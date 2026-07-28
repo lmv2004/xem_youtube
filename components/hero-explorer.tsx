@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Glass } from "@/components/ui/glass";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InterestPicker } from "@/components/interest-picker";
-import { FeaturedPlayer } from "@/components/featured-player";
+import { FeaturedPlayer, type FeaturedPlayerHandle } from "@/components/featured-player";
 import { VideoGrid } from "@/components/video-grid";
+import { MiniPlayer } from "@/components/mini-player";
 
 const STORAGE_INTERESTS = "xemphim:interests";
 const STORAGE_LAST_TOPIC = "xemphim:lastTopic";
@@ -76,6 +77,8 @@ export function HeroExplorer() {
   const [data, setData] = useState<VideoSearchResponse | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const requestSeq = useRef(0);
+  const featuredRef = useRef<FeaturedPlayerHandle>(null);
+  const [miniOpen, setMiniOpen] = useState(false);
 
   useEffect(() => {
     const p = readPersisted();
@@ -195,7 +198,14 @@ export function HeroExplorer() {
 
       <StatusMessage status={status} onRetry={() => void runSearch({ topic, interests, mode })} />
 
-      {featured ? <FeaturedPlayer item={featured} /> : null}
+      {featured ? (
+        <FeaturedPlayer
+          ref={featuredRef}
+          item={featured}
+          minimized={miniOpen}
+          onMinimizeToggle={() => setMiniOpen((v) => !v)}
+        />
+      ) : null}
       {rest.length > 0 ? (
         <section className="space-y-4 animate-in-up">
           <SectionHeading
@@ -204,17 +214,32 @@ export function HeroExplorer() {
           />
           <VideoGrid
             items={rest}
-            onPlay={(item) =>
+            onPlay={(item) => {
               setData({
                 ...(data as VideoSearchResponse),
                 items: [item, ...(ready?.items.filter((i) => i.id !== item.id) ?? [])],
                 featuredId: item.id,
                 topic: data?.topic ?? "",
-              })
-            }
+              });
+              setMiniOpen(false);
+              // Smooth scroll back to the featured player so the user sees
+              // the video they just clicked.
+              requestAnimationFrame(() => {
+                featuredRef.current?.scrollIntoView();
+              });
+            }}
           />
         </section>
       ) : null}
+
+      <MiniPlayer
+        item={miniOpen ? (featured ?? null) : null}
+        onClose={() => setMiniOpen(false)}
+        onExpand={() => {
+          setMiniOpen(false);
+          requestAnimationFrame(() => featuredRef.current?.scrollIntoView());
+        }}
+      />
     </div>
   );
 }
