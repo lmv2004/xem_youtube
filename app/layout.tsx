@@ -5,11 +5,21 @@ import { AuthSessionProvider } from "@/components/auth/session-provider";
 import { ClientLogInit } from "@/components/client-log-init";
 
 export const metadata: Metadata = {
-  title: "XemPhimYouTube",
+  title: "YoutubePremium",
   description:
     "Chọn sở thích, khám phá và lưu lại những video YouTube bạn yêu thích theo phong cách cá nhân.",
-  applicationName: "XemPhimYouTube",
-  authors: [{ name: "XemPhimYouTube" }],
+  applicationName: "YoutubePremium",
+  authors: [{ name: "YoutubePremium" }],
+  openGraph: {
+    title: "YoutubePremium",
+    description:
+      "Chọn sở thích, khám phá và lưu lại những video YouTube bạn yêu thích theo phong cách cá nhân.",
+  },
+  twitter: {
+    title: "YoutubePremium",
+    description:
+      "Chọn sở thích, khám phá và lưu lại những video YouTube bạn yêu thích theo phong cách cá nhân.",
+  },
   robots: { index: true, follow: true },
 };
 
@@ -17,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="vi" className="dark" suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans antialiased">
+        <title>YoutubePremium</title>
         <AuthSessionProvider>
           <ClientLogInit />
           {children}
