@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Production: Postgres (Neon / Supabase). Dev: SQLite (set DATABASE_URL=file:...).
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Auth.js v5 standard models for adapter, kept on SQLite-friendly types.
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  accounts      Account[]
+  sessions      Session[]
+  collections   Collection[]
+  history       ViewHistory[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Collection {
+  id        String           @id @default(cuid())
+  userId    String
+  name      String
+  slug      String
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CollectionItem[]
+
+  @@unique([userId, slug])
+  @@index([userId])
+}
+
+model CollectionItem {
+  id           String     @id @default(cuid())
+  collectionId String
+  videoId      String
+  title        String
+  channel      String
+  thumbnail    String
+  duration     Int        @default(0)
+  viewCount    Int        @default(0)
+  embedUrl     String
+  watchUrl     String
+  publishedAt  String?
+  description  String?
+  createdAt    DateTime   @default(now())
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, videoId])
+  @@index([collectionId])
+}
+
+model ViewHistory {
+  id          String   @id @default(cuid())
+  userId      String
+  videoId     String
+  title       String
+  channel     String
+  thumbnail   String
+  duration    Int      @default(0)
+  viewCount   Int      @default(0)
+  embedUrl    String
+  watchUrl    String
+  publishedAt String?
+  description String?
+  topic       String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
