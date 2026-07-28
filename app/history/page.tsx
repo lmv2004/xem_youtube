@@ -1,10 +1,13 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { History as HistoryIcon } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
-import { HistoryList } from "@/components/history-list";
+import { GradientMesh } from "@/components/site/gradient-mesh";
+import { Glass } from "@/components/ui/glass";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { HistoryList } from "@/components/history-list";
 
 export const metadata = { title: "Lịch sử xem - XemPhimYouTube" };
 
@@ -20,11 +23,19 @@ export default async function HistoryPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <GradientMesh />
       <SiteHeader />
       <main className="container flex-1 space-y-6 py-8">
-        <h1 className="text-2xl font-bold">Lịch sử xem</h1>
+        <div className="animate-in-up">
+          <h1 className="font-display text-3xl font-semibold tracking-tight inline-flex items-center gap-3">
+            <span className="rounded-full bg-primary/15 p-2 ring-1 ring-primary/30">
+              <HistoryIcon className="h-5 w-5 text-primary" />
+            </span>
+            Lịch sử xem
+          </h1>
+        </div>
         {items.length === 0 ? (
-          <Card>
+          <Card className="glass">
             <CardHeader>
               <CardTitle>Chưa có lượt xem nào</CardTitle>
             </CardHeader>
@@ -33,22 +44,25 @@ export default async function HistoryPage() {
             </CardContent>
           </Card>
         ) : (
-          <HistoryList
-            items={items.map((it) => ({
-              id: it.videoId,
-              title: it.title,
-              channel: it.channel,
-              thumbnail: it.thumbnail,
-              durationSeconds: it.duration,
-              viewCount: it.viewCount,
-              embedUrl: it.embedUrl,
-              watchUrl: it.watchUrl,
-              publishedAt: it.publishedAt ?? "",
-              description: it.description ?? "",
-              watchedAt: it.createdAt.toISOString(),
-              topic: it.topic ?? "",
-            }))}
-          />
+          <Glass intensity="soft" className="p-3 sm:p-4 animate-in-up">
+            <HistoryList
+              items={items.map((it) => ({
+                id: it.videoId,
+                title: it.title,
+                channel: it.channel,
+                thumbnail: it.thumbnail,
+                durationSeconds: it.duration,
+                viewCount: it.viewCount,
+                embedUrl: it.embedUrl,
+                watchUrl: it.watchUrl,
+                publishedAt: (it as { publishedAt?: string | null }).publishedAt ?? "",
+                description: (it as { description?: string | null }).description ?? "",
+                embeddable: true,
+                watchedAt: it.createdAt.toISOString(),
+                topic: it.topic ?? "",
+              }))}
+            />
+          </Glass>
         )}
       </main>
       <SiteFooter />
