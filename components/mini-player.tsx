@@ -160,13 +160,61 @@ export function MiniPlayer({ item, onClose, onExpand }: Props) {
   if (!item) return null;
   const blocked = item.embeddable === false;
 
-  function openPopOut() {
+  async function openPopOut() {
     if (typeof window === "undefined") return;
     const url = item!.watchUrl;
-    // YouTube embed iframes don't expose HTMLVideoElement, so the native
-    // Picture-in-Picture API isn't reachable. We open a new browser window
-    // instead — the user can drag it to another monitor.
-    window.open(url, "_blank", "noopener,noreferrer");
+
+    // Try the modern Window Management API path first (Chrome 100+ desktop).
+    // If the user has multiple screens and grants permission, the new window
+    // can be opened on any display the user picks.
+    type ScreenDetailed = {
+      availLeft: number;
+      availTop: number;
+      width: number;
+      height: number;
+    };
+    const screenApi = (
+      window as unknown as {
+        getScreenDetails?: () => Promise<{
+          screens: ScreenDetailed[];
+          currentScreen: ScreenDetailed;
+        }>;
+      }
+    ).getScreenDetails;
+    let features =
+      "popup=yes,width=960,height=540,noopener=yes";
+    if (screenApi) {
+      try {
+        const details = await screenApi();
+        const other = details.screens.find((s) => s !== details.currentScreen);
+        if (other) {
+          // Position the pop-out window on the secondary screen. If the user
+          // has more than one, the browser usually places the window there.
+          features = `popup=yes,width=960,height=540,left=${other.availLeft + 40},top=${other.availTop + 40},noopener=yes`;
+        }
+      } catch {
+        /* permission denied — fall back to default placement */
+      }
+    }
+
+    const win = window.open(url, "xemphim-tv", features);
+    // Window Management API: also try to move an existing window to another
+    // screen after it opens (Chrome 100+).
+    type ManagedWindow = Window & {
+      moveTo?: (x: number, y: number) => Promise<void>;
+    };
+    if (win && screenApi) {
+      try {
+        const details = await screenApi();
+        const other = details.screens.find((s) => s !== details.currentScreen);
+        const managed = win as ManagedWindow;
+        if (other && typeof managed.moveTo === "function") {
+          await managed.moveTo(other.availLeft + 40, other.availTop + 40);
+        }
+      } catch {
+        /* ignore */
+      }
+    }
   }
 
   return (
@@ -225,11 +273,11 @@ export function MiniPlayer({ item, onClose, onExpand }: Props) {
           data-menu
           onClick={(e) => {
             e.stopPropagation();
-            openPopOut();
+            void openPopOut();
           }}
           className="pointer-events-auto rounded-full bg-black/70 p-1.5 text-white shadow-lg backdrop-blur transition hover:bg-black/90"
-          aria-label="Mở trong cửa sổ riêng"
-          title="Mở trong cửa sổ riêng"
+          aria-label="Mở trong cửa sổ riêng (kéo sang màn hình khác)"
+          title="Mở trong cửa sổ riêng — bạn có thể kéo sang màn hình khác (Chrome 100+ desktop)"
         >
           <PictureInPicture2 className="h-3.5 w-3.5" />
         </button>
