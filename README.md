@@ -180,4 +180,6 @@ Windows Firewall (xem docs).
 2. Authorized redirect URI: `<AUTH_URL>/api/auth/callback/google`.
 3. Dán `AUTH_GOOGLE_ID` và `AUTH_GOOGLE_SECRET` vào `.env.local`.
 4. Khởi động lại `npm run dev`.
+
+Hướng dẫn chi tiết cho production (Vercel + custom domain): [docs/google-oauth.md](docs/google-oauth.md).
 # xem_youtube

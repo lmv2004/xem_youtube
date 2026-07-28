@@ -1,15 +1,18 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 export function RegisterForm() {
   const router = useRouter();
+  const search = useSearchParams();
+  const callbackUrl = search.get("callbackUrl") ?? "/";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -37,8 +40,15 @@ export function RegisterForm() {
       setError("Đăng ký thành công nhưng đăng nhập tự động thất bại. Hãy thử lại.");
       return;
     }
-    router.push("/");
+    router.push(callbackUrl);
     router.refresh();
+  }
+
+  async function onGoogle() {
+    setPending(true);
+    setError(null);
+    // signIn with redirect=true so the browser navigates to /api/auth/signin/google
+    await signIn("google", { callbackUrl });
   }
 
   return (
@@ -81,6 +91,20 @@ export function RegisterForm() {
             {pending ? "Đang tạo tài khoản..." : "Đăng ký"}
           </Button>
         </form>
+        <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
+          <Separator className="flex-1" />
+          <span>hoặc</span>
+          <Separator className="flex-1" />
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={() => void onGoogle()}
+          disabled={pending}
+        >
+          Đăng ký với Google
+        </Button>
       </CardContent>
       <CardFooter className="justify-center text-sm text-muted-foreground">
         Đã có tài khoản?{" "}

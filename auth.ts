@@ -41,6 +41,10 @@ if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
+      // Allow linking Google accounts to existing users with the same email so
+      // a user who registered with email/password can later sign in with Google.
+      // Safe because Google has verified the email address.
+      allowDangerousEmailAccountLinking: true,
     }),
   );
 }
