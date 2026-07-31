@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Heart, History, LogIn, Search, UserPlus } from "lucide-react";
+import { Compass, Heart, History, Link2, LogIn, Search, UserPlus } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Glass } from "@/components/ui/glass";
@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 
 const NAV = [
   { href: "/", label: "Khám phá", icon: Compass },
+  { href: "/watch", label: "Xem nhanh", icon: Link2 },
   { href: "/favorites", label: "Yêu thích", icon: Heart },
   { href: "/history", label: "Lịch sử", icon: History },
 ];

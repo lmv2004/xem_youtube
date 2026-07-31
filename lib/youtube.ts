@@ -247,6 +247,59 @@ export function isStructuredError(e: unknown): e is Error & YouTubeError {
   return isYouTubeError(e);
 }
 
+// Fetch a single video by id via YouTube Data API videos.list. Returns null
+// when the id is unknown, removed, or the payload is empty. Mirrors the
+// shape returned by searchVideos() and listTrending() so callers can use
+// any VideoItem interchangeably.
+export async function getVideoById(id: string): Promise<VideoItem | null> {
+  const key = ensureKey();
+  const cleanId = id.trim();
+  if (!cleanId) return null;
+
+  const url = new URL(VIDEOS_ENDPOINT);
+  url.searchParams.set("part", "statistics,contentDetails,snippet,status");
+  url.searchParams.set("id", cleanId);
+  url.searchParams.set("key", key);
+
+  const res = await fetchWithTimeout(url.toString(), DEFAULT_TIMEOUT_MS);
+  if (!res.ok) {
+    fail("upstream-error", `YouTube từ chối yêu cầu video (HTTP ${res.status}).`);
+  }
+  const json = (await res.json()) as {
+    items?: VideosListItem[];
+    error?: { message?: string; code?: number };
+  };
+  if (json.error) {
+    fail("upstream-error", json.error.message ?? "Lỗi không xác định từ YouTube.");
+  }
+  const v = (json.items ?? [])[0];
+  if (!v || !v.id) return null;
+
+  const snip = v.snippet;
+  const title = snip?.title ?? "Không rõ tiêu đề";
+  const channel = snip?.channelTitle ?? "Không rõ kênh";
+  const publishedAt = snip?.publishedAt ?? "";
+  const description = snip?.description ?? "";
+  const thumbnail = pickThumbnail(snip);
+  const viewCount = Number(v.statistics?.viewCount ?? 0);
+  const durationSeconds = parseDurationSeconds(v.contentDetails?.duration);
+  const embeddable = v.status?.embeddable !== false ? true : false;
+
+  return {
+    id: v.id,
+    title,
+    channel,
+    publishedAt,
+    description,
+    thumbnail,
+    embedUrl: `https://www.youtube.com/embed/${v.id}`,
+    watchUrl: `https://www.youtube.com/watch?v=${v.id}`,
+    durationSeconds,
+    viewCount,
+    embeddable,
+  };
+}
+
 // Fetches most-popular videos for a region (no query required).
 // Returns a normalized list of VideoItem, matching `searchVideos()` shape.
 export async function listTrending(regionCode: string, maxResults = MAX_RESULTS): Promise<VideoItem[]> {
