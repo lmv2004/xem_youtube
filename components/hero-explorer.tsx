@@ -99,10 +99,11 @@ export function HeroExplorer() {
       setIsLoading(true);
       try {
         const params = new URLSearchParams();
-        if (opts.mode === "trending") {
+        const t = opts.topic.trim();
+        const hasSearch = t.length >= 2 || opts.interests.length > 0;
+        if (opts.mode === "trending" && !hasSearch) {
           params.set("mode", "trending");
         } else {
-          const t = opts.topic.trim();
           if (t) params.set("topic", t);
           if (opts.interests.length > 0) params.set("interests", opts.interests.join(","));
         }
@@ -128,9 +129,9 @@ export function HeroExplorer() {
 
   useEffect(() => {
     if (!hydrated) return;
-    void runSearch({ topic, interests, mode });
+    void runSearch({ topic, interests, mode: interests.length > 0 || topic.trim().length >= 2 ? "search" : "trending" });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [interests, hydrated, mode]);
+  }, [interests, hydrated]);
 
   const status = toStatus(data?.topic ?? "", data, isLoading);
   const ready = status.kind === "ready" ? status : null;
