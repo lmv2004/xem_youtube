@@ -1,13 +1,22 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { BookmarkPlus, Clock, ExternalLink, Play, Share2 } from "lucide-react";
+import {
+  BookmarkPlus,
+  Clock,
+  ExternalLink,
+  Loader2,
+  Play,
+  Share2,
+  Users,
+} from "lucide-react";
 import type { VideoItem } from "@/lib/types";
 import { formatDuration, formatViews } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AddToCollectionDialog } from "./add-to-collection-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useCreateRoom } from "@/hooks/use-create-room";
 import { cn } from "@/lib/utils";
 
 export type ViewMode = "grid" | "list";
@@ -83,6 +92,37 @@ function useShare() {
       toast({ title: "Không sao chép được liên kết" });
     }
   };
+}
+
+/** Opens a watch party for this video and sends the host into the room. */
+function WatchTogetherButton({
+  item,
+  compact,
+}: {
+  item: VideoItem;
+  compact?: boolean;
+}) {
+  const { createRoom, isCreating } = useCreateRoom();
+
+  return (
+    <Button
+      type="button"
+      size={compact ? "icon" : "sm"}
+      variant="ghost"
+      className={compact ? "h-8 w-8" : undefined}
+      disabled={isCreating}
+      onClick={() => void createRoom(item)}
+      aria-label="Xem cùng nhau"
+      title="Xem cùng nhau"
+    >
+      {isCreating ? (
+        <Loader2 className={cn("h-4 w-4 animate-spin", !compact && "mr-1")} />
+      ) : (
+        <Users className={cn("h-4 w-4", !compact && "mr-1")} />
+      )}
+      {compact ? null : "Xem cùng"}
+    </Button>
+  );
 }
 
 function WatchLaterButton({
@@ -218,6 +258,7 @@ function VideoTile({
           </Button>
 
           <div className="flex items-center gap-1">
+            <WatchTogetherButton item={item} compact />
             <Button
               type="button"
               size="icon"
@@ -299,6 +340,7 @@ function VideoRow({
               {queued ? "Trong hàng đợi" : "Xem sau"}
             </Button>
           ) : null}
+          <WatchTogetherButton item={item} />
           <Button
             type="button"
             size="icon"

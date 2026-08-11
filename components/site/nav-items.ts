@@ -5,6 +5,7 @@ import {
   Library,
   Link2,
   Settings,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -28,6 +29,7 @@ export type NavItem = {
  */
 export const PRIMARY_NAV: NavItem[] = [
   { href: "/", label: "Khám phá", icon: Compass },
+  { href: "/rooms", label: "Phòng xem chung", shortLabel: "Phòng", icon: Users },
   { href: "/watch", label: "Xem nhanh", shortLabel: "Xem", icon: Link2 },
 ];
 
@@ -41,11 +43,15 @@ export const ACCOUNT_NAV: NavItem[] = [
   { href: "/account", label: "Tài khoản", shortLabel: "Tài khoản", icon: Settings },
 ];
 
-/** Items shown in the mobile bottom bar (kept to five for tap-target comfort). */
+/**
+ * Items shown in the mobile bottom bar, capped at five so tap targets stay
+ * comfortable. Account is reachable from the header avatar, so it gives up its
+ * slot to the watch party.
+ */
 export const MOBILE_NAV: NavItem[] = [
   PRIMARY_NAV[0],
   PRIMARY_NAV[1],
+  PRIMARY_NAV[2],
   LIBRARY_NAV[0],
   LIBRARY_NAV[1],
-  ACCOUNT_NAV[0],
 ];

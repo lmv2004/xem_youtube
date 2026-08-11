@@ -20,6 +20,8 @@ model User {
   sessions      Session[]
   collections   Collection[]
   history       ViewHistory[]
+  rooms         Room[]
+  roomMessages  RoomMessage[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -110,4 +112,50 @@ model ViewHistory {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Watch party
+// ---------------------------------------------------------------------------
+
+// Playback state is stored as an anchor rather than a live position:
+// (positionSeconds, lastSyncAt, isPlaying). Clients derive the current
+// position from that anchor, so a room stays correct between writes and we
+// never have to write on every tick.
+model Room {
+  id     String @id @default(cuid())
+  code   String @unique
+  title  String
+  hostId String
+  host   User   @relation(fields: [hostId], references: [id], onDelete: Cascade)
+
+  videoId    String
+  videoTitle String
+  channel    String
+  thumbnail  String
+  embedUrl   String
+  watchUrl   String
+  duration   Int    @default(0)
+
+  isPlaying       Boolean  @default(false)
+  positionSeconds Float    @default(0)
+  lastSyncAt      DateTime @default(now())
+
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  messages  RoomMessage[]
+
+  @@index([hostId])
+}
+
+model RoomMessage {
+  id        String   @id @default(cuid())
+  roomId    String
+  userId    String
+  body      String
+  createdAt DateTime @default(now())
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, createdAt])
 }
