@@ -19,6 +19,9 @@ export type VideoSearchResponse = {
   topic: string;
   items: VideoItem[];
   featuredId: string | null;
+  // Opaque cursor returned by the YouTube Data API. Null/absent when the
+  // current result set has no further pages.
+  nextPageToken?: string | null;
   error?: { code: ErrorCode; message: string };
 };
 

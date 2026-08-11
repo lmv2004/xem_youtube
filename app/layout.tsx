@@ -3,6 +3,12 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthSessionProvider } from "@/components/auth/session-provider";
 import { ClientLogInit } from "@/components/client-log-init";
+import { ThemeProvider } from "@/components/theme/theme-provider";
+
+// Runs before first paint so the stored theme is applied without a flash of
+// the wrong colour scheme. Kept as a plain string (not imported from the
+// client module) so this file stays a server component.
+const THEME_INIT_SCRIPT = `(function(){try{var s=localStorage.getItem("xemphim:theme");var t=(s==="light"||s==="dark"||s==="system")?s:"dark";var r=t==="system"?(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t;var e=document.documentElement;e.classList.toggle("dark",r==="dark");e.style.colorScheme=r;}catch(_){}})();`;
 
 export const metadata: Metadata = {
   title: "YoutubePremium",
@@ -25,14 +31,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="vi" className="dark" suppressHydrationWarning>
+    <html lang="vi" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="min-h-screen bg-background font-sans antialiased">
-        <title>YoutubePremium</title>
-        <AuthSessionProvider>
-          <ClientLogInit />
-          {children}
-          <Toaster />
-        </AuthSessionProvider>
+        <ThemeProvider defaultTheme="dark">
+          <AuthSessionProvider>
+            <ClientLogInit />
+            {children}
+            <Toaster />
+          </AuthSessionProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
