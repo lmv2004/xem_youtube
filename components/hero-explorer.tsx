@@ -1,7 +1,16 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { PlayCircle, Search, Sparkles, X } from "lucide-react";
-import type { SearchStatus, VideoItem, VideoSearchResponse } from "@/lib/types";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Loader2,
+  Maximize2,
+  Minimize2,
+  PlayCircle,
+  Search,
+  SkipForward,
+  Sparkles,
+  X,
+} from "lucide-react";
+import type { ErrorCode, SearchStatus, VideoItem, VideoSearchResponse } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +20,16 @@ import { InterestPicker } from "@/components/interest-picker";
 import { FeaturedPlayer, type FeaturedPlayerHandle } from "@/components/featured-player";
 import { VideoGrid } from "@/components/video-grid";
 import { MiniPlayer } from "@/components/mini-player";
+import { FilterChips } from "@/components/filter-chips";
+import { VideoFiltersBar } from "@/components/video-filters";
+import { WatchLaterPanel } from "@/components/watch-later-panel";
+import { useWatchLater } from "@/hooks/use-watch-later";
+import {
+  DEFAULT_FILTERS,
+  filtersToSearchParams,
+  type VideoFilters,
+} from "@/lib/filters";
+import { cn } from "@/lib/utils";
 
 const STORAGE_INTERESTS = "xemphim:interests";
 const STORAGE_LAST_TOPIC = "xemphim:lastTopic";
@@ -18,16 +37,10 @@ const STORAGE_LAST_MODE = "xemphim:lastMode";
 
 type Mode = "trending" | "search";
 
-type Persisted = {
-  interests: string[];
-  topic: string;
-  mode: Mode;
-};
+type Persisted = { interests: string[]; topic: string; mode: Mode };
 
 function readPersisted(): Persisted {
-  if (typeof window === "undefined") {
-    return { interests: [], topic: "", mode: "trending" };
-  }
+  if (typeof window === "undefined") return { interests: [], topic: "", mode: "trending" };
   try {
     const interests = JSON.parse(localStorage.getItem(STORAGE_INTERESTS) ?? "[]") as string[];
     const topic = localStorage.getItem(STORAGE_LAST_TOPIC) ?? "";
@@ -54,93 +67,160 @@ function writePersisted(p: Persisted) {
   }
 }
 
-function toStatus(
-  topic: string,
-  data: VideoSearchResponse | null,
-  isLoading: boolean,
-): SearchStatus {
-  if (isLoading) return { kind: "loading", topic };
-  if (!data) return { kind: "idle" };
-  if (data.error?.code === "missing-key") return { kind: "missing-key" };
-  if (data.error) {
-    return { kind: "error", topic, code: data.error.code, message: data.error.message };
-  }
-  if (data.items.length === 0) return { kind: "empty", topic };
-  return { kind: "ready", topic, items: data.items, featuredId: data.featuredId };
-}
-
 export function HeroExplorer() {
   const [interests, setInterests] = useState<string[]>([]);
-  const [topic, setTopic] = useState("");
-  const [mode, setMode] = useState<Mode>("trending");
+  const [topicInput, setTopicInput] = useState("");
+  const [query, setQuery] = useState(""); // committed search term
+  const [chip, setChip] = useState<string | null>(null);
+  const [filters, setFilters] = useState<VideoFilters>(DEFAULT_FILTERS);
+
+  const [items, setItems] = useState<VideoItem[]>([]);
+  const [featuredId, setFeaturedId] = useState<string | null>(null);
+  const [nextPageToken, setNextPageToken] = useState<string | null>(null);
+  const [responseTopic, setResponseTopic] = useState("");
+  const [error, setError] = useState<{ code: ErrorCode; message: string } | null>(null);
+
   const [isLoading, setIsLoading] = useState(false);
-  const [data, setData] = useState<VideoSearchResponse | null>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+
+  const [theater, setTheater] = useState(false);
+  const [miniOpen, setMiniOpen] = useState(false);
+
   const requestSeq = useRef(0);
   const featuredRef = useRef<FeaturedPlayerHandle>(null);
-  const [miniOpen, setMiniOpen] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  const watchLater = useWatchLater();
+
+  // A chip always wins over the free-text query so the two never fight.
+  const activeTopic = chip ?? query;
+  const mode: Mode =
+    activeTopic.trim().length >= 2 || interests.length > 0 ? "search" : "trending";
 
   useEffect(() => {
     const p = readPersisted();
     setInterests(p.interests);
-    setTopic(p.topic);
-    setMode(p.mode);
+    setTopicInput(p.topic);
+    setQuery(p.mode === "search" ? p.topic : "");
     setHydrated(true);
   }, []);
 
   useEffect(() => {
     if (!hydrated) return;
-    writePersisted({ interests, topic, mode });
-  }, [interests, topic, mode, hydrated]);
+    writePersisted({ interests, topic: activeTopic, mode });
+  }, [interests, activeTopic, mode, hydrated]);
 
-  const runSearch = useCallback(
-    async (opts: { topic: string; interests: string[]; mode: Mode }) => {
-      const seq = ++requestSeq.current;
-      setIsLoading(true);
-      try {
-        const params = new URLSearchParams();
-        const t = opts.topic.trim();
-        const hasSearch = t.length >= 2 || opts.interests.length > 0;
-        if (opts.mode === "trending" && !hasSearch) {
-          params.set("mode", "trending");
-        } else {
-          if (t) params.set("topic", t);
-          if (opts.interests.length > 0) params.set("interests", opts.interests.join(","));
-        }
-        const url = `/api/videos?${params.toString()}`;
-        const res = await fetch(url, { cache: "no-store" });
-        const json = (await res.json()) as VideoSearchResponse;
-        if (seq !== requestSeq.current) return;
-        setData(json);
-      } catch {
-        if (seq !== requestSeq.current) return;
-        setData({
-          topic: opts.topic,
-          items: [],
-          featuredId: null,
-          error: { code: "network", message: "Không thể gọi máy chủ." },
-        });
-      } finally {
-        if (seq === requestSeq.current) setIsLoading(false);
+  const buildUrl = useCallback(
+    (pageToken?: string | null) => {
+      const params = new URLSearchParams();
+      const t = activeTopic.trim();
+      if (mode === "trending") {
+        params.set("mode", "trending");
+      } else {
+        if (t.length >= 2) params.set("topic", t);
+        if (interests.length > 0) params.set("interests", interests.join(","));
       }
+      filtersToSearchParams(filters, params);
+      if (pageToken) params.set("pageToken", pageToken);
+      return "/api/videos?" + params.toString();
     },
-    [],
+    [activeTopic, mode, interests, filters],
   );
 
+  const load = useCallback(
+    async (pageToken: string | null) => {
+      const isAppend = Boolean(pageToken);
+      const seq = ++requestSeq.current;
+
+      if (isAppend) setIsLoadingMore(true);
+      else setIsLoading(true);
+
+      try {
+        const res = await fetch(buildUrl(pageToken), { cache: "no-store" });
+        const json = (await res.json()) as VideoSearchResponse;
+        if (seq !== requestSeq.current) return; // a newer request superseded us
+
+        setResponseTopic(json.topic ?? "");
+        setError(json.error ?? null);
+        setNextPageToken(json.nextPageToken ?? null);
+
+        if (isAppend) {
+          setItems((prev) => {
+            const seen = new Set(prev.map((v) => v.id));
+            return [...prev, ...json.items.filter((v) => !seen.has(v.id))];
+          });
+        } else {
+          setItems(json.items);
+          setFeaturedId(json.featuredId);
+        }
+      } catch {
+        if (seq !== requestSeq.current) return;
+        setError({ code: "network", message: "Không thể gọi máy chủ." });
+        if (!isAppend) {
+          setItems([]);
+          setFeaturedId(null);
+          setNextPageToken(null);
+        }
+      } finally {
+        if (seq === requestSeq.current) {
+          setIsLoading(false);
+          setIsLoadingMore(false);
+        }
+      }
+    },
+    [buildUrl],
+  );
+
+  // Reload from scratch whenever the query, chip, interests or filters change.
   useEffect(() => {
     if (!hydrated) return;
-    void runSearch({ topic, interests, mode: interests.length > 0 || topic.trim().length >= 2 ? "search" : "trending" });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [interests, hydrated]);
+    void load(null);
+  }, [hydrated, query, chip, interests, filters, load]);
 
-  const status = toStatus(data?.topic ?? "", data, isLoading);
-  const ready = status.kind === "ready" ? status : null;
-  const rest: VideoItem[] = ready ? ready.items.filter((v) => v.id !== ready.featuredId) : [];
-  const featured = ready ? ready.items.find((v) => v.id === ready.featuredId) : null;
+  // Infinite scroll: fetch the next page when the sentinel scrolls into view.
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !nextPageToken || isLoading || isLoadingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) void load(nextPageToken);
+      },
+      { rootMargin: "600px 0px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [nextPageToken, isLoading, isLoadingMore, load]);
+
+  const featured = useMemo(
+    () => items.find((v) => v.id === featuredId) ?? null,
+    [items, featuredId],
+  );
+  const rest = useMemo(
+    () => items.filter((v) => v.id !== featuredId),
+    [items, featuredId],
+  );
+
+  const playItem = useCallback((item: VideoItem) => {
+    setItems((prev) => (prev.some((v) => v.id === item.id) ? prev : [item, ...prev]));
+    setFeaturedId(item.id);
+    setMiniOpen(false);
+    requestAnimationFrame(() => featuredRef.current?.scrollIntoView());
+  }, []);
+
+  const playNext = useCallback(() => {
+    const upcoming = watchLater.next(featuredId);
+    if (upcoming) playItem(upcoming);
+  }, [watchLater, featuredId, playItem]);
+
+  const status = toStatus({ activeTopic: responseTopic, items, error, isLoading });
 
   function resetToTrending() {
-    setTopic("");
-    setMode("trending");
+    setChip(null);
+    setQuery("");
+    setTopicInput("");
+    setFilters(DEFAULT_FILTERS);
   }
 
   return (
@@ -152,9 +232,10 @@ export function HeroExplorer() {
           className="flex flex-col gap-3 sm:flex-row"
           onSubmit={(e) => {
             e.preventDefault();
-            if (topic.trim().length < 2 && interests.length === 0) return;
-            setMode("search");
-            void runSearch({ topic, interests, mode: "search" });
+            const t = topicInput.trim();
+            if (t.length < 2 && interests.length === 0) return;
+            setChip(null);
+            setQuery(t);
           }}
         >
           <div className="relative flex-1">
@@ -162,28 +243,41 @@ export function HeroExplorer() {
             <Input
               placeholder="Tìm theo từ khoá tuỳ ý (không bắt buộc)..."
               className="glass-input h-11 pl-10 text-base"
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
+              value={topicInput}
+              onChange={(e) => setTopicInput(e.target.value)}
               maxLength={100}
             />
           </div>
-          <Button type="submit" size="lg" className="glow-primary" disabled={isLoading || (topic.trim().length < 2 && interests.length === 0)}>
+          <Button
+            type="submit"
+            size="lg"
+            className="glow-primary"
+            disabled={isLoading || (topicInput.trim().length < 2 && interests.length === 0)}
+          >
             {isLoading ? "Đang tìm..." : "Tìm video"}
           </Button>
         </form>
 
+        <FilterChips
+          value={chip}
+          disabled={isLoading}
+          onChange={(topic) => {
+            setChip(topic);
+            if (topic) setTopicInput(topic);
+          }}
+        />
+
+        <VideoFiltersBar value={filters} onChange={setFilters} disabled={isLoading} />
+
         <div className="flex flex-wrap items-center gap-2">
-          <Badge
-            variant="secondary"
-            className="bg-white/5 text-foreground ring-1 ring-white/10"
-          >
+          <Badge variant="secondary" className="bg-foreground/5 text-foreground ring-1 ring-border">
             {mode === "trending" ? (
               <>
                 <Sparkles className="mr-1 h-3 w-3 text-primary" /> Đề xuất chính
               </>
             ) : (
               <>
-                <PlayCircle className="mr-1 h-3 w-3 text-primary" /> {data?.topic ?? "Đã tìm"}
+                <PlayCircle className="mr-1 h-3 w-3 text-primary" /> {responseTopic || "Đã tìm"}
               </>
             )}
           </Badge>
@@ -197,44 +291,97 @@ export function HeroExplorer() {
         <InterestPicker value={interests} onChange={setInterests} />
       </Glass>
 
-      <StatusMessage status={status} onRetry={() => void runSearch({ topic, interests, mode })} />
+      <StatusMessage status={status} onRetry={() => void load(null)} />
 
       {featured ? (
-        <FeaturedPlayer
-          ref={featuredRef}
-          item={featured}
-          minimized={miniOpen}
-          onMinimizeToggle={() => setMiniOpen((v) => !v)}
-        />
+        <section
+          className={cn(
+            "space-y-3 transition-all duration-300",
+            theater &&
+              "-mx-4 rounded-3xl bg-black/50 px-4 py-5 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-10 lg:px-10",
+          )}
+        >
+          <div className="flex items-center justify-end gap-2">
+            {watchLater.next(featuredId) ? (
+              <Button type="button" size="sm" variant="ghost" onClick={playNext}>
+                <SkipForward className="mr-1 h-4 w-4" /> Phát tiếp
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => setTheater((v) => !v)}
+              aria-pressed={theater}
+            >
+              {theater ? (
+                <>
+                  <Minimize2 className="mr-1 h-4 w-4" /> Thoát rạp phim
+                </>
+              ) : (
+                <>
+                  <Maximize2 className="mr-1 h-4 w-4" /> Chế độ rạp phim
+                </>
+              )}
+            </Button>
+          </div>
+
+          <div className={cn(theater && "mx-auto max-w-6xl")}>
+            <FeaturedPlayer
+              ref={featuredRef}
+              item={featured}
+              minimized={miniOpen}
+              onMinimizeToggle={() => setMiniOpen((v) => !v)}
+            />
+          </div>
+        </section>
       ) : null}
+
+      <WatchLaterPanel
+        items={watchLater.items}
+        currentId={featuredId}
+        onPlay={playItem}
+        onRemove={watchLater.remove}
+        onClear={watchLater.clear}
+      />
+
       {rest.length > 0 ? (
         <section className="space-y-4 animate-in-up">
           <SectionHeading
             title={mode === "trending" ? "Đang thịnh hành" : "Đề xuất liên quan"}
-            subtitle={mode === "trending" ? "Tự động theo khu vực Việt Nam" : `Gợi ý cho "${data?.topic ?? ""}"`}
+            subtitle={
+              mode === "trending"
+                ? "Tự động theo khu vực Việt Nam"
+                : "Gợi ý cho \"" + (responseTopic || activeTopic) + "\""
+            }
           />
           <VideoGrid
             items={rest}
-            onPlay={(item) => {
-              setData({
-                ...(data as VideoSearchResponse),
-                items: [item, ...(ready?.items.filter((i) => i.id !== item.id) ?? [])],
-                featuredId: item.id,
-                topic: data?.topic ?? "",
-              });
-              setMiniOpen(false);
-              // Smooth scroll back to the featured player so the user sees
-              // the video they just clicked.
-              requestAnimationFrame(() => {
-                featuredRef.current?.scrollIntoView();
-              });
-            }}
+            activeId={featuredId}
+            onPlay={playItem}
+            onToggleWatchLater={watchLater.toggle}
+            isInWatchLater={watchLater.has}
           />
+
+          {/* Infinite-scroll sentinel */}
+          <div ref={sentinelRef} aria-hidden className="h-1 w-full" />
+
+          {isLoadingMore ? (
+            <p className="flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Đang tải thêm video...
+            </p>
+          ) : null}
+
+          {!nextPageToken && !isLoading ? (
+            <p className="py-4 text-center text-xs text-muted-foreground">
+              Đã hiển thị hết kết quả.
+            </p>
+          ) : null}
         </section>
       ) : null}
 
       <MiniPlayer
-        item={miniOpen ? (featured ?? null) : null}
+        item={miniOpen ? featured : null}
         onClose={() => setMiniOpen(false)}
         onExpand={() => {
           setMiniOpen(false);
@@ -245,13 +392,35 @@ export function HeroExplorer() {
   );
 }
 
+function toStatus({
+  activeTopic,
+  items,
+  error,
+  isLoading,
+}: {
+  activeTopic: string;
+  items: VideoItem[];
+  error: { code: ErrorCode; message: string } | null;
+  isLoading: boolean;
+}): SearchStatus {
+  // Keep showing the current results while a "load more" request is in flight.
+  if (isLoading && items.length === 0) return { kind: "loading", topic: activeTopic };
+  if (error?.code === "missing-key") return { kind: "missing-key" };
+  if (error && items.length === 0) {
+    return { kind: "error", topic: activeTopic, code: error.code, message: error.message };
+  }
+  if (!isLoading && items.length === 0 && activeTopic) return { kind: "empty", topic: activeTopic };
+  if (items.length === 0) return { kind: "idle" };
+  return { kind: "ready", topic: activeTopic, items, featuredId: items[0]?.id ?? null };
+}
+
 function Hero() {
   return (
     <section className="relative isolate animate-in-up">
       <div className="space-y-3 text-center">
         <Badge
           variant="secondary"
-          className="mx-auto inline-flex w-fit bg-white/5 text-foreground ring-1 ring-white/10"
+          className="mx-auto inline-flex w-fit bg-foreground/5 text-foreground ring-1 ring-border"
         >
           <Sparkles className="mr-1 h-3 w-3 text-primary" /> Cá nhân hoá theo sở thích
         </Badge>
@@ -281,12 +450,12 @@ function SectionHeading({ title, subtitle }: { title: string; subtitle?: string 
 }
 
 function StatusMessage({ status, onRetry }: { status: SearchStatus; onRetry: () => void }) {
-  if (status.kind === "idle") return null;
+  if (status.kind === "idle" || status.kind === "ready") return null;
   if (status.kind === "loading") {
     return (
       <div className="space-y-3" aria-live="polite">
         <p className="text-sm text-muted-foreground">Đang tải đề xuất...</p>
-        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-hidden>
+        <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3" aria-hidden>
           {Array.from({ length: 6 }).map((_, i) => (
             <li key={i} className="overflow-hidden rounded-2xl glass">
               <Skeleton className="aspect-video w-full" />
@@ -303,7 +472,8 @@ function StatusMessage({ status, onRetry }: { status: SearchStatus; onRetry: () 
   if (status.kind === "empty") {
     return (
       <Glass intensity="soft" className="p-4 text-sm">
-        Không tìm thấy video cho chủ đề <strong>{status.topic}</strong>. Thử chủ đề khác nhé.
+        Không tìm thấy video cho chủ đề <strong>{status.topic}</strong>. Thử bớt bộ lọc hoặc
+        đổi chủ đề nhé.
       </Glass>
     );
   }

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Logo } from "./logo";
 import { cn } from "@/lib/utils";
 
@@ -51,7 +52,7 @@ export function SiteHeader() {
                     "inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-all",
                     active
                       ? "bg-primary/15 text-foreground ring-1 ring-primary/30"
-                      : "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+                      : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground",
                   )}
                 >
                   <Icon className="h-4 w-4" />
@@ -62,13 +63,14 @@ export function SiteHeader() {
           </nav>
 
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             {status === "loading" ? (
-              <div className="h-9 w-24 animate-pulse rounded-full bg-white/10" />
+              <div className="h-9 w-24 animate-pulse rounded-full bg-foreground/10" />
             ) : user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
-                    className="rounded-full ring-1 ring-white/10 transition hover:ring-primary/40"
+                    className="rounded-full ring-1 ring-border transition hover:ring-primary/40"
                     aria-label="Menu người dùng"
                   >
                     <Avatar className="h-9 w-9">
