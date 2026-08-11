@@ -1,77 +1,126 @@
-# Giao diện v3 — ghi chú triển khai
+# Giao diện v3
 
-Tài liệu mô tả các thay đổi giao diện và tính năng được thêm trong nhánh
-`feat/youtube-ui-v3`.
+Tài liệu cho đợt nâng cấp giao diện trên nhánh `feat/youtube-ui-v3`.
 
-## 1. Bố cục kiểu YouTube
+**Không thêm dependency npm nào** — `package.json` và `package-lock.json` giữ nguyên.
 
-- `components/site/app-sidebar.tsx` — thanh điều hướng dọc.
-  - Desktop: cột dính (sticky), thu gọn còn icon, trạng thái lưu ở
-    `localStorage["xemphim:sidebar:collapsed"]`.
-  - Mobile: nút nổi góc dưới trái mở drawer overlay tự viết (không dùng
-    `components/ui/sheet.tsx` để tránh phụ thuộc vào hành vi focus-trap của dialog).
-- `components/site/site-shell.tsx` — khung trang dùng chung
-  (`GradientMesh` + `SiteHeader` + sidebar + `SiteFooter`). Các route khác có thể
-  chuyển sang dùng component này để đồng bộ bố cục.
-- `components/filter-chips.tsx` — thanh chip chủ đề cuộn ngang, lấy dữ liệu từ
-  `TOPIC_SUGGESTIONS`.
+---
 
-## 2. Chế độ sáng / tối
+## 1. Điều hướng: mỗi breakpoint chỉ một nơi
 
-- `components/theme/theme-provider.tsx` — provider tự viết, **không thêm
-  dependency mới**. Hỗ trợ `light` / `dark` / `system`, lưu ở
-  `localStorage["xemphim:theme"]`.
-- `app/layout.tsx` đã bỏ `className="dark"` cứng trên thẻ `<html>` và thêm một
-  inline script chạy trước khi paint để tránh nháy màu (FOUC).
-- `app/globals.css` vốn đã có sẵn cả hai bộ token `:root` (sáng) và `.dark`, nên
-  không cần sửa CSS.
+Trước đây cùng một nhóm liên kết xuất hiện ở ba chỗ: header, sidebar và footer. Nay
+được gom về một nguồn duy nhất và render đúng một lần trên mỗi kích thước màn hình.
 
-> Lưu ý: một số class cũ dạng `bg-white/5`, `ring-white/10` chỉ hợp với nền tối.
-> Những chỗ đã đổi sang `bg-foreground/5`, `ring-border`. Nếu còn trang nào hiển
-> thị lạ ở chế độ sáng, thay theo cùng quy tắc này.
+| Thành phần | Mobile | Desktop (lg+) |
+| --- | --- | --- |
+| `components/site/mobile-nav.tsx` | thanh tab dưới đáy | ẩn |
+| `components/site/app-sidebar.tsx` | ẩn | cột dọc, thu gọn được |
+| `site-header.tsx` | chỉ logo + theme + tài khoản | như mobile |
+| `site-footer.tsx` | chỉ thương hiệu + ghi chú bản quyền | như mobile |
 
-## 3. Phân trang + infinite scroll
+`components/site/nav-items.ts` là nguồn duy nhất định nghĩa các mục điều hướng
+(`PRIMARY_NAV`, `LIBRARY_NAV`, `ACCOUNT_NAV`, `MOBILE_NAV`). Thêm mục mới chỉ cần sửa file
+này, cả hai thanh điều hướng tự cập nhật.
 
-- `lib/youtube-search.ts` (mới) — bản có phân trang của `searchVideos` /
-  `listTrending`, trả thêm `nextPageToken`.
-  - Viết thành file riêng thay vì sửa `lib/youtube.ts` vì module cũ đang được
-    nhiều route import với chữ ký hàm cố định.
-  - Khác biệt quan trọng: không tự sắp xếp lại kết quả theo lượt xem, để tuỳ chọn
-    `order=date` thực sự trả về video mới nhất.
-- `app/api/videos/route.ts` nhận thêm `pageToken`, `order`, `duration`,
-  `uploadDate`; trả về `nextPageToken`.
-- `components/hero-explorer.tsx` dùng `IntersectionObserver` với
-  `rootMargin: "600px"` để nạp trước khi người dùng chạm đáy, kèm lọc trùng `id`.
+> **Lưu ý khi thêm mục vào `MOBILE_NAV`:** thanh dưới đáy được giới hạn 5 mục để vùng
+> chạm không bị hẹp. Quá 5 mục nên chuyển sang menu "Thêm".
 
-## 4. Bộ lọc nâng cao
+Drawer trượt cũ trên mobile đã bị bỏ: nó tốn hai lần chạm để tới bất kỳ trang nào.
 
-- `lib/filters.ts` — kiểu dữ liệu + nhãn tiếng Việt + chuyển đổi sang tham số của
-  YouTube Data API. File này không import gì của React hay server nên dùng được cả
-  hai phía.
-- `components/video-filters.tsx` — ba dropdown: sắp xếp, thời lượng, ngày đăng.
-- Endpoint `chart=mostPopular` không nhận tham số lọc, nên ở chế độ “Đề xuất
-  chính” bộ lọc được áp dụng trong bộ nhớ (xem `applyFiltersInMemory`).
+---
 
-## 5. Xem sau + hàng đợi phát
+## 2. Logo mới
 
-- `hooks/use-watch-later.ts` — lưu ở `localStorage["xemphim:watchLater"]`, tối đa
-  100 mục. Đồng bộ giữa các component trong cùng tab bằng custom event
-  `xemphim:watchLater:change` (sự kiện `storage` của trình duyệt chỉ bắn sang tab
-  khác).
-- `components/watch-later-panel.tsx` — danh sách hàng đợi, ẩn hoàn toàn khi trống.
-- Nút “Phát tiếp” lấy mục đầu tiên trong hàng đợi khác video đang phát.
+`components/site/logo.tsx` xuất hai thành phần:
 
-## 6. Chế độ rạp phim (theater)
+- `<Logo size={28} />` — riêng biểu tượng: khung màn hình bo tròn, nút play, hai cung
+  sóng hai bên (ý niệm phát trực tuyến + khám phá).
+- `<Wordmark hideTextOnMobile />` — biểu tượng kèm chữ, dùng ở header và footer.
 
-Triển khai bằng cách bọc `FeaturedPlayer` trong một container mở rộng ngay tại
-`hero-explorer.tsx`. **Không sửa** `components/featured-player.tsx` vì component
-đó đang hoạt động đúng với mini-player sẵn có.
+`app/icon.svg` là phiên bản favicon. Next.js App Router tự nhận file này, không cần
+khai báo thêm trong `metadata`.
 
-## Kiểm thử thủ công gợi ý
+Màu gradient trong SVG để cứng thay vì dùng CSS variable, để logo hiển thị giống nhau
+ở cả hai theme và ở tab trình duyệt.
 
-1. `npm run typecheck` và `npm run lint`.
-2. Đổi theme sáng / tối / hệ thống, tải lại trang → không nháy màu.
-3. Cuộn xuống cuối lưới → tự nạp thêm video, không trùng lặp.
-4. Đổi bộ lọc → danh sách nạp lại từ đầu, `nextPageToken` reset.
-5. Thêm vài video vào Xem sau → tải lại trang → hàng đợi vẫn còn.
-6. Thu gọn sidebar → tải lại trang → vẫn thu gọn.
+---
+
+## 3. Tối ưu PC và mobile
+
+- Lưới video giãn theo màn hình: 1 → 2 (sm) → 3 (xl) → 4 cột (2xl). Trước đây dừng ở
+  3 cột nên màn hình rộng bị thừa nhiều khoảng trống.
+- Thanh tab mobile tôn trọng `env(safe-area-inset-bottom)` để không bị thanh home của
+  iPhone che. Khung trang có `pb-20 lg:pb-0` tương ứng.
+- Nút "Xem sau" trên thẻ video **luôn hiện trên mobile**, chỉ ẩn–hiện theo hover từ `lg`
+  trở lên. Màn hình cảm ứng không có trạng thái hover.
+- Header dán ở `top-0` với padding ngoài, thay cho `top-3` cũ vốn để hở một dải nền khi
+  cuộn trên màn hình nhỏ.
+- Khoảng cách, cỡ chữ và padding chuyển sang thang responsive (`py-5 sm:py-8`,
+  `text-3xl sm:text-5xl md:text-6xl`...).
+
+---
+
+## 4. Tính năng bổ sung
+
+### Tìm kiếm gần đây
+`hooks/use-recent-searches.ts` lưu tối đa 8 từ khoá vào `localStorage`. Danh sách hiện
+khi đưa con trỏ vào ô tìm, xoá được từng mục hoặc toàn bộ. Trùng lặp được loại bỏ
+không phân biệt hoa thường.
+
+> Các nút trong danh sách dùng `onMouseDown` kèm `preventDefault`. Nếu chỉ dùng `onClick`,
+> sự kiện `blur` của ô nhập sẽ đóng danh sách trước khi cú nhấp kịp đăng ký.
+
+### Phím tắt
+| Phím | Tác dụng |
+| --- | --- |
+| `/` | đưa con trỏ vào ô tìm kiếm |
+| `T` | bật/tắt chế độ rạp phim |
+| `Esc` | đóng gợi ý, thoát rạp phim, bỏ focus |
+
+Trình xử lý bỏ qua khi người dùng đang gõ trong `input`, `textarea` hay vùng
+`contenteditable`, và khi có kèm `Ctrl`/`Cmd`/`Alt`.
+
+### Chế độ lưới / danh sách
+Nút chuyển ở cạnh bộ lọc, lưu vào `localStorage`. Chế độ danh sách hiển thị thêm mô tả
+video nên hợp khi cần lướt nhanh nhiều kết quả.
+
+### Chia sẻ
+Dùng `navigator.share` khi trình duyệt hỗ trợ (thường là mobile), nếu không thì sao chép
+liên kết vào clipboard kèm thông báo toast. Người dùng đóng bảng chia sẻ cũng rơi về
+nhánh sao chép.
+
+### Lên đầu trang
+`components/back-to-top.tsx` hiện sau khi cuộn qua 800px. Vị trí nằm trên thanh tab
+mobile (`bottom-24 lg:bottom-6`) để không chồng lên nhau.
+
+---
+
+## 5. Các đợt trước trên cùng nhánh
+
+- **Light/Dark mode** — `components/theme/`, script chạy trước paint trong `app/layout.tsx`
+  để tránh nháy màu.
+- **Infinite scroll** — `lib/youtube-search.ts` trả `nextPageToken`; `IntersectionObserver`
+  với `rootMargin: 600px`, lọc trùng theo `id`.
+- **Bộ lọc nâng cao** — `lib/filters.ts` + `components/video-filters.tsx`. Endpoint
+  `chart=mostPopular` không nhận tham số lọc nên chế độ đề xuất lọc trong bộ nhớ.
+- **Xem sau** — `hooks/use-watch-later.ts`, đồng bộ trong cùng tab bằng custom event.
+
+---
+
+## Kiểm thử
+
+```bash
+npm run typecheck
+npm run lint
+npm run dev
+```
+
+1. Thu nhỏ cửa sổ dưới 1024px → sidebar biến mất, thanh tab dưới đáy xuất hiện; không
+   còn liên kết điều hướng nào lặp lại trên màn hình.
+2. Nhấn `/` → con trỏ nhảy vào ô tìm. Nhấn `T` → vào/ra chế độ rạp phim.
+3. Tìm vài từ khoá → tải lại trang → danh sách gần đây vẫn còn.
+4. Đổi sang chế độ danh sách → tải lại trang → vẫn giữ chế độ đó.
+5. Kiểm tra favicon mới ở tab trình duyệt (có thể cần xoá cache).
+6. Trên iPhone: thanh tab không bị thanh home che, footer không bị khuất.
+
+> Cần `YOUTUBE_API_KEY` trong `.env.local` để chạy thử.
