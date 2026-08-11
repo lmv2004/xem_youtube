@@ -11,13 +11,16 @@ import {
   ChevronsDownUp,
   ChevronsUpDown,
   ExternalLink,
+  Loader2,
   Maximize2,
   Minimize2,
   Pause,
   Play,
+  Users,
   X,
 } from "lucide-react";
 import { AddToCollectionDialog } from "./add-to-collection-dialog";
+import { useCreateRoom } from "@/hooks/use-create-room";
 import { useRouter } from "next/navigation";
 
 export type FeaturedPlayerHandle = {
@@ -40,6 +43,7 @@ export const FeaturedPlayer = forwardRef<FeaturedPlayerHandle, Props>(function F
   const [playing, setPlaying] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const { createRoom, isCreating } = useCreateRoom();
 
   useImperativeHandle(ref, () => ({
     scrollIntoView: () => {
@@ -96,7 +100,7 @@ export const FeaturedPlayer = forwardRef<FeaturedPlayerHandle, Props>(function F
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={item.thumbnail || `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`}
+                  src={item.thumbnail || "https://i.ytimg.com/vi/" + item.id + "/hqdefault.jpg"}
                   alt=""
                   className="h-full w-full object-cover opacity-90 transition group-hover:opacity-75"
                 />
@@ -163,6 +167,23 @@ export const FeaturedPlayer = forwardRef<FeaturedPlayerHandle, Props>(function F
             ) : (
               <Button size="sm" onClick={() => setPlaying(true)}>
                 <Play className="mr-1" /> Phát ngay
+              </Button>
+            )}
+            {/* A room plays through the IFrame API, so a video that blocks
+                embedding would only produce a dead room. */}
+            {blocked ? null : (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isCreating}
+                onClick={() => void createRoom(item)}
+              >
+                {isCreating ? (
+                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                ) : (
+                  <Users className="mr-1 h-4 w-4" />
+                )}
+                Xem cùng nhau
               </Button>
             )}
             {onMinimizeToggle ? (
