@@ -1,37 +1,72 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Check, Copy, ExternalLink, Loader2, Radio, Users } from "lucide-react";
+import {
+  Check,
+  Copy,
+  ExternalLink,
+  Loader2,
+  LogOut,
+  MessageSquare,
+  Radio,
+  Search,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Glass } from "@/components/ui/glass";
 import { SyncPlayer, type SyncPlayerHandle } from "./sync-player";
 import { RoomChat } from "./room-chat";
+import { RoomMembers } from "./room-members";
+import { RoomSearch } from "./room-search";
+import { JoinGate } from "./join-gate";
 import { useRoomSync } from "@/hooks/use-room-sync";
+import { useRoomIdentity } from "@/hooks/use-room-identity";
 import { useToast } from "@/hooks/use-toast";
 import {
   DRIFT_TOLERANCE_SECONDS,
+  describeAction,
   effectivePosition,
   type RoomDto,
   type RoomMessageDto,
 } from "@/lib/rooms";
+import type { VideoItem } from "@/lib/types";
+import { cn } from "@/lib/utils";
+
+/** How long to ignore local player events after we move the player ourselves. */
+const ECHO_WINDOW_MS = 1200;
+const VIDEO_SWAP_WINDOW_MS = 2500;
 
 export function RoomClient({ code }: { code: string }) {
+  const router = useRouter();
   const { data: session } = useSession();
   const { toast } = useToast();
+  const identity = useRoomIdentity(session?.user?.name ?? null);
 
   const [room, setRoom] = useState<RoomDto | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [joined, setJoined] = useState(false);
+  const [joining, setJoining] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [tab, setTab] = useState<"chat" | "search">("chat");
 
   const handleRef = useRef<SyncPlayerHandle | null>(null);
-  const currentUserId = session?.user?.id ?? null;
-  const isHost = Boolean(room && currentUserId && room.host.id === currentUserId);
+  const currentVideoRef = useRef<string | null>(null);
+  // Programmatic play/pause/seek fires the same events a human would, so we
+  // mute our own outgoing broadcasts for a moment. Without this every client
+  // would echo every change back and the room would fight itself.
+  const suppressUntilRef = useRef(0);
 
-  const sync = useRoomSync(code, Boolean(room));
-  const { appendLocal } = sync;
+  const sync = useRoomSync(code, {
+    enabled: joined && identity.hydrated,
+    clientId: identity.clientId,
+    displayName: identity.name,
+  });
+  const { appendLocal, leave } = sync;
+  const currentUserId = session?.user?.id ?? null;
 
   useEffect(() => {
     let cancelled = false;
@@ -56,40 +91,68 @@ export function RoomClient({ code }: { code: string }) {
     };
   }, [code]);
 
-  /** Host broadcasts its own play/pause; viewers never write playback state. */
   const pushPlayback = useCallback(
-    async (isPlaying: boolean, positionSeconds: number) => {
+    async (payload: Record<string, unknown>) => {
+      if (!identity.clientId) return;
       try {
-        await fetch("/api/rooms/" + code, {
+        const res = await fetch("/api/rooms/" + code, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ isPlaying, positionSeconds }),
+          body: JSON.stringify({ clientId: identity.clientId, ...payload }),
         });
+        if (res.status === 403) {
+          toast({ title: "Bạn cần tham gia phòng trước khi điều khiển" });
+        }
       } catch {
         /* the next poll will reconcile */
       }
     },
-    [code],
+    [code, identity.clientId, toast],
   );
 
-  // Viewers follow the host. We only hard-seek past the drift tolerance,
-  // because correcting every fraction of a second is more disruptive than
-  // simply being slightly behind.
+  // Follow the room. Anyone can drive now, so the only thing that decides
+  // whether we apply an update is whether *we* were the one who made it.
   useEffect(() => {
     const handle = handleRef.current;
     const playback = sync.playback;
-    if (!handle || !playback || isHost) return;
+    const video = sync.video;
+    if (!handle || !playback || !video) return;
+
+    // A video swap wins over any seek: correcting the position of a player
+    // that is about to load a different video is pointless.
+    if (currentVideoRef.current && video.videoId !== currentVideoRef.current) {
+      currentVideoRef.current = video.videoId;
+      suppressUntilRef.current = Date.now() + VIDEO_SWAP_WINDOW_MS;
+      handle.loadVideo(
+        video.videoId,
+        effectivePosition(playback, { serverTime: sync.serverTime ?? undefined }),
+      );
+      return;
+    }
+    if (!currentVideoRef.current) currentVideoRef.current = video.videoId;
+
+    // Our own action coming back through polling — the player is already there.
+    if (playback.lastActionById && playback.lastActionById === identity.clientId) {
+      return;
+    }
 
     const target = effectivePosition(playback, {
       serverTime: sync.serverTime ?? undefined,
     });
 
     if (Math.abs(handle.getCurrentTime() - target) > DRIFT_TOLERANCE_SECONDS) {
+      suppressUntilRef.current = Date.now() + ECHO_WINDOW_MS;
       handle.seekTo(target);
     }
-    if (playback.isPlaying && !handle.isPlaying()) handle.play();
-    if (!playback.isPlaying && handle.isPlaying()) handle.pause();
-  }, [sync.playback, sync.serverTime, isHost]);
+    if (playback.isPlaying && !handle.isPlaying()) {
+      suppressUntilRef.current = Date.now() + ECHO_WINDOW_MS;
+      handle.play();
+    }
+    if (!playback.isPlaying && handle.isPlaying()) {
+      suppressUntilRef.current = Date.now() + ECHO_WINDOW_MS;
+      handle.pause();
+    }
+  }, [sync.playback, sync.video, sync.serverTime, identity.clientId]);
 
   const onSend = useCallback(
     async (body: string) => {
@@ -126,6 +189,26 @@ export function RoomClient({ code }: { code: string }) {
     [code, appendLocal, toast],
   );
 
+  const changeVideo = useCallback(
+    async (item: VideoItem) => {
+      await pushPlayback({
+        isPlaying: true,
+        video: {
+          videoId: item.id,
+          title: item.title,
+          channel: item.channel ?? "",
+          thumbnail: item.thumbnail ?? "",
+          embedUrl: item.embedUrl,
+          watchUrl: item.watchUrl,
+          duration: item.durationSeconds ?? 0,
+        },
+      });
+      toast({ title: "Đã đổi video cho cả phòng", description: item.title });
+      setTab("chat");
+    },
+    [pushPlayback, toast],
+  );
+
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -134,6 +217,19 @@ export function RoomClient({ code }: { code: string }) {
     } catch {
       toast({ title: "Không sao chép được liên kết" });
     }
+  };
+
+  const handleJoin = () => {
+    setJoining(true);
+    identity.persistName(identity.name);
+    setJoined(true);
+    setJoining(false);
+  };
+
+  const handleLeave = async () => {
+    setLeaving(true);
+    await leave();
+    router.push("/rooms");
   };
 
   if (loadError) {
@@ -147,15 +243,31 @@ export function RoomClient({ code }: { code: string }) {
     );
   }
 
-  if (!room) {
+  if (!room || !identity.hydrated) {
     return (
       <p className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" /> Đang vào phòng...
+        <Loader2 className="h-4 w-4 animate-spin" /> Đang tải phòng...
       </p>
     );
   }
 
+  if (!joined) {
+    return (
+      <JoinGate
+        code={room.code}
+        title={room.title}
+        video={room.video}
+        name={identity.name}
+        onNameChange={identity.rename}
+        onJoin={handleJoin}
+        joining={joining}
+      />
+    );
+  }
+
   const video = sync.video ?? room.video;
+  const playback = sync.playback ?? room.playback;
+  const activity = describeAction(playback);
 
   return (
     <div className="space-y-5">
@@ -163,13 +275,12 @@ export function RoomClient({ code }: { code: string }) {
         <Badge className="bg-primary/15 text-foreground ring-1 ring-primary/30">
           <Radio className="mr-1 h-3 w-3 text-primary" /> Mã {room.code}
         </Badge>
+
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-base font-semibold">{room.title}</h1>
-          <p className="truncate text-xs text-muted-foreground">
-            Chủ phòng: {room.host.name ?? "Ẩn danh"}
-            {isHost ? " (bạn)" : ""}
-          </p>
+          <RoomMembers members={sync.members} myClientId={identity.clientId} />
         </div>
+
         <div className="flex items-center gap-2">
           <Button type="button" size="sm" variant="outline" onClick={copyLink}>
             {copied ? (
@@ -187,6 +298,21 @@ export function RoomClient({ code }: { code: string }) {
               <ExternalLink className="mr-1 h-4 w-4" /> YouTube
             </Link>
           </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="text-destructive hover:text-destructive"
+            disabled={leaving}
+            onClick={() => void handleLeave()}
+          >
+            {leaving ? (
+              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+              <LogOut className="mr-1 h-4 w-4" />
+            )}
+            Rời phòng
+          </Button>
         </div>
       </Glass>
 
@@ -199,34 +325,69 @@ export function RoomClient({ code }: { code: string }) {
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-3">
           <SyncPlayer
-            videoId={video.videoId}
+            videoId={room.video.videoId}
             onReady={(handle) => {
               handleRef.current = handle;
             }}
             onStateChange={(playing, currentTime) => {
-              if (isHost) void pushPlayback(playing, currentTime);
+              // Ignore the events caused by our own sync corrections.
+              if (Date.now() < suppressUntilRef.current) return;
+              void pushPlayback({ isPlaying: playing, positionSeconds: currentTime });
             }}
           />
+
           <div>
             <h2 className="text-sm font-semibold leading-snug">{video.title}</h2>
             <p className="text-xs text-muted-foreground">{video.channel}</p>
           </div>
 
-          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Users className="h-3.5 w-3.5" />
-            {isHost
-              ? "Bạn đang điều khiển. Mọi người trong phòng sẽ theo thao tác phát/tạm dừng của bạn."
-              : "Phòng đang theo chủ phòng. Bạn tự tua thì sẽ bị kéo về đúng điểm chung."}
+          <p className="text-xs text-muted-foreground">
+            {activity
+              ? activity
+              : "Ai trong phòng cũng phát, tạm dừng, tua và đổi video được."}
           </p>
         </div>
 
-        <RoomChat
-          messages={sync.messages}
-          canChat={Boolean(currentUserId)}
-          currentUserId={currentUserId}
-          isSending={isSending}
-          onSend={onSend}
-        />
+        <div className="space-y-2">
+          <div className="flex gap-1 rounded-xl bg-foreground/5 p-1">
+            <button
+              type="button"
+              onClick={() => setTab("chat")}
+              className={cn(
+                "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition",
+                tab === "chat"
+                  ? "bg-background shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <MessageSquare className="h-4 w-4" /> Trò chuyện
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("search")}
+              className={cn(
+                "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition",
+                tab === "search"
+                  ? "bg-background shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Search className="h-4 w-4" /> Đổi video
+            </button>
+          </div>
+
+          {tab === "chat" ? (
+            <RoomChat
+              messages={sync.messages}
+              canChat={Boolean(currentUserId)}
+              currentUserId={currentUserId}
+              isSending={isSending}
+              onSend={onSend}
+            />
+          ) : (
+            <RoomSearch onPick={changeVideo} activeVideoId={video.videoId} />
+          )}
+        </div>
       </div>
     </div>
   );
