@@ -106,12 +106,7 @@ export function SyncPlayer({ videoId, onStateChange, onReady }: Props) {
 
       const player = new YT.Player(containerRef.current, {
         videoId,
-        playerVars: {
-          rel: 0,
-          modestbranding: 1,
-          playsinline: 1,
- službe: 0,
-        },
+        playerVars: { rel: 0, modestbranding: 1, playsinline: 1 },
         events: {
           onReady: () => {
             onReadyRef.current?.({
