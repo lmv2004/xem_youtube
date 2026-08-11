@@ -8,10 +8,12 @@ import {
   Copy,
   ExternalLink,
   Loader2,
+  Lock,
   LogOut,
   MessageSquare,
   Radio,
   Search,
+  Unlock,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,6 +28,7 @@ import { useRoomIdentity } from "@/hooks/use-room-identity";
 import { useToast } from "@/hooks/use-toast";
 import {
   DRIFT_TOLERANCE_SECONDS,
+  canControlPlayback,
   describeAction,
   effectivePosition,
   type RoomDto,
@@ -49,6 +52,7 @@ export function RoomClient({ code }: { code: string }) {
   const [joined, setJoined] = useState(false);
   const [joining, setJoining] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [lockPending, setLockPending] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [copied, setCopied] = useState(false);
   const [tab, setTab] = useState<"chat" | "search">("chat");
@@ -65,8 +69,21 @@ export function RoomClient({ code }: { code: string }) {
     clientId: identity.clientId,
     displayName: identity.name,
   });
-  const { appendLocal, leave } = sync;
+  const { appendLocal, leave, refresh } = sync;
   const currentUserId = session?.user?.id ?? null;
+
+  // The host is identified by account, so they keep the role across devices.
+  const isHost = Boolean(currentUserId && room && currentUserId === room.host.id);
+  // The initial GET only seeds the first render; once polling starts it owns
+  // the value, otherwise unlocking would never reach the UI.
+  const hostOnlyControl = sync.serverTime
+    ? sync.hostOnlyControl
+    : room?.hostOnlyControl ?? false;
+  const canControl = canControlPlayback({ hostOnlyControl, isHost });
+
+  // Player callbacks may be bound once, so read the live value from a ref.
+  const canControlRef = useRef(canControl);
+  canControlRef.current = canControl;
 
   useEffect(() => {
     let cancelled = false;
@@ -94,6 +111,10 @@ export function RoomClient({ code }: { code: string }) {
   const pushPlayback = useCallback(
     async (payload: Record<string, unknown>) => {
       if (!identity.clientId) return;
+      // In a locked room, stay quiet instead of firing requests we know the
+      // server will reject.
+      if (!canControlRef.current) return;
+
       try {
         const res = await fetch("/api/rooms/" + code, {
           method: "PATCH",
@@ -101,7 +122,10 @@ export function RoomClient({ code }: { code: string }) {
           body: JSON.stringify({ clientId: identity.clientId, ...payload }),
         });
         if (res.status === 403) {
-          toast({ title: "Bạn cần tham gia phòng trước khi điều khiển" });
+          const json = (await res.json().catch(() => null)) as
+            | { message?: string }
+            | null;
+          toast({ title: json?.message ?? "Bạn không có quyền điều khiển phòng" });
         }
       } catch {
         /* the next poll will reconcile */
@@ -110,8 +134,8 @@ export function RoomClient({ code }: { code: string }) {
     [code, identity.clientId, toast],
   );
 
-  // Follow the room. Anyone can drive now, so the only thing that decides
-  // whether we apply an update is whether *we* were the one who made it.
+  // Follow the room. The only thing that decides whether we apply an update
+  // is whether *we* were the one who made it.
   useEffect(() => {
     const handle = handleRef.current;
     const playback = sync.playback;
@@ -209,6 +233,39 @@ export function RoomClient({ code }: { code: string }) {
     [pushPlayback, toast],
   );
 
+  /** Host-only: take exclusive control of playback, or hand it back. */
+  const toggleLock = async () => {
+    if (!identity.clientId) return;
+    const next = !hostOnlyControl;
+    setLockPending(true);
+
+    try {
+      const res = await fetch("/api/rooms/" + code, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId: identity.clientId, hostOnlyControl: next }),
+      });
+
+      if (!res.ok) {
+        const json = (await res.json().catch(() => null)) as { message?: string } | null;
+        toast({ title: json?.message ?? "Không đổi được cài đặt" });
+        return;
+      }
+
+      setRoom((prev) => (prev ? { ...prev, hostOnlyControl: next } : prev));
+      await refresh();
+      toast({
+        title: next
+          ? "Đã khoá: chỉ chủ phòng điều khiển"
+          : "Đã mở điều khiển cho mọi người",
+      });
+    } catch {
+      toast({ title: "Không gọi được máy chủ" });
+    } finally {
+      setLockPending(false);
+    }
+  };
+
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -281,7 +338,35 @@ export function RoomClient({ code }: { code: string }) {
           <RoomMembers members={sync.members} myClientId={identity.clientId} />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {isHost ? (
+            <Button
+              type="button"
+              size="sm"
+              variant={hostOnlyControl ? "default" : "outline"}
+              disabled={lockPending}
+              onClick={() => void toggleLock()}
+              title={
+                hostOnlyControl
+                  ? "Đang khoá — bấm để mở cho mọi người"
+                  : "Mọi người đều điều khiển được — bấm để khoá"
+              }
+            >
+              {lockPending ? (
+                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+              ) : hostOnlyControl ? (
+                <Lock className="mr-1 h-4 w-4" />
+              ) : (
+                <Unlock className="mr-1 h-4 w-4" />
+              )}
+              {hostOnlyControl ? "Chỉ chủ phòng" : "Mọi người"}
+            </Button>
+          ) : hostOnlyControl ? (
+            <Badge className="bg-amber-500/15 text-foreground ring-1 ring-amber-500/30">
+              <Lock className="mr-1 h-3 w-3" /> Chủ phòng đang khoá
+            </Badge>
+          ) : null}
+
           <Button type="button" size="sm" variant="outline" onClick={copyLink}>
             {copied ? (
               <>
@@ -341,11 +426,24 @@ export function RoomClient({ code }: { code: string }) {
             <p className="text-xs text-muted-foreground">{video.channel}</p>
           </div>
 
-          <p className="text-xs text-muted-foreground">
-            {activity
-              ? activity
-              : "Ai trong phòng cũng phát, tạm dừng, tua và đổi video được."}
-          </p>
+          {canControl ? (
+            <p className="text-xs text-muted-foreground">
+              {activity
+                ? activity
+                : hostOnlyControl
+                  ? "Bạn đang khoá phòng: chỉ bạn điều khiển được."
+                  : "Ai trong phòng cũng phát, tạm dừng, tua và đổi video được."}
+            </p>
+          ) : (
+            <p className="flex items-start gap-1.5 rounded-xl bg-amber-500/10 px-3 py-2 text-xs text-muted-foreground">
+              <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>
+                Chủ phòng đang khoá điều khiển. Trình phát của bạn sẽ tự bám theo chủ
+                phòng.
+                {activity ? " " + activity + "." : ""}
+              </span>
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -372,7 +470,12 @@ export function RoomClient({ code }: { code: string }) {
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
-              <Search className="h-4 w-4" /> Đổi video
+              {canControl ? (
+                <Search className="h-4 w-4" />
+              ) : (
+                <Lock className="h-4 w-4" />
+              )}
+              Đổi video
             </button>
           </div>
 
@@ -385,7 +488,11 @@ export function RoomClient({ code }: { code: string }) {
               onSend={onSend}
             />
           ) : (
-            <RoomSearch onPick={changeVideo} activeVideoId={video.videoId} />
+            <RoomSearch
+              onPick={changeVideo}
+              activeVideoId={video.videoId}
+              disabled={!canControl}
+            />
           )}
         </div>
       </div>
