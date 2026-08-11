@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, Play, Search, Sparkles } from "lucide-react";
+import { Loader2, Lock, Play, Search, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDuration } from "@/lib/format";
@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 type Props = {
   onPick: (item: VideoItem) => Promise<void> | void;
   activeVideoId?: string | null;
+  /** True when the host locked control: browsing stays open, switching does not. */
+  disabled?: boolean;
 };
 
 /**
@@ -17,7 +19,7 @@ type Props = {
  * endpoint: with no query it returns the trending list, which doubles as the
  * suggestion feed.
  */
-export function RoomSearch({ onPick, activeVideoId }: Props) {
+export function RoomSearch({ onPick, activeVideoId, disabled = false }: Props) {
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<VideoItem[]>([]);
   const [heading, setHeading] = useState("Đề xuất cho phòng");
@@ -91,6 +93,14 @@ export function RoomSearch({ onPick, activeVideoId }: Props) {
         </Button>
       </form>
 
+      {disabled ? (
+        <p className="flex items-start gap-1.5 border-b border-border bg-amber-500/10 px-3 py-2 text-xs text-muted-foreground">
+          <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          Chủ phòng đang khoá điều khiển. Bạn vẫn xem được đề xuất nhưng chưa đổi
+          được video.
+        </p>
+      ) : null}
+
       <div className="flex items-center gap-1.5 px-3 pt-2 text-xs text-muted-foreground">
         <Sparkles className="h-3.5 w-3.5" />
         {heading}
@@ -146,11 +156,13 @@ export function RoomSearch({ onPick, activeVideoId }: Props) {
                         size="sm"
                         variant="outline"
                         className="h-7 text-xs"
-                        disabled={pickingId !== null}
+                        disabled={disabled || pickingId !== null}
                         onClick={() => void pick(item)}
                       >
                         {pickingId === item.id ? (
                           <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                        ) : disabled ? (
+                          <Lock className="mr-1 h-3 w-3" />
                         ) : (
                           <Play className="mr-1 h-3 w-3" />
                         )}

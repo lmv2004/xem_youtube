@@ -14,6 +14,7 @@ type State = {
   video: RoomVideo | null;
   messages: RoomMessageDto[];
   members: RoomMemberDto[];
+  hostOnlyControl: boolean;
   serverTime: string | null;
   isOffline: boolean;
 };
@@ -41,6 +42,7 @@ export function useRoomSync(code: string, { enabled, clientId, displayName }: Op
     video: null,
     messages: [],
     members: [],
+    hostOnlyControl: false,
     serverTime: null,
     isOffline: false,
   });
@@ -87,6 +89,7 @@ export function useRoomSync(code: string, { enabled, clientId, displayName }: Op
           playback: json.playback,
           video: json.video,
           members: json.members,
+          hostOnlyControl: json.hostOnlyControl,
           messages: fresh.length > 0 ? [...prev.messages, ...fresh] : prev.messages,
           serverTime: json.serverTime,
           isOffline: false,
