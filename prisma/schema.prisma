@@ -22,6 +22,7 @@ model User {
   history       ViewHistory[]
   rooms         Room[]
   roomMessages  RoomMessage[]
+  roomPresences RoomPresence[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -141,9 +142,17 @@ model Room {
   positionSeconds Float    @default(0)
   lastSyncAt      DateTime @default(now())
 
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  // Attribution for the last playback change. `lastActionById` holds the
+  // actor's clientId and is what lets a client recognise its own echo coming
+  // back through polling instead of re-seeking itself.
+  lastActionBy   String?
+  lastActionById String?
+  lastActionKind String?
+
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
   messages  RoomMessage[]
+  presences RoomPresence[]
 
   @@index([hostId])
 }
@@ -158,4 +167,23 @@ model RoomMessage {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([roomId, createdAt])
+}
+
+// One row per open tab. Guests are supported, so the identity is a
+// browser-generated clientId rather than a userId; `lastSeenAt` is refreshed
+// by the sync poll and rows that go stale are swept away.
+model RoomPresence {
+  id         String   @id @default(cuid())
+  roomId     String
+  clientId   String
+  userId     String?
+  name       String
+  image      String?
+  joinedAt   DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+  room       Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([roomId, clientId])
+  @@index([roomId, lastSeenAt])
 }

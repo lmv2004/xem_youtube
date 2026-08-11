@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { log } from "@/lib/logger";
 import { withRequestLog } from "@/lib/api-route";
-import { normalizeRoomCode, type RoomDto } from "@/lib/rooms";
+import {
+  normalizeRoomCode,
+  type PlaybackActionKind,
+  type RoomDto,
+} from "@/lib/rooms";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,6 +49,9 @@ export const GET = withRequestLog(SCOPE, async (_request, context) => {
       isPlaying: room.isPlaying,
       positionSeconds: room.positionSeconds,
       lastSyncAt: room.lastSyncAt.toISOString(),
+      lastActionBy: room.lastActionBy,
+      lastActionById: room.lastActionById,
+      lastActionKind: (room.lastActionKind as PlaybackActionKind | null) ?? null,
     },
     createdAt: room.createdAt.toISOString(),
   };
@@ -54,6 +60,7 @@ export const GET = withRequestLog(SCOPE, async (_request, context) => {
 });
 
 const patchSchema = z.object({
+  clientId: z.string().trim().min(1).max(64),
   isPlaying: z.boolean().optional(),
   positionSeconds: z.number().min(0).max(86_400).optional(),
   video: z
@@ -69,24 +76,15 @@ const patchSchema = z.object({
     .optional(),
 });
 
-/** Host-only playback control. */
+/**
+ * Playback control is open to every member of the room, not just the host.
+ *
+ * The only gate is presence: you must have joined (which anyone with the link
+ * can do) so that we have a name to attribute the action to and so a random
+ * caller cannot drive a room they never opened.
+ */
 export const PATCH = withRequestLog(SCOPE + ".update", async (request, context) => {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
-
   const code = await readCode(context);
-  const room = await prisma.room.findUnique({ where: { code } });
-  if (!room) {
-    return NextResponse.json({ message: "Phòng không tồn tại." }, { status: 404 });
-  }
-  if (room.hostId !== session.user.id) {
-    return NextResponse.json(
-      { message: "Chỉ chủ phòng mới điều khiển được." },
-      { status: 403 },
-    );
-  }
 
   const body = await request.json().catch(() => null);
   const parsed = patchSchema.safeParse(body);
@@ -94,7 +92,30 @@ export const PATCH = withRequestLog(SCOPE + ".update", async (request, context) 
     return NextResponse.json({ message: "Dữ liệu không hợp lệ." }, { status: 400 });
   }
 
-  const { isPlaying, positionSeconds, video } = parsed.data;
+  const room = await prisma.room.findUnique({ where: { code } });
+  if (!room) {
+    return NextResponse.json({ message: "Phòng không tồn tại." }, { status: 404 });
+  }
+
+  const { clientId, isPlaying, positionSeconds, video } = parsed.data;
+
+  const presence = await prisma.roomPresence.findUnique({
+    where: { roomId_clientId: { roomId: room.id, clientId } },
+  });
+  if (!presence) {
+    return NextResponse.json(
+      { message: "Bạn cần tham gia phòng trước khi điều khiển." },
+      { status: 403 },
+    );
+  }
+
+  const kind: PlaybackActionKind = video
+    ? "video"
+    : isPlaying === true
+      ? "play"
+      : isPlaying === false
+        ? "pause"
+        : "seek";
 
   // Every write re-anchors lastSyncAt, otherwise viewers would keep
   // extrapolating from a stale timestamp and drift further each poll.
@@ -116,14 +137,17 @@ export const PATCH = withRequestLog(SCOPE + ".update", async (request, context) 
           }
         : {}),
       lastSyncAt: new Date(),
+      lastActionBy: presence.name,
+      lastActionById: clientId,
+      lastActionKind: kind,
     },
   });
 
   log.info(SCOPE + ".update", "playback updated", {
-    userId: session.user.id,
     code,
+    by: presence.name,
+    kind,
     isPlaying: updated.isPlaying,
-    changedVideo: Boolean(video),
   });
 
   return NextResponse.json({
@@ -131,6 +155,9 @@ export const PATCH = withRequestLog(SCOPE + ".update", async (request, context) 
       isPlaying: updated.isPlaying,
       positionSeconds: updated.positionSeconds,
       lastSyncAt: updated.lastSyncAt.toISOString(),
+      lastActionBy: updated.lastActionBy,
+      lastActionById: updated.lastActionById,
+      lastActionKind: (updated.lastActionKind as PlaybackActionKind | null) ?? null,
     },
     serverTime: new Date().toISOString(),
   });
