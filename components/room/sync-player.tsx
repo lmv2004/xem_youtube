@@ -110,7 +110,8 @@ export function SyncPlayer({ videoId, onStateChange, onReady }: Props) {
           rel: 0,
           modestbranding: 1,
           playsinline: 1,
-￼        },
+ službe: 0,
+        },
         events: {
           onReady: () => {
             onReadyRef.current?.({
