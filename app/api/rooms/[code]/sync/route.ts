@@ -24,8 +24,8 @@ const syncSchema = z.object({
 });
 
 /**
- * Single polling endpoint: playback state, new chat messages, and the member
- * list — one round trip per tick instead of three.
+ * Single polling endpoint: playback state, new chat messages, the member
+ * list, and the control lock — one round trip per tick instead of four.
  *
  * This is a POST because the poll doubles as the presence heartbeat: it
  * refreshes the caller's `lastSeenAt` and sweeps members who stopped polling.
@@ -135,6 +135,7 @@ export const POST = withRequestLog(SCOPE, async (request, context) => {
       isGuest: !p.userId,
       joinedAt: p.joinedAt.toISOString(),
     })),
+    hostOnlyControl: room.hostOnlyControl,
     cursor: messages.length > 0 ? messages[messages.length - 1].createdAt : after ?? null,
     serverTime: now.toISOString(),
   };

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { log } from "@/lib/logger";
 import { withRequestLog } from "@/lib/api-route";
 import {
+  canControlPlayback,
   normalizeRoomCode,
   type PlaybackActionKind,
   type RoomDto,
@@ -53,6 +54,7 @@ export const GET = withRequestLog(SCOPE, async (_request, context) => {
       lastActionById: room.lastActionById,
       lastActionKind: (room.lastActionKind as PlaybackActionKind | null) ?? null,
     },
+    hostOnlyControl: room.hostOnlyControl,
     createdAt: room.createdAt.toISOString(),
   };
 
@@ -63,6 +65,7 @@ const patchSchema = z.object({
   clientId: z.string().trim().min(1).max(64),
   isPlaying: z.boolean().optional(),
   positionSeconds: z.number().min(0).max(86_400).optional(),
+  hostOnlyControl: z.boolean().optional(),
   video: z
     .object({
       videoId: z.string().trim().min(1).max(32),
@@ -77,11 +80,12 @@ const patchSchema = z.object({
 });
 
 /**
- * Playback control is open to every member of the room, not just the host.
+ * Playback control is open to every member by default; the host can flip
+ * `hostOnlyControl` to take exclusive control of a rowdy room.
  *
- * The only gate is presence: you must have joined (which anyone with the link
- * can do) so that we have a name to attribute the action to and so a random
- * caller cannot drive a room they never opened.
+ * Presence is always required: you must have joined (which anyone with the
+ * link can do) so that we have a name to attribute the action to and so a
+ * random caller cannot drive a room they never opened.
  */
 export const PATCH = withRequestLog(SCOPE + ".update", async (request, context) => {
   const code = await readCode(context);
@@ -97,7 +101,7 @@ export const PATCH = withRequestLog(SCOPE + ".update", async (request, context) 
     return NextResponse.json({ message: "Phòng không tồn tại." }, { status: 404 });
   }
 
-  const { clientId, isPlaying, positionSeconds, video } = parsed.data;
+  const { clientId, isPlaying, positionSeconds, video, hostOnlyControl } = parsed.data;
 
   const presence = await prisma.roomPresence.findUnique({
     where: { roomId_clientId: { roomId: room.id, clientId } },
@@ -105,6 +109,44 @@ export const PATCH = withRequestLog(SCOPE + ".update", async (request, context) 
   if (!presence) {
     return NextResponse.json(
       { message: "Bạn cần tham gia phòng trước khi điều khiển." },
+      { status: 403 },
+    );
+  }
+
+  // The host is identified by account, not by clientId: they stay the host
+  // across devices and tabs.
+  const isHost = presence.userId !== null && presence.userId === room.hostId;
+
+  // --- Lock toggle -------------------------------------------------------
+  if (hostOnlyControl !== undefined && hostOnlyControl !== room.hostOnlyControl) {
+    if (!isHost) {
+      return NextResponse.json(
+        { message: "Chỉ chủ phòng đổi được cài đặt này." },
+        { status: 403 },
+      );
+    }
+
+    await prisma.room.update({ where: { code }, data: { hostOnlyControl } });
+    log.info(SCOPE + ".update", "control lock changed", { code, hostOnlyControl });
+  }
+
+  const lockedNow = hostOnlyControl ?? room.hostOnlyControl;
+  const hasPlaybackChange =
+    isPlaying !== undefined || positionSeconds !== undefined || video !== undefined;
+
+  // Toggling the lock alone must not touch the playback anchor: bumping
+  // lastSyncAt without a fresh position would make every viewer jump
+  // backwards by however long the room had been playing.
+  if (!hasPlaybackChange) {
+    return NextResponse.json({
+      hostOnlyControl: lockedNow,
+      serverTime: new Date().toISOString(),
+    });
+  }
+
+  if (!canControlPlayback({ hostOnlyControl: lockedNow, isHost })) {
+    return NextResponse.json(
+      { message: "Chủ phòng đang khoá điều khiển." },
       { status: 403 },
     );
   }
@@ -117,7 +159,7 @@ export const PATCH = withRequestLog(SCOPE + ".update", async (request, context) 
         ? "pause"
         : "seek";
 
-  // Every write re-anchors lastSyncAt, otherwise viewers would keep
+  // Every playback write re-anchors lastSyncAt, otherwise viewers would keep
   // extrapolating from a stale timestamp and drift further each poll.
   const updated = await prisma.room.update({
     where: { code },
@@ -159,6 +201,7 @@ export const PATCH = withRequestLog(SCOPE + ".update", async (request, context) 
       lastActionById: updated.lastActionById,
       lastActionKind: (updated.lastActionKind as PlaybackActionKind | null) ?? null,
     },
+    hostOnlyControl: updated.hostOnlyControl,
     serverTime: new Date().toISOString(),
   });
 });

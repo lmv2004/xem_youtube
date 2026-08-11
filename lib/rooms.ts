@@ -97,6 +97,8 @@ export type RoomDto = {
   host: { id: string; name: string | null; image: string | null };
   video: RoomVideo;
   playback: RoomPlayback;
+  /** When true, only the host may drive playback. */
+  hostOnlyControl: boolean;
   createdAt: string;
 };
 
@@ -112,10 +114,23 @@ export type RoomSyncResponse = {
   video: RoomVideo;
   messages: RoomMessageDto[];
   members: RoomMemberDto[];
+  hostOnlyControl: boolean;
   /** Pass back as `after` on the next poll. */
   cursor: string | null;
   serverTime: string;
 };
+
+/**
+ * Single source of truth for "may this person drive playback?", shared by the
+ * API and the UI so a disabled button and a rejected request can never
+ * disagree.
+ */
+export function canControlPlayback(opts: {
+  hostOnlyControl: boolean;
+  isHost: boolean;
+}): boolean {
+  return !opts.hostOnlyControl || opts.isHost;
+}
 
 /**
  * Position the room *should* be at right now.

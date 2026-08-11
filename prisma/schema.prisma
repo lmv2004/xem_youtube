@@ -149,6 +149,10 @@ model Room {
   lastActionById String?
   lastActionKind String?
 
+  // When on, only the host may drive playback. Off by default: a room stays
+  // collaborative unless the host actively locks it.
+  hostOnlyControl Boolean @default(false)
+
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
   messages  RoomMessage[]
