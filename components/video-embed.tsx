@@ -10,6 +10,9 @@ type Props = {
   className?: string;
   /** Auto-play when the iframe loads. Default false — we always show a play overlay first. */
   autoPlay?: boolean;
+  /** Loop the single video. Session-only, default false. YouTube requires the
+   *  matching `playlist=<id>` query when `loop=1`, so we set both together. */
+  loop?: boolean;
 };
 
 // Reusable YouTube embed wrapper. Shows a thumbnail + play button until the
@@ -20,11 +23,14 @@ type Props = {
 // When `item.embeddable === false` (the channel blocks embedding on this
 // origin — common on LAN / company proxies), we skip the iframe entirely and
 // show a "Mở YouTube" button so the user can still watch the video.
-export function VideoEmbed({ item, className, autoPlay = false }: Props) {
+export function VideoEmbed({ item, className, autoPlay = false, loop = false }: Props) {
   const [playing, setPlaying] = useState(autoPlay);
+  // YouTube quirk: `loop=1` is ignored unless `playlist=<id>` is also set, so we
+  // always emit the two together (and only when looping is requested).
+  const loopParams = loop ? `&loop=1&playlist=${encodeURIComponent(item.id)}` : "";
   const src = autoPlay
-    ? `${item.embedUrl}?autoplay=1&rel=0&modestbranding=1&playsinline=1`
-    : `${item.embedUrl}?rel=0&modestbranding=1&playsinline=1`;
+    ? `${item.embedUrl}?autoplay=1&rel=0&modestbranding=1&playsinline=1${loopParams}`
+    : `${item.embedUrl}?rel=0&modestbranding=1&playsinline=1${loopParams}`;
 
   return (
     <div className={cn("relative aspect-video w-full overflow-hidden bg-black", className)}>
