@@ -1,12 +1,14 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   BookmarkPlus,
   Clock,
   ExternalLink,
   Loader2,
   Play,
+  Repeat,
   Share2,
   Users,
 } from "lucide-react";
@@ -153,6 +155,25 @@ function WatchLaterButton({
   );
 }
 
+/** Sends the user to /watch/<id>?loop=1 so the embed picks up loop mode. */
+function LoopButton({ item, compact }: { item: VideoItem; compact?: boolean }) {
+  const router = useRouter();
+  return (
+    <Button
+      type="button"
+      size={compact ? "icon" : "sm"}
+      variant="ghost"
+      className={compact ? "h-8 w-8" : undefined}
+      onClick={() => router.push(`/watch/${item.id}?loop=1`)}
+      aria-label="Lặp lại video này"
+      title="Lặp lại video này"
+    >
+      <Repeat className={cn("h-4 w-4", !compact && "mr-1")} />
+      {compact ? null : "Lặp"}
+    </Button>
+  );
+}
+
 function Thumb({
   item,
   onPlay,
@@ -259,6 +280,7 @@ function VideoTile({
 
           <div className="flex items-center gap-1">
             <WatchTogetherButton item={item} compact />
+            <LoopButton item={item} compact />
             <Button
               type="button"
               size="icon"
@@ -341,6 +363,7 @@ function VideoRow({
             </Button>
           ) : null}
           <WatchTogetherButton item={item} />
+          <LoopButton item={item} />
           <Button
             type="button"
             size="icon"

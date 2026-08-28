@@ -16,6 +16,7 @@ import {
   Minimize2,
   Pause,
   Play,
+  Repeat,
   Users,
   X,
 } from "lucide-react";
@@ -43,6 +44,8 @@ export const FeaturedPlayer = forwardRef<FeaturedPlayerHandle, Props>(function F
   const [playing, setPlaying] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  // Session-only loop toggle. Default off so existing behavior is unchanged.
+  const [loop, setLoop] = useState(false);
   const { createRoom, isCreating } = useCreateRoom();
 
   useImperativeHandle(ref, () => ({
@@ -76,6 +79,12 @@ export const FeaturedPlayer = forwardRef<FeaturedPlayerHandle, Props>(function F
 
   const blocked = item.embeddable === false;
 
+  // YouTube requires `playlist=<id>` alongside `loop=1` for the loop to engage
+  // on a single video; emit both together only when the toggle is on.
+  const iframeSrc = loop
+    ? `${item.embedUrl}?autoplay=1&rel=0&modestbranding=1&playsinline=1&loop=1&playlist=${encodeURIComponent(item.id)}`
+    : `${item.embedUrl}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
+
   return (
     <Card ref={rootRef} className="glass glow-soft animate-in-up overflow-hidden">
       <CardContent className="space-y-3 p-0">
@@ -85,7 +94,7 @@ export const FeaturedPlayer = forwardRef<FeaturedPlayerHandle, Props>(function F
               <BlockedEmbed item={item} />
             ) : playing && !minimized ? (
               <iframe
-                src={`${item.embedUrl}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
+                src={iframeSrc}
                 title={item.title}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
@@ -167,6 +176,18 @@ export const FeaturedPlayer = forwardRef<FeaturedPlayerHandle, Props>(function F
             ) : (
               <Button size="sm" onClick={() => setPlaying(true)}>
                 <Play className="mr-1" /> Phát ngay
+              </Button>
+            )}
+            {blocked ? null : (
+              <Button
+                variant={loop ? "secondary" : "outline"}
+                size="sm"
+                onClick={() => setLoop((v) => !v)}
+                aria-label={loop ? "Tắt lặp lại" : "Bật lặp lại"}
+                aria-pressed={loop}
+                title={loop ? "Đang lặp lại video này" : "Lặp lại video này"}
+              >
+                <Repeat className="mr-1" /> {loop ? "Đang lặp" : "Lặp lại"}
               </Button>
             )}
             {/* A room plays through the IFrame API, so a video that blocks

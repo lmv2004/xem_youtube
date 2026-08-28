@@ -11,7 +11,7 @@ import { getVideoById } from "@/lib/youtube";
 
 export const dynamic = "force-dynamic";
 
-type Params = { params: Promise<{ id: string }> };
+type Params = { params: Promise<{ id: string }>; searchParams: Promise<{ loop?: string }> };
 
 export async function generateMetadata({ params }: Params) {
   const { id } = await params;
@@ -24,8 +24,12 @@ export async function generateMetadata({ params }: Params) {
   }
 }
 
-export default async function WatchPage({ params }: Params) {
+export default async function WatchPage({ params, searchParams }: Params) {
   const { id } = await params;
+  const { loop } = await searchParams;
+  // Accept `?loop=1` / `?loop=true` as opt-in; anything else (including absent)
+  // keeps the default off, so existing links and crawlers are unaffected.
+  const wantLoop = loop === "1" || loop === "true";
   let video: Awaited<ReturnType<typeof getVideoById>> = null;
   try {
     video = await getVideoById(id);
@@ -48,14 +52,14 @@ export default async function WatchPage({ params }: Params) {
       <SiteHeader />
       <main className="container flex-1 py-8">
         <article className="mx-auto max-w-4xl space-y-6">
-          <VideoEmbed item={video} className="rounded-2xl ring-1 ring-ink/10" autoPlay />
+          <VideoEmbed item={video} className="rounded-2xl ring-1 ring-border" autoPlay loop={wantLoop} />
 
           <header className="space-y-2">
             <h1 className="font-display text-2xl leading-tight sm:text-3xl">
               {video.title}
             </h1>
             <p className="text-sm text-muted-foreground">
-              <span className="font-semibold text-ink">{video.channel}</span>
+              <span className="font-semibold text-foreground">{video.channel}</span>
               {video.viewCount > 0 ? ` · ${formatViews(video.viewCount)}` : ""}
               {video.durationSeconds > 0 ? ` · ${formatDuration(video.durationSeconds)}` : ""}
               {published ? ` · ${published}` : ""}
@@ -63,7 +67,7 @@ export default async function WatchPage({ params }: Params) {
           </header>
 
           {video.description ? (
-            <section className="space-y-2 rounded-2xl border border-ink/10 bg-panel/60 p-4 text-sm leading-relaxed text-ink/90">
+            <section className="space-y-2 rounded-2xl border border-border bg-card/60 p-4 text-sm leading-relaxed text-foreground/90">
               <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                 Mô tả
               </h2>
@@ -72,7 +76,7 @@ export default async function WatchPage({ params }: Params) {
           ) : null}
 
           {video.embeddable === false ? (
-            <section className="space-y-3 rounded-2xl border border-amber-300/40 bg-amber-50/60 p-4 text-sm text-amber-900">
+            <section className="space-y-3 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-700 dark:text-amber-400">
               <p className="font-medium">Video chặn nhúng trên trang này.</p>
               <p className="text-xs opacity-80">
                 Chủ kênh đã tắt nhúng ở một số website. Bạn có thể mở trực tiếp trên YouTube.
@@ -85,7 +89,7 @@ export default async function WatchPage({ params }: Params) {
             </section>
           ) : null}
 
-          <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-ink/10 pt-4 text-sm">
+          <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4 text-sm">
             <Button asChild variant="outline" size="sm">
               <Link href="/watch">Xem video khác</Link>
             </Button>
