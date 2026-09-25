@@ -1,6 +1,7 @@
 "use client";
+
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -51,46 +52,68 @@ function NavLink({
       title={collapsed ? label : undefined}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all",
+        "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200",
         collapsed && "justify-center px-0",
         active
-          ? "bg-primary/15 font-medium text-foreground ring-1 ring-primary/30"
-          : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground",
+          ? "bg-gradient-to-r from-rose-500/20 via-purple-500/10 to-transparent font-semibold text-foreground border-l-2 border-rose-500 shadow-sm shadow-rose-500/10"
+          : "text-muted-foreground hover:bg-white/5 hover:text-foreground hover:translate-x-0.5",
       )}
     >
-      <Icon className={cn("h-[18px] w-[18px] shrink-0", active && "text-primary")} />
+      <Icon
+        className={cn(
+          "h-[18px] w-[18px] shrink-0 transition-colors",
+          active ? "text-rose-500" : "group-hover:text-foreground",
+        )}
+      />
       {collapsed ? null : <span className="truncate">{label}</span>}
+      {active && !collapsed && (
+        <span className="ml-auto h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
+      )}
     </Link>
   );
 }
 
 function SectionLabel({ children, hidden }: { children: React.ReactNode; hidden: boolean }) {
-  if (hidden) return <div className="my-2 h-px bg-border" />;
+  if (hidden) return <div className="my-2 h-px bg-white/10" />;
   return (
-    <p className="px-3 pb-1 pt-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+    <p className="px-3 pb-1 pt-4 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60">
       {children}
     </p>
   );
 }
 
 /**
- * Desktop navigation rail (lg+ only). On smaller screens navigation is handled
- * exclusively by <MobileNav />, so this component renders nothing there.
+ * Desktop navigation rail (lg+ only).
  */
 export function AppSidebar() {
   const { collapsed, toggle } = useCollapsed();
   const pathname = usePathname();
-  const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname.startsWith(href);
+  const searchParams = useSearchParams();
+  const currentTab = searchParams?.get("tab");
+
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    if (href.includes("?tab=")) {
+      const [path, query] = href.split("?tab=");
+      return pathname === path && currentTab === query;
+    }
+    if (href === "/favorites") {
+      return pathname === "/favorites" && !currentTab;
+    }
+    if (href === "/account") {
+      return pathname === "/account" && !currentTab;
+    }
+    return pathname.startsWith(href);
+  };
 
   return (
     <aside
       className={cn(
-        "sticky top-24 hidden shrink-0 self-start lg:block",
-        collapsed ? "w-[68px]" : "w-56",
+        "sticky top-24 hidden shrink-0 self-start lg:block transition-all duration-300",
+        collapsed ? "w-[68px]" : "w-60",
       )}
     >
-      <div className="glass rounded-2xl p-2">
+      <div className="rounded-2xl border border-white/10 bg-card/75 p-2 shadow-2xl backdrop-blur-2xl">
         <div className={cn("flex pb-1", collapsed ? "justify-center" : "justify-end")}>
           <Button
             type="button"
@@ -98,7 +121,7 @@ export function AppSidebar() {
             variant="ghost"
             onClick={toggle}
             aria-label={collapsed ? "Mở rộng thanh bên" : "Thu gọn thanh bên"}
-            className="h-8 w-8 text-muted-foreground"
+            className="h-8 w-8 text-muted-foreground hover:bg-white/10 hover:text-foreground rounded-lg"
           >
             {collapsed ? (
               <PanelLeftOpen className="h-4 w-4" />
@@ -108,7 +131,7 @@ export function AppSidebar() {
           </Button>
         </div>
 
-        <nav className="flex flex-col gap-0.5">
+        <nav className="flex flex-col gap-1">
           {PRIMARY_NAV.map((item) => (
             <NavLink
               key={item.href}

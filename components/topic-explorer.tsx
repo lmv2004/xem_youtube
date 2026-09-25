@@ -74,7 +74,7 @@ export function TopicExplorer({ suggestions }: Props) {
           autoComplete="off"
           spellCheck={false}
           placeholder="Ví dụ: nhạc acoustic, phim ngắn, học lập trình..."
-          className="w-full flex-1 rounded-lg border border-ink/15 bg-white/80 px-4 py-3 text-base shadow-sm placeholder:text-muted focus:bg-white"
+          className="w-full flex-1 rounded-lg border border-border bg-card/80 px-4 py-3 text-base shadow-sm placeholder:text-muted-foreground focus:bg-card"
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
           maxLength={100}
@@ -82,7 +82,7 @@ export function TopicExplorer({ suggestions }: Props) {
         />
         <button
           type="submit"
-          className="rounded-lg bg-ink px-5 py-3 text-sm font-semibold text-paper transition hover:bg-accent disabled:opacity-50"
+          className="rounded-lg bg-foreground px-5 py-3 text-sm font-semibold text-foreground transition hover:bg-primary disabled:opacity-50"
           disabled={isLoading || topic.trim().length < 2}
         >
           {isLoading ? "Đang tìm..." : "Tìm video"}
@@ -101,7 +101,7 @@ export function TopicExplorer({ suggestions }: Props) {
               setTopic(s);
               void submit(s);
             }}
-            className="rounded-full border border-ink/15 bg-panel px-3 py-1.5 text-xs font-medium text-ink transition hover:border-accent hover:text-accent"
+            className="rounded-full border border-border bg-secondary px-3 py-1.5 text-xs font-medium text-foreground transition hover:border-primary/50 hover:text-primary"
           >
             {s}
           </button>

@@ -4,6 +4,14 @@ import { normalizeRoomCode } from "@/lib/rooms";
 
 export const dynamic = "force-dynamic";
 
+export async function generateMetadata({ params }: { params: Promise<{ code: string }> }) {
+  const { code } = await params;
+  return {
+    title: `Phòng ${code.toUpperCase()} | XemPhim`,
+    description: "Xem video YouTube cùng bạn bè trong phòng xem chung XemPhim.",
+  };
+}
+
 export default async function RoomPage({
   params,
 }: {

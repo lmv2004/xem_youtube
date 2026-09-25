@@ -61,3 +61,30 @@ export const POST = withRequestLog("api:history.add", async (request) => {
   });
   return NextResponse.json({ id: created.id }, { status: 201 });
 });
+
+export const DELETE = withRequestLog("api:history.delete", async (request) => {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id");
+  const all = searchParams.get("all");
+
+  if (all === "true" || all === "1") {
+    await prisma.viewHistory.deleteMany({
+      where: { userId: session.user.id },
+    });
+    return NextResponse.json({ message: "Đã xóa toàn bộ lịch sử xem." });
+  }
+
+  if (id) {
+    await prisma.viewHistory.deleteMany({
+      where: { id, userId: session.user.id },
+    });
+    return NextResponse.json({ message: "Đã xóa video khỏi lịch sử xem." });
+  }
+
+  return NextResponse.json({ message: "Thiếu id hoặc tham số all." }, { status: 400 });
+});

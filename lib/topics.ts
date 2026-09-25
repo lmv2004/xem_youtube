@@ -1,9 +1,15 @@
-// Curated Vietnamese topic suggestions shown as chips.
+// Curated Vietnamese topic suggestions shown as horizontal category chips.
 export const TOPIC_SUGGESTIONS: ReadonlyArray<string> = [
-  "Nhạc Việt hot",
-  "Phim ngắn hay",
-  "Học lập trình",
-  "Ẩm thực đường phố",
-  "Du lịch Việt Nam",
-  "Tin tức thời sự",
+  "Âm nhạc",
+  "Phim ảnh",
+  "Gaming",
+  "Lập trình",
+  "Công nghệ",
+  "Ẩm thực",
+  "Du lịch",
+  "Thể thao",
+  "Tin tức",
+  "Podcast",
+  "Khoa học",
+  "Hoạt hình",
 ];

@@ -1,3 +1,5 @@
+"use client";
+
 import { clsx } from "clsx";
 
 type Props = {
@@ -6,76 +8,154 @@ type Props = {
 };
 
 /**
- * App mark: a rounded "screen" with a play glyph and two signal arcs,
- * suggesting streaming + discovery. The gradient is defined once and reused;
- * duplicate ids across instances resolve to the same definition.
+ * Ultra-modern Cinematic Mark for XemPhim:
+ * A 3D-angled crystal prism play glyph enclosed in an obsidian squircle
+ * with a multi-stop neon iridescent border and glowing celestial lens flare.
  */
-export function Logo({ className, size = 28 }: Props) {
+export function Logo({ className, size = 32 }: Props) {
   return (
-    <svg
-      viewBox="0 0 32 32"
-      width={size}
-      height={size}
-      className={clsx("shrink-0", className)}
+    <div
+      className={clsx(
+        "group/logo relative inline-flex shrink-0 items-center justify-center transition-transform duration-300 hover:scale-105",
+        className,
+      )}
+      style={{ width: size, height: size }}
       role="img"
-      aria-label="XemPhimYouTube"
+      aria-label="XemPhim Logo"
     >
-      <defs>
-        <linearGradient id="xp-logo-fill" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="hsl(350 90% 60%)" />
-          <stop offset="55%" stopColor="hsl(325 85% 58%)" />
-          <stop offset="100%" stopColor="hsl(265 85% 62%)" />
-        </linearGradient>
-        <linearGradient id="xp-logo-sheen" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="white" stopOpacity="0.28" />
-          <stop offset="60%" stopColor="white" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-
-      {/* Screen */}
-      <rect x="1.5" y="4" width="29" height="24" rx="7.5" fill="url(#xp-logo-fill)" />
-      <rect x="1.5" y="4" width="29" height="24" rx="7.5" fill="url(#xp-logo-sheen)" />
-
-      {/* Play glyph */}
-      <path d="M13.4 11.3 20.6 16l-7.2 4.7v-9.4z" fill="white" />
-
-      {/* Signal arcs */}
-      <path
-        d="M24.4 12.6a5.2 5.2 0 0 1 0 6.8"
-        stroke="white"
-        strokeOpacity="0.75"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        fill="none"
+      {/* Outer ambient glow */}
+      <div
+        className="absolute -inset-1 rounded-2xl bg-gradient-to-tr from-rose-600/40 via-violet-600/30 to-cyan-500/40 opacity-50 blur-md transition-opacity duration-300 group-hover/logo:opacity-90"
+        aria-hidden
       />
-      <path
-        d="M7.6 12.6a5.2 5.2 0 0 0 0 6.8"
-        stroke="white"
-        strokeOpacity="0.75"
-        strokeWidth="1.6"
-        strokeLinecap="round"
+
+      <svg
+        viewBox="0 0 48 48"
+        width={size}
+        height={size}
         fill="none"
-      />
-    </svg>
+        className="relative drop-shadow-[0_4px_12px_rgba(255,42,84,0.35)]"
+      >
+        <defs>
+          <linearGradient id="xp-border" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FF3366" />
+            <stop offset="45%" stopColor="#8B5CF6" />
+            <stop offset="100%" stopColor="#06B6D4" />
+          </linearGradient>
+
+          <linearGradient id="xp-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#141724" />
+            <stop offset="100%" stopColor="#080911" />
+          </linearGradient>
+
+          {/* Prism facets */}
+          <linearGradient id="xp-f1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FF2A54" />
+            <stop offset="100%" stopColor="#FF6B4A" />
+          </linearGradient>
+
+          <linearGradient id="xp-f2" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#8B5CF6" />
+            <stop offset="100%" stopColor="#C084FC" />
+          </linearGradient>
+
+          <linearGradient id="xp-f3" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#06B6D4" />
+            <stop offset="100%" stopColor="#3B82F6" />
+          </linearGradient>
+
+          <filter id="xp-glow-filter" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="3.5" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+
+        {/* Squircle base */}
+        <rect x="2" y="2" width="44" height="44" rx="14" fill="url(#xp-bg)" />
+        <rect
+          x="2.5"
+          y="2.5"
+          width="43"
+          height="43"
+          rx="13.5"
+          stroke="url(#xp-border)"
+          strokeWidth="1.6"
+          strokeOpacity="0.85"
+        />
+
+        {/* Ambient colored light core */}
+        <circle
+          cx="24"
+          cy="24"
+          r="10"
+          fill="#FF2A54"
+          opacity="0.35"
+          filter="url(#xp-glow-filter)"
+        />
+
+        {/* 3D Prism Play Glyph */}
+        {/* Top facet */}
+        <path
+          d="M18.5 14.5 L33.5 24 L24 24 Z"
+          fill="url(#xp-f1)"
+          className="transition-all duration-300 group-hover/logo:brightness-110"
+        />
+        {/* Bottom facet */}
+        <path
+          d="M18.5 14.5 L24 24 L18.5 33.5 Z"
+          fill="url(#xp-f2)"
+          className="transition-all duration-300 group-hover/logo:brightness-110"
+        />
+        {/* Center-right facet */}
+        <path
+          d="M18.5 33.5 L24 24 L33.5 24 Z"
+          fill="url(#xp-f3)"
+          className="transition-all duration-300 group-hover/logo:brightness-110"
+        />
+
+        {/* Gloss edge highlight */}
+        <path
+          d="M18.5 14.5 L33.5 24"
+          stroke="white"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          strokeOpacity="0.8"
+        />
+
+        {/* Celestial Star Flare */}
+        <path
+          d="M34 10 C34 11.8 35.8 13.5 37.5 13.5 C35.8 13.5 34 15.2 34 17 C34 15.2 32.2 13.5 30.5 13.5 C32.2 13.5 34 11.8 34 10 Z"
+          fill="#FFFFFF"
+          className="animate-pulse transition-transform duration-300 group-hover/logo:scale-125"
+          style={{ transformOrigin: "34px 13.5px" }}
+        />
+      </svg>
+    </div>
   );
 }
 
-/** Logo + wordmark lockup used in the header and footer. */
+/** Logo + wordmark lockup used in header, footer, and branding moments. */
 export function Wordmark({
   className,
-  size = 26,
+  size = 30,
   hideTextOnMobile = false,
 }: Props & { hideTextOnMobile?: boolean }) {
   return (
-    <span className={clsx("flex items-center gap-2.5", className)}>
+    <span className={clsx("group inline-flex items-center gap-3 select-none", className)}>
       <Logo size={size} />
       <span
         className={clsx(
-          "font-display text-[15px] font-semibold tracking-tight",
-          hideTextOnMobile && "hidden sm:inline",
+          "flex items-center gap-1.5 font-display tracking-tight leading-none",
+          hideTextOnMobile && "hidden sm:inline-flex",
         )}
       >
-        Xem<span className="text-gradient">Phim</span>
+        <span className="text-[19px] font-extrabold text-foreground tracking-tight">
+          Xem<span className="bg-gradient-to-r from-rose-500 via-purple-500 to-cyan-400 bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(244,63,94,0.3)]">Phim</span>
+        </span>
+        <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/10 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-rose-400 uppercase shadow-[0_0_10px_rgba(244,63,94,0.2)]">
+          <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-ping" />
+          PRO
+        </span>
       </span>
     </span>
   );

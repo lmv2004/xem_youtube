@@ -39,6 +39,29 @@ async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Respons
   }
 }
 
+type CacheEntry<T> = { data: T; expiresAt: number };
+const pagedCache = new Map<string, CacheEntry<unknown>>();
+
+function getFromPagedCache<T>(key: string): T | null {
+  const entry = pagedCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    pagedCache.delete(key);
+    return null;
+  }
+  return entry.data as T;
+}
+
+function putInPagedCache<T>(key: string, data: T, ttlSeconds = 600): void {
+  if (pagedCache.size > 200) {
+    const now = Date.now();
+    for (const [k, v] of pagedCache.entries()) {
+      if (now > v.expiresAt) pagedCache.delete(k);
+    }
+  }
+  pagedCache.set(key, { data, expiresAt: Date.now() + ttlSeconds * 1000 });
+}
+
 function ensureKey(): string {
   const key = process.env.YOUTUBE_API_KEY?.trim();
   if (!key) fail("missing-key", "Chưa cấu hình YOUTUBE_API_KEY trên máy chủ.");
@@ -156,6 +179,10 @@ export async function searchVideosPaged(
   query: string,
   opts: SearchOptions = {},
 ): Promise<PagedVideos> {
+  const cacheKey = `paged-search:${query}:${opts.pageToken ?? ""}:${opts.order ?? ""}:${opts.duration ?? ""}:${opts.publishedAfter ?? ""}`;
+  const cached = getFromPagedCache<PagedVideos>(cacheKey);
+  if (cached) return cached;
+
   const key = ensureKey();
 
   const searchUrl = new URL(SEARCH_ENDPOINT);
@@ -194,11 +221,15 @@ export async function searchVideosPaged(
     .filter((id): id is string => typeof id === "string" && id.length > 0);
 
   if (ids.length === 0) {
-    return { items: [], nextPageToken: json.nextPageToken ?? null };
+    const emptyResult = { items: [], nextPageToken: json.nextPageToken ?? null };
+    putInPagedCache(cacheKey, emptyResult, 300);
+    return emptyResult;
   }
 
   const items = await hydrate(ids, searchItems, key);
-  return { items, nextPageToken: json.nextPageToken ?? null };
+  const result = { items, nextPageToken: json.nextPageToken ?? null };
+  putInPagedCache(cacheKey, result, 600);
+  return result;
 }
 
 // Paginated "most popular" chart. The chart endpoint ignores order/duration/
@@ -207,12 +238,17 @@ export async function listTrendingPaged(
   regionCode: string,
   opts: SearchOptions = {},
 ): Promise<PagedVideos> {
+  const normRegion = regionCode.slice(0, 2).toUpperCase();
+  const cacheKey = `paged-trending:${normRegion}:${opts.pageToken ?? ""}:${opts.maxResults ?? PAGE_SIZE}`;
+  const cached = getFromPagedCache<PagedVideos>(cacheKey);
+  if (cached) return cached;
+
   const key = ensureKey();
 
   const url = new URL(VIDEOS_ENDPOINT);
   url.searchParams.set("part", "statistics,contentDetails,snippet,status");
   url.searchParams.set("chart", "mostPopular");
-  url.searchParams.set("regionCode", regionCode.slice(0, 2).toUpperCase());
+  url.searchParams.set("regionCode", normRegion);
   url.searchParams.set("maxResults", String(opts.maxResults ?? PAGE_SIZE));
   if (opts.pageToken) url.searchParams.set("pageToken", opts.pageToken);
   url.searchParams.set("key", key);
@@ -234,5 +270,7 @@ export async function listTrendingPaged(
     .filter((v): v is VideosListItem & { id: string } => typeof v.id === "string")
     .map((v) => toVideoItem(v.id, v.snippet, v));
 
-  return { items, nextPageToken: json.nextPageToken ?? null };
+  const result = { items, nextPageToken: json.nextPageToken ?? null };
+  putInPagedCache(cacheKey, result, 900);
+  return result;
 }

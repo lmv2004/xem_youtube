@@ -1,0 +1,1036 @@
+Tôi có một website xem và khám phá video YouTube:
+
+https://xem-youtube.vercel.app/
+
+Tôi muốn bạn đóng vai trò đồng thời là:
+
+- Senior Frontend Developer
+- Senior UI/UX Designer
+- Product Designer
+- Software Architect
+
+Hãy phân tích toàn bộ source code hiện tại của project và cải tiến website thành một nền tảng xem video hiện đại, đẹp, nhanh và có trải nghiệm giống một sản phẩm thực tế chứ không phải một project demo.
+
+QUAN TRỌNG:
+
+- Không phá vỡ các chức năng hiện có.
+- Tận dụng architecture và framework hiện tại nếu hợp lý.
+- Không rewrite toàn bộ project một cách không cần thiết.
+- Code phải sạch, dễ bảo trì, responsive và production-ready.
+- Giữ nguyên khả năng sử dụng YouTube Data API / YouTube Embed hiện tại.
+- Không làm các chức năng vi phạm chính sách YouTube.
+- Sau khi phân tích source code, hãy chủ động quyết định cách triển khai tốt nhất thay vì liên tục hỏi tôi.
+- Nếu phát hiện architecture hiện tại chưa tốt, hãy refactor có kiểm soát.
+- Ưu tiên trải nghiệm desktop nhưng mobile và tablet cũng phải rất tốt.
+
+==================================================
+1. MỤC TIÊU THIẾT KẾ
+==================================================
+
+Tôi muốn website có phong cách:
+
+YouTube + Netflix + Spotify + các streaming platform hiện đại.
+
+Nhưng KHÔNG copy trực tiếp UI của bất kỳ nền tảng nào.
+
+Phong cách tổng thể:
+
+- Dark mode là giao diện chính.
+- Tối giản nhưng cao cấp.
+- Modern cinematic UI.
+- Background dark charcoal / near black thay vì màu đen tuyệt đối.
+- Các surface/card có độ phân lớp nhẹ.
+- Border tinh tế.
+- Shadow mềm.
+- Border radius khoảng 10–16px.
+- Animation nhỏ, mượt.
+- Hover effect tinh tế.
+- Không lạm dụng gradient.
+- Không dùng quá nhiều màu.
+- Accent color có thể dùng đỏ/coral nhẹ liên tưởng video nhưng không copy YouTube.
+- Typography rõ ràng, hiện đại.
+- Khoảng trắng hợp lý.
+- Ưu tiên thumbnail và nội dung video.
+
+Website phải tạo cảm giác:
+
+"Mở lên là muốn tìm video và xem ngay."
+
+==================================================
+2. CẢI TIẾN LAYOUT TOÀN SITE
+==================================================
+
+Thiết kế lại App Shell.
+
+DESKTOP:
+
+Sidebar cố định bên trái.
+
+Sidebar khi mở khoảng 220–250px.
+
+Cho phép collapse xuống icon-only khoảng 70px.
+
+Các nhóm menu:
+
+Khám phá
+Phòng xem chung
+Xem nhanh
+
+THƯ VIỆN
+Yêu thích
+Lịch sử
+Bộ sưu tập
+
+KHÁC
+Tài khoản
+Cài đặt
+
+Menu active phải rõ ràng nhưng không quá chói.
+
+Header sticky phía trên.
+
+Header bao gồm:
+
+- Logo
+- Search bar lớn ở trung tâm
+- nút search
+- keyboard shortcut hint nếu phù hợp
+- avatar
+- notification hoặc activity icon nếu có ý nghĩa
+- theme/settings menu
+
+Ở mobile:
+
+- Không giữ sidebar lớn.
+- Sử dụng bottom navigation hoặc drawer.
+- Search có thể mở thành full-screen search overlay.
+
+==================================================
+3. TRANG KHÁM PHÁ / HOME
+==================================================
+
+Trang hiện tại đang dựa nhiều vào form chọn sở thích.
+
+Hãy biến nó thành một trang discovery thực sự.
+
+Phần đầu:
+
+Một search bar nổi bật:
+
+"Tìm video, chủ đề, kênh..."
+
+Có search suggestion.
+
+Có recent searches.
+
+Có clear history.
+
+Có thể dùng debounce.
+
+Dưới search:
+
+Horizontal category chips:
+
+Tất cả
+Âm nhạc
+Phim
+Gaming
+Lập trình
+Công nghệ
+Ẩm thực
+Du lịch
+Thể thao
+Tin tức
+Podcast
+...
+
+Cho phép horizontal scroll.
+
+Các section nội dung:
+
+"Đề xuất cho bạn"
+
+"Đang thịnh hành"
+
+"Âm nhạc"
+
+"Công nghệ"
+
+"Học lập trình"
+
+"Video dài đáng xem"
+
+"Có thể bạn thích"
+
+Nếu API hoặc quota không đủ để tạo recommendation thực sự, hãy xây dựng logic hợp lý dựa trên:
+
+- sở thích user
+- lịch sử tìm kiếm
+- video đã xem
+- video yêu thích
+- category được click
+- từ khóa gần đây
+
+Không giả vờ rằng đó là AI recommendation nếu thực tế không phải.
+
+==================================================
+4. VIDEO CARD
+==================================================
+
+Thiết kế lại video card hiện đại.
+
+Card nên hiển thị:
+
+- thumbnail 16:9
+- duration nằm trên thumbnail
+- tiêu đề
+- channel avatar nếu API cho phép
+- channel name
+- views
+- thời gian đăng
+- menu ba chấm
+
+Hover thumbnail:
+
+- scale rất nhẹ
+- shadow
+- optional preview animation nếu có thể làm hợp lý
+- hiện quick actions
+
+Quick actions:
+
+Xem ngay
+Thêm yêu thích
+Thêm vào bộ sưu tập
+Xem sau
+Tạo phòng xem chung
+Copy link
+
+Không để card có quá nhiều nút hiện thường xuyên.
+
+Dùng context menu / hover menu.
+
+Skeleton loading khi fetch data.
+
+Empty state đẹp khi không có kết quả.
+
+Error state thân thiện.
+
+==================================================
+5. TRANG XEM VIDEO
+==================================================
+
+Đây phải là một trong những phần được đầu tư nhiều nhất.
+
+Layout desktop:
+
+--------------------------------
+|            VIDEO             |
+|                              |
+--------------------------------
+
+Video title
+Channel / metadata / actions
+
+------------------ -------------
+description         suggestions
+                    suggestions
+                    suggestions
+------------------ -------------
+
+Player:
+
+- responsive
+- giữ aspect ratio
+- ưu tiên diện tích xem
+- cinematic mode nếu phù hợp
+
+Bên dưới video:
+
+- Title
+- Channel
+- View count
+- Published date
+- Like/Favorite
+- Add collection
+- Share
+- Watch together
+
+Description:
+
+- collapsed mặc định
+- nút "Xem thêm"
+
+Sidebar bên phải:
+
+"Tiếp theo"
+
+Hiển thị danh sách video liên quan.
+
+Có autoplay toggle nếu architecture hỗ trợ.
+
+Khi viewport nhỏ:
+
+Suggestions chuyển xuống dưới video.
+
+Nếu user scroll xuống phần comment/suggestion, cân nhắc mini-player sticky ở góc màn hình.
+
+Chỉ làm mini-player nếu không gây phức tạp hoặc xung đột với YouTube Embed API.
+
+==================================================
+6. XEM NHANH
+==================================================
+
+Trang hiện tại chỉ cho dán link YouTube.
+
+Hãy biến nó thành trải nghiệm tốt hơn.
+
+Giữ:
+
+Dán link YouTube / youtu.be / Shorts / Video ID.
+
+Nhưng thiết kế thành một Quick Watch page hiện đại.
+
+Khi user paste link:
+
+- detect ngay URL hợp lệ
+- lấy video ID
+- hiển thị preview
+- thumbnail
+- title nếu lấy được
+- channel
+- nút "Xem ngay"
+
+Cho phép Ctrl+V / paste nhanh.
+
+Có recent pasted videos.
+
+Không cần hiển thị quá nhiều ví dụ URL như hiện tại.
+
+Có thể thêm drop/paste area:
+
+"Dán link YouTube vào đây"
+
+Nếu clipboard API sử dụng được thì thêm:
+
+"Dán từ clipboard"
+
+nhưng phải xử lý permission đúng cách.
+
+==================================================
+7. PHÒNG XEM CHUNG / WATCH PARTY
+==================================================
+
+Đây có thể trở thành feature khác biệt nhất của website.
+
+Thiết kế lại thành feature thực sự nổi bật.
+
+Trang danh sách phòng:
+
+- Tạo phòng
+- Nhập mã phòng
+- Recent rooms
+- Rooms do user tạo
+
+Tạo room modal:
+
+Tên phòng
+Video
+Public / Private
+Max participants nếu backend hỗ trợ
+
+Room page:
+
+Desktop layout:
+
+Video lớn bên trái.
+
+Chat bên phải.
+
+Header room:
+
+Tên phòng
+Room code
+Copy invite link
+Số người đang xem
+Participants
+
+Chat:
+
+- avatar
+- username
+- timestamp
+- auto scroll hợp lý
+- input ở cuối
+- emoji cơ bản nếu dễ triển khai
+
+Video sync:
+
+Nếu backend hiện tại hỗ trợ realtime:
+- play
+- pause
+- seek
+- video change
+
+phải sync giữa các thành viên.
+
+Nếu chưa hỗ trợ tốt, hãy kiểm tra architecture và triển khai theo cách phù hợp nhất.
+
+Có thể dùng WebSocket / Socket.io / Supabase Realtime hoặc công nghệ đang có trong project.
+
+Nhưng KHÔNG tự ý thêm dependency lớn nếu project đã có giải pháp realtime.
+
+Xử lý:
+
+- reconnect
+- host disconnect
+- user join/leave
+- room invalid
+- room expired
+
+Hiện toast:
+
+"Minh vừa tham gia phòng"
+
+==================================================
+8. YÊU THÍCH
+==================================================
+
+Thiết kế giống một library page.
+
+Cho phép:
+
+- grid/list toggle
+- sort
+- search trong favorites
+- remove favorite
+- mở video
+- add collection
+
+Sort:
+
+Mới thêm
+Cũ nhất
+Tên video
+
+Nếu số lượng lớn:
+
+pagination hoặc infinite scroll.
+
+==================================================
+9. LỊCH SỬ XEM
+==================================================
+
+Hiển thị history theo timeline.
+
+Ví dụ:
+
+Hôm nay
+
+video...
+video...
+
+Hôm qua
+
+video...
+
+Tuần trước
+
+video...
+
+Có:
+
+- search history
+- delete từng video
+- clear history
+- resume video nếu lưu được playback progress
+
+Nếu lưu playback progress thì card có progress bar nhỏ dưới thumbnail.
+
+==================================================
+10. BỘ SƯU TẬP / PLAYLIST
+==================================================
+
+Cho phép user tạo collection riêng.
+
+Ví dụ:
+
+Học React
+Nhạc Chill
+Video xem cuối tuần
+
+Collection card:
+
+cover collage từ thumbnail video.
+
+Hiển thị:
+
+Tên collection
+Số video
+Ngày cập nhật
+
+Trang collection:
+
+- edit name
+- delete
+- remove video
+- reorder nếu hợp lý
+- play first
+- shuffle nếu có ý nghĩa
+
+==================================================
+11. SEARCH UX
+==================================================
+
+Search là chức năng trung tâm.
+
+Cải tiến:
+
+- debounce
+- loading state
+- query synchronization với URL
+- pagination / infinite scroll
+- filter
+
+Filters:
+
+Upload date
+Duration
+Type
+Sort by relevance/date/view count nếu API hỗ trợ.
+
+Khi user gõ:
+
+Hiện dropdown:
+
+Recent searches
+Suggested keywords nếu có data
+Có thể hiển thị một số video nhanh
+
+Không spam API.
+
+Tối ưu quota YouTube API.
+
+Cache response nếu có thể.
+
+==================================================
+12. PERSONALIZATION
+==================================================
+
+Hiện website có bước chọn sở thích.
+
+Giữ concept này nhưng cải tiến UX.
+
+Thay vì luôn hiển thị block lớn:
+
+Lần đầu truy cập:
+
+Hiển thị onboarding modal / page.
+
+"Bạn thường xem gì?"
+
+Cho chọn 3–5 chủ đề.
+
+Sau đó homepage dùng các chủ đề đó.
+
+Trong settings user có thể chỉnh lại.
+
+Nếu user chưa đăng nhập:
+
+lưu localStorage.
+
+Nếu đăng nhập:
+
+ưu tiên lưu server nếu backend hỗ trợ.
+
+==================================================
+13. ACCOUNT PAGE
+==================================================
+
+Tạo dashboard tài khoản đẹp.
+
+Sections:
+
+Profile
+
+Preferences
+
+Appearance
+
+Playback
+
+Privacy
+
+Account
+
+Ví dụ:
+
+Theme:
+Dark
+Light
+System
+
+Autoplay:
+On / Off
+
+Default player size
+
+Watch history:
+On / Off
+
+Clear watch history
+
+Recommendation preferences
+
+==================================================
+14. COMMAND PALETTE
+==================================================
+
+Nếu phù hợp với architecture, thêm command palette:
+
+Ctrl / Cmd + K
+
+Cho phép:
+
+Search video
+Go to Favorites
+Go to History
+Quick Watch
+Create Room
+Settings
+
+UI giống modern productivity apps.
+
+==================================================
+15. KEYBOARD SHORTCUT
+==================================================
+
+Có thể hỗ trợ:
+
+/ → focus search
+
+Ctrl/Cmd + K → command palette
+
+Esc → đóng modal
+
+Không override shortcut của YouTube player.
+
+==================================================
+16. TOAST / FEEDBACK
+==================================================
+
+Thay các alert() native nếu đang sử dụng.
+
+Tạo toast system hiện đại.
+
+Ví dụ:
+
+"Đã thêm vào yêu thích"
+
+"Đã sao chép liên kết"
+
+"Đã tạo phòng"
+
+"Không thể tải video"
+
+Có:
+
+success
+error
+info
+
+==================================================
+17. LOADING / SKELETON / EMPTY STATE
+==================================================
+
+Không để trang blank khi loading.
+
+Tạo skeleton cho:
+
+Video grid
+Video list
+Profile
+Room
+
+Empty state cần có icon/illustration đơn giản.
+
+Ví dụ Favorites empty:
+
+"Chưa có video yêu thích"
+
+"Video bạn đánh dấu sẽ xuất hiện tại đây."
+
+[Khám phá video]
+
+==================================================
+18. RESPONSIVE
+==================================================
+
+Thiết kế đầy đủ:
+
+Desktop >= 1280
+
+Laptop 1024–1279
+
+Tablet 768–1023
+
+Mobile < 768
+
+Video grid:
+
+Desktop: khoảng 4 cards / row tùy viewport
+
+Laptop: 3
+
+Tablet: 2
+
+Mobile: 1–2 tùy layout.
+
+Không hard-code layout gây overflow.
+
+==================================================
+19. PERFORMANCE
+==================================================
+
+Kiểm tra và tối ưu:
+
+- unnecessary re-render
+- API request duplicate
+- image loading
+- bundle size
+- dynamic imports
+- lazy loading
+- route loading
+- caching
+- debounce
+- pagination
+
+Thumbnail phải lazy load.
+
+Sử dụng đúng kích thước ảnh từ YouTube thay vì luôn tải ảnh lớn nhất.
+
+Không request API lại nếu data còn hợp lệ trong cache.
+
+Nếu dùng Next.js, tận dụng các khả năng phù hợp của Next.js nhưng không over-engineer.
+
+==================================================
+20. ACCESSIBILITY
+==================================================
+
+Đảm bảo:
+
+- keyboard navigation
+- focus states
+- aria-label
+- semantic HTML
+- contrast
+- button accessible
+- modal focus management
+
+==================================================
+21. MICRO INTERACTIONS
+==================================================
+
+Thêm animation nhỏ:
+
+- card hover
+- sidebar transition
+- modal enter/exit
+- toast
+- skeleton
+- dropdown
+- tabs
+
+Animation khoảng 150–250ms.
+
+Không làm animation quá nhiều.
+
+Ưu tiên transform + opacity để đảm bảo performance.
+
+==================================================
+22. DESIGN SYSTEM
+==================================================
+
+Tạo design system nhất quán.
+
+Định nghĩa:
+
+colors
+background
+surface
+border
+text-primary
+text-secondary
+accent
+danger
+success
+
+Spacing system.
+
+Typography scale.
+
+Radius.
+
+Shadow.
+
+Button variants:
+
+primary
+secondary
+ghost
+danger
+
+Component:
+
+Button
+IconButton
+Input
+SearchInput
+Modal
+Dropdown
+Tooltip
+Toast
+Skeleton
+VideoCard
+VideoListItem
+Avatar
+Badge
+Tabs
+Chip
+
+Không tạo nhiều component trùng chức năng.
+
+==================================================
+23. CLEAN UP UI HIỆN TẠI
+==================================================
+
+Loại bỏ cảm giác:
+
+- form HTML đơn giản
+- quá nhiều text hướng dẫn
+- button đặt rời rạc
+- khoảng trắng thiếu nhất quán
+- footer chiếm sự chú ý
+- nội dung giống demo project
+
+Footer nên tối giản.
+
+Ví dụ:
+
+XemPhim
+YouTube-powered video discovery
+
+Terms · Privacy · About
+
+Không cần lặp lại navigation ở footer trên desktop nếu sidebar đã có.
+
+==================================================
+24. BRANDING
+==================================================
+
+Website hiện đang dùng các tên như:
+
+YoutubePremium
+Xem Phim
+
+Hãy chuẩn hóa branding thành một tên duy nhất trong toàn bộ app.
+
+Tạm dùng:
+
+"XemPhim"
+
+hoặc nếu code hiện tại đã có tên thương hiệu rõ ràng thì giữ nhưng phải nhất quán.
+
+Tạo logo dạng text + simple play symbol.
+
+Không dùng logo YouTube làm logo chính.
+
+==================================================
+25. CODE QUALITY
+==================================================
+
+Sau khi redesign:
+
+- loại bỏ dead code
+- remove unused imports
+- tránh duplicate logic
+- tách hooks hợp lý
+- tách API layer
+- error handling rõ ràng
+- loading state rõ ràng
+- TypeScript type đầy đủ nếu project dùng TypeScript
+- không dùng any bừa bãi
+- không hard-code data nếu có thể lấy từ config/constants
+
+Nếu đang dùng React:
+
+Tách:
+
+components/
+features/
+hooks/
+services/
+types/
+utils/
+
+theo architecture phù hợp với project hiện tại.
+
+Không bắt buộc cấu trúc trên nếu architecture hiện tại có cách tốt hơn.
+
+==================================================
+26. API / SECURITY
+==================================================
+
+Kiểm tra cách sử dụng YouTube API.
+
+Không expose secret API key nếu key cần bảo mật.
+
+Nếu hiện tại API key nằm client và không nên nằm client, hãy chuyển request thông qua backend/API route phù hợp.
+
+Có:
+
+- error handling
+- quota handling
+- rate limiting nếu cần
+- caching
+
+Không log token hoặc sensitive information.
+
+==================================================
+27. SEO / META
+==================================================
+
+Tạo metadata hợp lý:
+
+title
+description
+OpenGraph
+favicon
+
+Page title động:
+
+Khám phá | XemPhim
+
+Tên video | XemPhim
+
+Phòng xem chung | XemPhim
+
+==================================================
+28. NHỮNG FEATURE NÊN CÂN NHẮC THÊM
+==================================================
+
+Sau khi hoàn thiện các feature chính, nếu phù hợp hãy cân nhắc:
+
+Picture-in-picture
+
+Mini player
+
+Continue watching
+
+Watch later
+
+Recently searched
+
+Recently watched
+
+Trending topics
+
+Keyboard shortcuts
+
+Share room QR code
+
+Copy timestamp link
+
+Theater mode
+
+Fullscreen theater UI
+
+Video queue
+
+Drag-and-drop reorder queue
+
+Không thêm tất cả một cách máy móc.
+
+Chỉ thêm feature khi nó cải thiện trải nghiệm thực tế và phù hợp với architecture.
+
+==================================================
+29. KHÔNG ĐƯỢC LÀM
+==================================================
+
+Không:
+
+- biến website thành clone YouTube.
+- nhồi quá nhiều gradient.
+- dùng glassmorphism khắp nơi.
+- dùng animation rườm rà.
+- thêm dependency không cần thiết.
+- hard-code demo data vào production UI.
+- phá API hiện tại.
+- xóa chức năng đang hoạt động.
+- tạo hàng trăm component nhỏ vô nghĩa.
+- thay đổi architecture chỉ vì muốn rewrite.
+- hiển thị fake views/fake recommendation.
+- thêm chức năng download video YouTube.
+- bypass quảng cáo hoặc cơ chế bảo vệ của YouTube.
+- che branding bắt buộc của YouTube Embed nếu chính sách không cho phép.
+
+==================================================
+30. CÁCH LÀM VIỆC
+==================================================
+
+Trước tiên:
+
+1. Đọc toàn bộ project.
+2. Xác định framework và dependencies.
+3. Xác định architecture hiện tại.
+4. Liệt kê các page.
+5. Kiểm tra YouTube API integration.
+6. Kiểm tra authentication.
+7. Kiểm tra database.
+8. Kiểm tra realtime/watch room implementation.
+9. Kiểm tra state management.
+10. Kiểm tra vấn đề UI/UX hiện tại.
+
+Sau đó lập một kế hoạch cải tiến nội bộ và bắt đầu sửa code.
+
+Không chỉ đưa cho tôi mockup hoặc lời khuyên.
+
+HÃY THỰC SỰ CHỈNH SỬA CODE.
+
+Ưu tiên theo thứ tự:
+
+1. Global design system + app shell
+2. Home / Discovery
+3. Video card
+4. Watch page
+5. Search
+6. Quick Watch
+7. Watch Party
+8. Favorites / History / Collections
+9. Account / Settings
+10. Responsive
+11. Performance
+12. Accessibility
+13. Code cleanup
+
+Sau mỗi phần lớn:
+
+- chạy build
+- sửa TypeScript error
+- sửa lint error quan trọng
+- kiểm tra console errors
+- kiểm tra responsive
+- đảm bảo feature cũ vẫn hoạt động
+
+Cuối cùng cung cấp:
+
+1. Tóm tắt những gì đã thay đổi.
+2. Danh sách file quan trọng đã sửa.
+3. Feature mới đã thêm.
+4. Bug đã sửa.
+5. Những việc chưa thể hoàn thành và lý do.
+6. Những đề xuất tiếp theo.
+
+Mục tiêu cuối cùng:
+
+Khi người dùng truy cập website, họ phải cảm thấy đây là một nền tảng xem và khám phá video hoàn chỉnh, hiện đại, nhanh và được thiết kế có chủ đích, chứ không phải một giao diện demo đặt lên trên YouTube API.

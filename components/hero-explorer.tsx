@@ -1,15 +1,23 @@
 "use client";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
+  Compass,
+  Filter,
+  Flame,
   LayoutGrid,
   List,
   Loader2,
-  Maximize2,
-  Minimize2,
-  PlayCircle,
+  Music,
+  Play,
+  RotateCcw,
   Search,
-  SkipForward,
+  SlidersHorizontal,
   Sparkles,
+  Terminal,
+  TrendingUp,
+  Tv,
   X,
 } from "lucide-react";
 import type { ErrorCode, SearchStatus, VideoItem, VideoSearchResponse } from "@/lib/types";
@@ -17,14 +25,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Glass } from "@/components/ui/glass";
-import { Skeleton } from "@/components/ui/skeleton";
-import { InterestPicker } from "@/components/interest-picker";
-import { FeaturedPlayer, type FeaturedPlayerHandle } from "@/components/featured-player";
-import { VideoGrid, type ViewMode } from "@/components/video-grid";
-import { MiniPlayer } from "@/components/mini-player";
 import { FilterChips } from "@/components/filter-chips";
 import { VideoFiltersBar } from "@/components/video-filters";
+import { VideoGrid, VideoGridSkeleton, type ViewMode } from "@/components/video-grid";
+import { FeaturedPlayer, type FeaturedPlayerHandle } from "@/components/featured-player";
+import { MiniPlayer } from "@/components/mini-player";
 import { WatchLaterPanel } from "@/components/watch-later-panel";
+import { OnboardingModal } from "@/components/onboarding-modal";
 import { useWatchLater } from "@/hooks/use-watch-later";
 import { useRecentSearches } from "@/hooks/use-recent-searches";
 import { DEFAULT_FILTERS, filtersToSearchParams, type VideoFilters } from "@/lib/filters";
@@ -36,37 +43,12 @@ const STORAGE_LAST_MODE = "xemphim:lastMode";
 const STORAGE_VIEW = "xemphim:viewMode";
 
 type Mode = "trending" | "search";
-type Persisted = { interests: string[]; topic: string; mode: Mode };
-
-function readPersisted(): Persisted {
-  if (typeof window === "undefined") return { interests: [], topic: "", mode: "trending" };
-  try {
-    const interests = JSON.parse(localStorage.getItem(STORAGE_INTERESTS) ?? "[]") as string[];
-    const topic = localStorage.getItem(STORAGE_LAST_TOPIC) ?? "";
-    const mode = (localStorage.getItem(STORAGE_LAST_MODE) as Mode | null) ?? "trending";
-    return {
-      interests: Array.isArray(interests) ? interests : [],
-      topic,
-      mode: mode === "search" ? "search" : "trending",
-    };
-  } catch {
-    return { interests: [], topic: "", mode: "trending" };
-  }
-}
-
-function writePersisted(p: Persisted) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(STORAGE_INTERESTS, JSON.stringify(p.interests));
-    if (p.topic) localStorage.setItem(STORAGE_LAST_TOPIC, p.topic);
-    else localStorage.removeItem(STORAGE_LAST_TOPIC);
-    localStorage.setItem(STORAGE_LAST_MODE, p.mode);
-  } catch {
-    /* ignore */
-  }
-}
 
 export function HeroExplorer() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlTopic = searchParams.get("topic");
+
   const [interests, setInterests] = useState<string[]>([]);
   const [topicInput, setTopicInput] = useState("");
   const [query, setQuery] = useState("");
@@ -83,10 +65,16 @@ export function HeroExplorer() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
 
   const [theater, setTheater] = useState(false);
   const [miniOpen, setMiniOpen] = useState(false);
   const [suggestOpen, setSuggestOpen] = useState(false);
+
+  // Additional curated feed sections for discovery landing
+  const [musicItems, setMusicItems] = useState<VideoItem[]>([]);
+  const [techItems, setTechItems] = useState<VideoItem[]>([]);
+  const [loadingCurated, setLoadingCurated] = useState(false);
 
   const requestSeq = useRef(0);
   const featuredRef = useRef<FeaturedPlayerHandle>(null);
@@ -97,27 +85,63 @@ export function HeroExplorer() {
   const recent = useRecentSearches();
 
   const activeTopic = chip ?? query;
-  const mode: Mode =
-    activeTopic.trim().length >= 2 || interests.length > 0 ? "search" : "trending";
+  const isCustomFeed = Boolean(activeTopic.trim());
+  const mode: Mode = isCustomFeed || interests.length > 0 ? "search" : "trending";
 
+  // Hydrate state from localStorage or URL parameter
   useEffect(() => {
-    const p = readPersisted();
-    setInterests(p.interests);
-    setTopicInput(p.topic);
-    setQuery(p.mode === "search" ? p.topic : "");
     try {
+      const storedInterests = JSON.parse(
+        localStorage.getItem(STORAGE_INTERESTS) ?? "[]",
+      ) as string[];
+      setInterests(Array.isArray(storedInterests) ? storedInterests : []);
+
       const storedView = localStorage.getItem(STORAGE_VIEW);
       if (storedView === "list" || storedView === "grid") setView(storedView);
+
+      if (urlTopic) {
+        setTopicInput(urlTopic);
+        setQuery(urlTopic);
+      } else {
+        const lastTopic = localStorage.getItem(STORAGE_LAST_TOPIC) ?? "";
+        const lastMode = localStorage.getItem(STORAGE_LAST_MODE);
+        if (lastMode === "search" && lastTopic) {
+          setTopicInput(lastTopic);
+          setQuery(lastTopic);
+        }
+      }
     } catch {
       /* ignore */
     }
     setHydrated(true);
-  }, []);
+  }, [urlTopic]);
 
+  // Sync state changes with localStorage
   useEffect(() => {
     if (!hydrated) return;
-    writePersisted({ interests, topic: activeTopic, mode });
+    try {
+      localStorage.setItem(STORAGE_INTERESTS, JSON.stringify(interests));
+      if (activeTopic) localStorage.setItem(STORAGE_LAST_TOPIC, activeTopic);
+      else localStorage.removeItem(STORAGE_LAST_TOPIC);
+      localStorage.setItem(STORAGE_LAST_MODE, mode);
+    } catch {
+      /* ignore */
+    }
   }, [interests, activeTopic, mode, hydrated]);
+
+  // Listen for search events from header
+  useEffect(() => {
+    const handleHeaderSearch = (e: Event) => {
+      const detail = (e as CustomEvent<{ topic: string }>).detail;
+      if (detail?.topic) {
+        setChip(null);
+        setTopicInput(detail.topic);
+        setQuery(detail.topic);
+      }
+    };
+    window.addEventListener("xemphim:search", handleHeaderSearch);
+    return () => window.removeEventListener("xemphim:search", handleHeaderSearch);
+  }, []);
 
   const changeView = useCallback((next: ViewMode) => {
     setView(next);
@@ -189,11 +213,44 @@ export function HeroExplorer() {
     [buildUrl],
   );
 
+  // Load curated sections for default landing page
+  useEffect(() => {
+    if (!hydrated || isCustomFeed) return;
+    let isCancelled = false;
+    (async () => {
+      setLoadingCurated(true);
+      try {
+        const [musicRes, techRes] = await Promise.all([
+          fetch("/api/videos?topic=Âm+nhạc+Việt+Nam&limit=6", { cache: "no-store" }),
+          fetch("/api/videos?topic=Công+nghệ+Lập+trình&limit=6", { cache: "no-store" }),
+        ]);
+        if (!isCancelled) {
+          if (musicRes.ok) {
+            const mJson = (await musicRes.json()) as VideoSearchResponse;
+            setMusicItems(mJson.items?.slice(0, 6) ?? []);
+          }
+          if (techRes.ok) {
+            const tJson = (await techRes.json()) as VideoSearchResponse;
+            setTechItems(tJson.items?.slice(0, 6) ?? []);
+          }
+        }
+      } catch {
+        /* ignore */
+      } finally {
+        if (!isCancelled) setLoadingCurated(false);
+      }
+    })();
+    return () => {
+      isCancelled = true;
+    };
+  }, [hydrated, isCustomFeed]);
+
   useEffect(() => {
     if (!hydrated) return;
     void load(null);
   }, [hydrated, query, chip, interests, filters, load]);
 
+  // Infinite scroll
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el || !nextPageToken || isLoading || isLoadingMore) return;
@@ -207,34 +264,6 @@ export function HeroExplorer() {
     observer.observe(el);
     return () => observer.disconnect();
   }, [nextPageToken, isLoading, isLoadingMore, load]);
-
-  // Keyboard shortcuts: "/" focus search, "t" theater, Escape closes overlays.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      const typing =
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        target?.isContentEditable === true;
-
-      if (e.key === "Escape") {
-        setSuggestOpen(false);
-        setTheater(false);
-        if (typing) inputRef.current?.blur();
-        return;
-      }
-      if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
-
-      if (e.key === "/") {
-        e.preventDefault();
-        inputRef.current?.focus();
-      } else if (e.key.toLowerCase() === "t") {
-        setTheater((v) => !v);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
 
   const featured = useMemo(
     () => items.find((v) => v.id === featuredId) ?? null,
@@ -257,195 +286,421 @@ export function HeroExplorer() {
   const submitSearch = useCallback(
     (term: string) => {
       const t = term.trim();
-      if (t.length < 2 && interests.length === 0) return;
       setChip(null);
       setTopicInput(t);
       setQuery(t);
       setSuggestOpen(false);
       if (t.length >= 2) recent.add(t);
+      router.push(t ? `/?topic=${encodeURIComponent(t)}` : "/");
     },
-    [interests.length, recent],
+    [recent, router],
   );
 
-  const status = toStatus({ activeTopic: responseTopic, items, error, isLoading });
-
-  function resetToTrending() {
+  const resetToHome = useCallback(() => {
     setChip(null);
     setQuery("");
     setTopicInput("");
     setFilters(DEFAULT_FILTERS);
-  }
+    router.push("/");
+  }, [router]);
 
   return (
-    <div className="space-y-7 sm:space-y-8">
-      <Hero />
+    <div className="space-y-8 sm:space-y-10">
+      {/* Onboarding Dialog */}
+      <OnboardingModal
+        isOpen={onboardingOpen}
+        onOpenChange={setOnboardingOpen}
+        onComplete={(selected) => {
+          setInterests(selected);
+          void load(null);
+        }}
+      />
 
-      <Glass
-        intensity="strong"
-        className="space-y-4 p-4 sm:space-y-5 sm:p-6 glow-soft animate-in-up"
-      >
-        <form
-          className="flex flex-col gap-2.5 sm:flex-row sm:gap-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            submitSearch(topicInput);
-          }}
-        >
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
+      {/* Discovery Hero Search & Categories Bar */}
+      <section className="space-y-4">
+        {/* Prominent Discovery Search Bar */}
+        <div className="relative">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              submitSearch(topicInput);
+            }}
+            className="relative flex items-center"
+          >
+            <Search className="pointer-events-none absolute left-4 h-5 w-5 text-muted-foreground" />
+            <input
               ref={inputRef}
-              placeholder="Tìm theo từ khoá tuỳ ý..."
-              className="glass-input h-11 pl-10 pr-12 text-base"
+              type="text"
               value={topicInput}
               onChange={(e) => setTopicInput(e.target.value)}
               onFocus={() => setSuggestOpen(true)}
-              // Delay so a click on a suggestion registers before the list closes.
-              onBlur={() => window.setTimeout(() => setSuggestOpen(false), 150)}
-              maxLength={100}
+              onBlur={() => setTimeout(() => setSuggestOpen(false), 150)}
+              placeholder="Tìm video, chủ đề, kênh..."
+              className="h-12 sm:h-14 w-full rounded-2xl border border-border/70 bg-card/70 pl-11 pr-28 text-base text-foreground shadow-sm backdrop-blur transition placeholder:text-muted-foreground/80 focus:border-primary/50 focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
-            <kbd className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded border border-border px-1.5 py-0.5 text-[11px] text-muted-foreground sm:block">
-              /
-            </kbd>
-
-            {suggestOpen && recent.items.length > 0 ? (
-              <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-30 overflow-hidden rounded-xl border border-border bg-popover p-1 shadow-xl">
-                <div className="flex items-center justify-between px-2 py-1">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Tìm gần đây
-                  </span>
-                  <button
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={recent.clear}
-                    className="text-[11px] text-muted-foreground hover:text-foreground"
-                  >
-                    Xoá hết
-                  </button>
-                </div>
-                <ul>
-                  {recent.items.map((term) => (
-                    <li key={term} className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => submitSearch(term)}
-                        className="flex flex-1 items-center gap-2 truncate rounded-lg px-2 py-1.5 text-left text-sm hover:bg-foreground/5"
-                      >
-                        <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                        <span className="truncate">{term}</span>
-                      </button>
-                      <button
-                        type="button"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => recent.remove(term)}
-                        aria-label={"Xoá " + term}
-                        className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-          </div>
-
-          <Button
-            type="submit"
-            size="lg"
-            className="glow-primary"
-            disabled={isLoading || (topicInput.trim().length < 2 && interests.length === 0)}
-          >
-            {isLoading ? "Đang tìm..." : "Tìm video"}
-          </Button>
-        </form>
-
-        <FilterChips
-          value={chip}
-          disabled={isLoading}
-          onChange={(topic) => {
-            setChip(topic);
-            if (topic) setTopicInput(topic);
-          }}
-        />
-
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <VideoFiltersBar value={filters} onChange={setFilters} disabled={isLoading} />
-          <ViewToggle view={view} onChange={changeView} />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary" className="bg-foreground/5 text-foreground ring-1 ring-border">
-            {mode === "trending" ? (
-              <>
-                <Sparkles className="mr-1 h-3 w-3 text-primary" /> Đề xuất chính
-              </>
-            ) : (
-              <>
-                <PlayCircle className="mr-1 h-3 w-3 text-primary" /> {responseTopic || "Đã tìm"}
-              </>
-            )}
-          </Badge>
-          {mode === "search" ? (
-            <Button type="button" variant="ghost" size="sm" onClick={resetToTrending}>
-              <X className="mr-1" /> Quay lại đề xuất chính
-            </Button>
-          ) : null}
-        </div>
-
-        <InterestPicker value={interests} onChange={setInterests} />
-      </Glass>
-
-      <StatusMessage status={status} view={view} onRetry={() => void load(null)} />
-
-      {featured ? (
-        <section
-          className={cn(
-            "space-y-3 transition-all duration-300",
-            theater &&
-              "-mx-3 rounded-3xl bg-black/50 px-3 py-4 backdrop-blur sm:-mx-6 sm:px-6 sm:py-5 lg:-mx-10 lg:px-10",
-          )}
-        >
-          <div className="flex items-center justify-end gap-1 sm:gap-2">
-            {watchLater.next(featuredId) ? (
-              <Button type="button" size="sm" variant="ghost" onClick={playNext}>
-                <SkipForward className="mr-1 h-4 w-4" /> Phát tiếp
+            <div className="absolute right-2.5 flex items-center gap-1.5">
+              {topicInput ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTopicInput("");
+                    setQuery("");
+                    setChip(null);
+                  }}
+                  className="grid h-8 w-8 place-items-center rounded-xl text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              ) : null}
+              <Button type="submit" size="sm" className="rounded-xl px-4 glow-primary">
+                Tìm kiếm
               </Button>
-            ) : null}
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={() => setTheater((v) => !v)}
-              aria-pressed={theater}
-              title="Phím tắt: T"
-            >
-              {theater ? (
-                <>
-                  <Minimize2 className="mr-1 h-4 w-4" />
-                  <span className="hidden sm:inline">Thoát rạp phim</span>
-                </>
-              ) : (
-                <>
-                  <Maximize2 className="mr-1 h-4 w-4" />
-                  <span className="hidden sm:inline">Chế độ rạp phim</span>
-                </>
-              )}
-            </Button>
+            </div>
+          </form>
+
+          {/* Autocomplete / Recent Searches Dropdown */}
+          {suggestOpen && recent.items.length > 0 && (
+            <div className="absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-2xl border border-border bg-card/95 p-2 shadow-2xl backdrop-blur-xl">
+              <div className="flex items-center justify-between px-3 py-1.5">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Tìm kiếm gần đây
+                </span>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={recent.clear}
+                  className="text-xs text-muted-foreground hover:text-primary"
+                >
+                  Xóa tất cả
+                </button>
+              </div>
+              <div className="flex flex-col gap-0.5">
+                {recent.items.slice(0, 5).map((term) => (
+                  <div
+                    key={term}
+                    className="flex items-center justify-between rounded-xl px-3 py-2 text-sm transition hover:bg-foreground/5"
+                  >
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => submitSearch(term)}
+                      className="flex flex-1 items-center gap-2.5 text-left text-foreground/90"
+                    >
+                      <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="truncate">{term}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => recent.remove(term)}
+                      className="text-muted-foreground hover:text-foreground"
+                      aria-label={"Xóa " + term}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Horizontal Category Chips */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <FilterChips
+              value={chip}
+              onChange={(nextChip) => {
+                setChip(nextChip);
+                setTopicInput(nextChip ?? "");
+                setQuery(nextChip ?? "");
+              }}
+              disabled={isLoading}
+            />
           </div>
 
-          <div className={cn(theater && "mx-auto max-w-6xl")}>
-            <FeaturedPlayer
-              ref={featuredRef}
-              item={featured}
-              minimized={miniOpen}
-              onMinimizeToggle={() => setMiniOpen((v) => !v)}
+          {/* Preference Pill */}
+          <button
+            type="button"
+            onClick={() => setOnboardingOpen(true)}
+            className="hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/70 bg-card/60 px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:border-primary/50 hover:text-foreground"
+            title="Tuỳ chỉnh chủ đề yêu thích"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            <span>Sở thích</span>
+            {interests.length > 0 ? (
+              <span className="grid h-4 w-4 place-items-center rounded-full bg-primary/20 text-[10px] font-bold text-primary">
+                {interests.length}
+              </span>
+            ) : null}
+          </button>
+        </div>
+
+        {/* User's Selected Interests Bar */}
+        {interests.length > 0 && !isCustomFeed && (
+          <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1 text-foreground/75 font-medium">
+              <Sparkles className="h-3.5 w-3.5 text-primary" /> Đang ưu tiên:
+            </span>
+            {interests.map((topic) => (
+              <button
+                key={topic}
+                type="button"
+                onClick={() => {
+                  setChip(topic);
+                  setQuery(topic);
+                }}
+                className="rounded-full bg-primary/10 px-2.5 py-0.5 text-primary hover:bg-primary/20 transition"
+              >
+                {topic}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setOnboardingOpen(true)}
+              className="text-[11px] underline underline-offset-2 hover:text-foreground"
+            >
+              Chỉnh sửa
+            </button>
+          </div>
+        )}
+      </section>
+
+      {/* Main Content Area: Search Results OR Curated Discovery Home */}
+      {isCustomFeed ? (
+        // Custom search or selected topic results
+        <section className="space-y-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border/50 pb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="font-display text-xl font-bold tracking-tight sm:text-2xl">
+                  {responseTopic ? `Kết quả cho "${responseTopic}"` : "Đang tìm kiếm..."}
+                </h2>
+                <button
+                  type="button"
+                  onClick={resetToHome}
+                  className="rounded-lg p-1 text-xs text-muted-foreground hover:bg-foreground/10 hover:text-foreground"
+                  title="Xoá bộ lọc về trang chủ"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {items.length} video tìm thấy
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <VideoFiltersBar
+                value={filters}
+                onChange={setFilters}
+                disabled={isLoading}
+              />
+              <ViewToggle view={view} onChange={changeView} />
+            </div>
+          </div>
+
+          {/* Active search video grid or loading skeletons */}
+          {isLoading && items.length === 0 ? (
+            <VideoGridSkeleton count={8} view={view} />
+          ) : error && items.length === 0 ? (
+            <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-6 text-center">
+              <p className="font-semibold text-destructive">Không thể tải video.</p>
+              <p className="mt-1 text-sm text-muted-foreground">{error.message}</p>
+              <Button size="sm" variant="outline" className="mt-3" onClick={() => void load(null)}>
+                Thử lại
+              </Button>
+            </div>
+          ) : items.length === 0 ? (
+            <div className="rounded-2xl border border-border/60 bg-card/40 p-10 text-center">
+              <Compass className="mx-auto mb-2 h-10 w-10 text-muted-foreground/40" />
+              <p className="font-medium text-foreground">Không tìm thấy video nào.</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Hãy thử đổi từ khóa tìm kiếm hoặc bớt bộ lọc.
+              </p>
+              <Button size="sm" variant="secondary" className="mt-4" onClick={resetToHome}>
+                Xem video thịnh hành
+              </Button>
+            </div>
+          ) : (
+            <VideoGrid
+              items={items}
+              view={view}
+              onPlay={playItem}
+              onToggleWatchLater={watchLater.toggle}
+              isInWatchLater={watchLater.has}
+              activeId={featuredId}
             />
+          )}
+
+          {/* Infinite Scroll Sentinel */}
+          <div ref={sentinelRef} className="py-4 text-center">
+            {isLoadingMore && (
+              <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                <span>Đang tải thêm video...</span>
+              </div>
+            )}
           </div>
         </section>
-      ) : null}
+      ) : (
+        // Multi-section Discovery Home Feed
+        <div className="space-y-10 sm:space-y-12">
+          {/* Spotlight Hero Player (if user selects a video or default) */}
+          {featured ? (
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-primary/15 text-primary">
+                    <Flame className="h-4 w-4" />
+                  </span>
+                  <h2 className="font-display text-lg font-bold sm:text-xl">
+                    Tiêu điểm nổi bật
+                  </h2>
+                </div>
+                <ViewToggle view={view} onChange={changeView} />
+              </div>
+              <FeaturedPlayer
+                ref={featuredRef}
+                item={featured}
+                onMinimizeToggle={() => setMiniOpen(true)}
+              />
+            </section>
+          ) : null}
 
+          {/* Section 1: Trending Feed */}
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="grid h-7 w-7 place-items-center rounded-lg bg-orange-500/15 text-orange-500">
+                  <TrendingUp className="h-4 w-4" />
+                </span>
+                <h2 className="font-display text-xl font-bold tracking-tight sm:text-2xl">
+                  {interests.length > 0 ? "Đề xuất theo sở thích của bạn" : "Đang thịnh hành hôm nay"}
+                </h2>
+              </div>
+              {!featured ? <ViewToggle view={view} onChange={changeView} /> : null}
+            </div>
+
+            {isLoading && items.length === 0 ? (
+              <VideoGridSkeleton count={8} view={view} />
+            ) : (
+              <VideoGrid
+                items={featured ? rest.slice(0, 8) : items.slice(0, 8)}
+                view={view}
+                onPlay={playItem}
+                onToggleWatchLater={watchLater.toggle}
+                isInWatchLater={watchLater.has}
+                activeId={featuredId}
+              />
+            )}
+          </section>
+
+          {/* Section 2: Music Curated Section */}
+          {musicItems.length > 0 && (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-rose-500/15 text-rose-500">
+                    <Music className="h-4 w-4" />
+                  </span>
+                  <h2 className="font-display text-xl font-bold tracking-tight sm:text-2xl">
+                    Âm nhạc nổi bật
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setChip("Âm nhạc");
+                    setQuery("Âm nhạc");
+                  }}
+                  className="text-xs font-semibold text-primary hover:underline"
+                >
+                  Xem thêm
+                </button>
+              </div>
+
+              <VideoGrid
+                items={musicItems}
+                view="grid"
+                onPlay={playItem}
+                onToggleWatchLater={watchLater.toggle}
+                isInWatchLater={watchLater.has}
+              />
+            </section>
+          )}
+
+          {/* Section 3: Tech & Programming Curated Section */}
+          {techItems.length > 0 && (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-indigo-500/15 text-indigo-500">
+                    <Terminal className="h-4 w-4" />
+                  </span>
+                  <h2 className="font-display text-xl font-bold tracking-tight sm:text-2xl">
+                    Công nghệ & Lập trình
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setChip("Lập trình");
+                    setQuery("Lập trình");
+                  }}
+                  className="text-xs font-semibold text-primary hover:underline"
+                >
+                  Xem thêm
+                </button>
+              </div>
+
+              <VideoGrid
+                items={techItems}
+                view="grid"
+                onPlay={playItem}
+                onToggleWatchLater={watchLater.toggle}
+                isInWatchLater={watchLater.has}
+              />
+            </section>
+          )}
+
+          {/* Section 4: All Trending remaining videos */}
+          {items.length > 8 && (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-500/15 text-emerald-500">
+                    <Compass className="h-4 w-4" />
+                  </span>
+                  <h2 className="font-display text-xl font-bold tracking-tight sm:text-2xl">
+                    Khám phá thêm
+                  </h2>
+                </div>
+              </div>
+
+              <VideoGrid
+                items={items.slice(8)}
+                view={view}
+                onPlay={playItem}
+                onToggleWatchLater={watchLater.toggle}
+                isInWatchLater={watchLater.has}
+                activeId={featuredId}
+              />
+
+              <div ref={sentinelRef} className="py-4 text-center">
+                {isLoadingMore && (
+                  <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    <span>Đang tải thêm video...</span>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+        </div>
+      )}
+
+      {/* Floating Watch Later Panel */}
       <WatchLaterPanel
         items={watchLater.items}
         currentId={featuredId}
@@ -454,49 +709,17 @@ export function HeroExplorer() {
         onClear={watchLater.clear}
       />
 
-      {rest.length > 0 ? (
-        <section className="space-y-4 animate-in-up">
-          <SectionHeading
-            title={mode === "trending" ? "Đang thịnh hành" : "Đề xuất liên quan"}
-            subtitle={
-              mode === "trending"
-                ? "Tự động theo khu vực Việt Nam"
-                : "Gợi ý cho \"" + (responseTopic || activeTopic) + "\""
-            }
-          />
-          <VideoGrid
-            items={rest}
-            view={view}
-            activeId={featuredId}
-            onPlay={playItem}
-            onToggleWatchLater={watchLater.toggle}
-            isInWatchLater={watchLater.has}
-          />
-
-          <div ref={sentinelRef} aria-hidden className="h-1 w-full" />
-
-          {isLoadingMore ? (
-            <p className="flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> Đang tải thêm video...
-            </p>
-          ) : null}
-
-          {!nextPageToken && !isLoading ? (
-            <p className="py-4 text-center text-xs text-muted-foreground">
-              Đã hiển thị hết kết quả.
-            </p>
-          ) : null}
-        </section>
-      ) : null}
-
-      <MiniPlayer
-        item={miniOpen ? featured : null}
-        onClose={() => setMiniOpen(false)}
-        onExpand={() => {
-          setMiniOpen(false);
-          requestAnimationFrame(() => featuredRef.current?.scrollIntoView());
-        }}
-      />
+      {/* Sticky Mini Player when scrolled */}
+      {featured && miniOpen && (
+        <MiniPlayer
+          item={featured}
+          onClose={() => setMiniOpen(false)}
+          onExpand={() => {
+            setMiniOpen(false);
+            featuredRef.current?.scrollIntoView();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -512,7 +735,7 @@ function ViewToggle({
     <div
       role="group"
       aria-label="Kiểu hiển thị"
-      className="flex items-center gap-0.5 rounded-full border border-border p-0.5"
+      className="flex items-center gap-0.5 rounded-xl border border-border/80 bg-card/60 p-0.5 backdrop-blur"
     >
       <button
         type="button"
@@ -520,9 +743,9 @@ function ViewToggle({
         aria-pressed={view === "grid"}
         aria-label="Hiển thị dạng lưới"
         className={cn(
-          "grid h-7 w-8 place-items-center rounded-full transition",
+          "grid h-7 w-8 place-items-center rounded-lg transition",
           view === "grid"
-            ? "bg-foreground text-background"
+            ? "bg-foreground text-background shadow-sm"
             : "text-muted-foreground hover:text-foreground",
         )}
       >
@@ -534,9 +757,9 @@ function ViewToggle({
         aria-pressed={view === "list"}
         aria-label="Hiển thị dạng danh sách"
         className={cn(
-          "grid h-7 w-8 place-items-center rounded-full transition",
+          "grid h-7 w-8 place-items-center rounded-lg transition",
           view === "list"
-            ? "bg-foreground text-background"
+            ? "bg-foreground text-background shadow-sm"
             : "text-muted-foreground hover:text-foreground",
         )}
       >
@@ -544,138 +767,4 @@ function ViewToggle({
       </button>
     </div>
   );
-}
-
-function toStatus({
-  activeTopic,
-  items,
-  error,
-  isLoading,
-}: {
-  activeTopic: string;
-  items: VideoItem[];
-  error: { code: ErrorCode; message: string } | null;
-  isLoading: boolean;
-}): SearchStatus {
-  if (isLoading && items.length === 0) return { kind: "loading", topic: activeTopic };
-  if (error?.code === "missing-key") return { kind: "missing-key" };
-  if (error && items.length === 0) {
-    return { kind: "error", topic: activeTopic, code: error.code, message: error.message };
-  }
-  if (!isLoading && items.length === 0 && activeTopic) return { kind: "empty", topic: activeTopic };
-  if (items.length === 0) return { kind: "idle" };
-  return { kind: "ready", topic: activeTopic, items, featuredId: items[0]?.id ?? null };
-}
-
-function Hero() {
-  return (
-    <section className="relative isolate animate-in-up">
-      <div className="space-y-3 text-center">
-        <Badge
-          variant="secondary"
-          className="mx-auto inline-flex w-fit bg-foreground/5 text-foreground ring-1 ring-border"
-        >
-          <Sparkles className="mr-1 h-3 w-3 text-primary" /> Cá nhân hoá theo sở thích
-        </Badge>
-        <h1 className="font-display text-3xl font-bold leading-[1.12] tracking-tight sm:text-5xl md:text-6xl">
-          Khám phá video YouTube
-          <br className="hidden sm:block" />{" "}
-          <span className="text-gradient">theo cách của bạn.</span>
-        </h1>
-        <p className="mx-auto max-w-2xl text-sm text-muted-foreground sm:text-base">
-          Chọn vài sở thích, hệ thống tự động tìm và đề xuất video xu hướng từ YouTube.
-        </p>
-      </div>
-    </section>
-  );
-}
-
-function SectionHeading({ title, subtitle }: { title: string; subtitle?: string }) {
-  return (
-    <div className="flex items-end justify-between gap-4">
-      <div className="min-w-0">
-        <h2 className="font-display text-xl font-semibold tracking-tight sm:text-2xl">{title}</h2>
-        {subtitle ? (
-          <p className="truncate text-sm text-muted-foreground">{subtitle}</p>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function StatusMessage({
-  status,
-  view,
-  onRetry,
-}: {
-  status: SearchStatus;
-  view: ViewMode;
-  onRetry: () => void;
-}) {
-  if (status.kind === "idle" || status.kind === "ready") return null;
-  if (status.kind === "loading") {
-    return (
-      <div className="space-y-3" aria-live="polite">
-        <p className="text-sm text-muted-foreground">Đang tải đề xuất...</p>
-        <ul
-          className={cn(
-            view === "grid"
-              ? "grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3 2xl:grid-cols-4"
-              : "flex flex-col gap-3",
-          )}
-          aria-hidden
-        >
-          {Array.from({ length: 6 }).map((_, i) =>
-            view === "grid" ? (
-              <li key={i} className="overflow-hidden rounded-2xl glass">
-                <Skeleton className="aspect-video w-full" />
-                <div className="space-y-2 p-4">
-                  <Skeleton className="h-3 w-3/4" />
-                  <Skeleton className="h-3 w-1/2" />
-                </div>
-              </li>
-            ) : (
-              <li key={i} className="flex gap-3 rounded-2xl glass p-2.5">
-                <Skeleton className="aspect-video w-36 shrink-0 rounded-xl sm:w-52" />
-                <div className="flex-1 space-y-2 py-1">
-                  <Skeleton className="h-3 w-3/4" />
-                  <Skeleton className="h-3 w-1/2" />
-                  <Skeleton className="h-3 w-1/3" />
-                </div>
-              </li>
-            ),
-          )}
-        </ul>
-      </div>
-    );
-  }
-  if (status.kind === "empty") {
-    return (
-      <Glass intensity="soft" className="p-4 text-sm">
-        Không tìm thấy video cho chủ đề <strong>{status.topic}</strong>. Thử bớt bộ lọc hoặc
-        đổi chủ đề nhé.
-      </Glass>
-    );
-  }
-  if (status.kind === "missing-key") {
-    return (
-      <Glass intensity="soft" className="border-destructive/40 bg-destructive/10 p-4 text-sm">
-        Máy chủ chưa được cấu hình <code className="rounded bg-muted px-1">YOUTUBE_API_KEY</code>.
-        Thêm biến này vào <code className="rounded bg-muted px-1">.env.local</code> rồi khởi động
-        lại <code className="rounded bg-muted px-1">npm run dev</code>.
-      </Glass>
-    );
-  }
-  if (status.kind === "error") {
-    return (
-      <Glass intensity="soft" className="border-destructive/40 bg-destructive/10 p-4 text-sm">
-        <p className="font-medium text-destructive">Không thể tải video.</p>
-        <p className="mt-1 text-muted-foreground">{status.message}</p>
-        <Button size="sm" variant="outline" className="mt-2" onClick={onRetry}>
-          Thử lại
-        </Button>
-      </Glass>
-    );
-  }
-  return null;
 }
