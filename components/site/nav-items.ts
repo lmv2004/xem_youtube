@@ -36,11 +36,12 @@ export const PRIMARY_NAV: NavItem[] = [
 export const LIBRARY_NAV: NavItem[] = [
   { href: "/favorites", label: "Yêu thích", shortLabel: "Thích", icon: Heart },
   { href: "/history", label: "Lịch sử", shortLabel: "Lịch sử", icon: History },
-  { href: "/collections", label: "Bộ sưu tập", shortLabel: "Bộ sưu tập", icon: Library },
+  { href: "/favorites?tab=collections", label: "Bộ sưu tập", shortLabel: "Bộ sưu tập", icon: Library },
 ];
 
 export const ACCOUNT_NAV: NavItem[] = [
   { href: "/account", label: "Tài khoản", shortLabel: "Tài khoản", icon: Settings },
+  { href: "/account?tab=settings", label: "Cài đặt", shortLabel: "Cài đặt", icon: Settings },
 ];
 
 /**

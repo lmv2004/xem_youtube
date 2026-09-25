@@ -46,6 +46,30 @@ async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Respons
   }
 }
 
+// In-memory response cache to minimize YouTube API quota usage and speed up repeated views.
+type CacheEntry<T> = { data: T; expiresAt: number };
+const memoryCache = new Map<string, CacheEntry<unknown>>();
+
+function getFromCache<T>(key: string): T | null {
+  const entry = memoryCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    memoryCache.delete(key);
+    return null;
+  }
+  return entry.data as T;
+}
+
+function putInCache<T>(key: string, data: T, ttlSeconds = 600): void {
+  if (memoryCache.size > 300) {
+    const now = Date.now();
+    for (const [k, v] of memoryCache.entries()) {
+      if (now > v.expiresAt) memoryCache.delete(k);
+    }
+  }
+  memoryCache.set(key, { data, expiresAt: Date.now() + ttlSeconds * 1000 });
+}
+
 function ensureKey(): string {
   const key = process.env.YOUTUBE_API_KEY?.trim();
   if (!key) fail("missing-key", "Chưa cấu hình YOUTUBE_API_KEY trên máy chủ.");
@@ -155,6 +179,10 @@ function pickThumbnail(snip: SearchListItem["snippet"]): string {
 
 // Public entry point. Topic must be already validated by the caller.
 export async function searchVideos(topic: string): Promise<VideoItem[]> {
+  const cacheKey = `search:${topic.trim().toLowerCase()}`;
+  const cached = getFromCache<VideoItem[]>(cacheKey);
+  if (cached) return cached;
+
   const key = ensureKey();
 
   const searchUrl = new URL(SEARCH_ENDPOINT);
@@ -238,6 +266,7 @@ export async function searchVideos(topic: string): Promise<VideoItem[]> {
 
   // Sort by viewCount desc, falling back to search order when viewCount is 0.
   items.sort((a, b) => b.viewCount - a.viewCount);
+  putInCache(cacheKey, items, 600); // 10 minutes cache
   return items;
 }
 
@@ -247,14 +276,16 @@ export function isStructuredError(e: unknown): e is Error & YouTubeError {
   return isYouTubeError(e);
 }
 
-// Fetch a single video by id via YouTube Data API videos.list. Returns null
-// when the id is unknown, removed, or the payload is empty. Mirrors the
-// shape returned by searchVideos() and listTrending() so callers can use
-// any VideoItem interchangeably.
+// Fetch a single video by id via YouTube Data API videos.list.
 export async function getVideoById(id: string): Promise<VideoItem | null> {
-  const key = ensureKey();
   const cleanId = id.trim();
   if (!cleanId) return null;
+
+  const cacheKey = `video:${cleanId}`;
+  const cached = getFromCache<VideoItem>(cacheKey);
+  if (cached) return cached;
+
+  const key = ensureKey();
 
   const url = new URL(VIDEOS_ENDPOINT);
   url.searchParams.set("part", "statistics,contentDetails,snippet,status");
@@ -285,7 +316,7 @@ export async function getVideoById(id: string): Promise<VideoItem | null> {
   const durationSeconds = parseDurationSeconds(v.contentDetails?.duration);
   const embeddable = v.status?.embeddable !== false ? true : false;
 
-  return {
+  const item: VideoItem = {
     id: v.id,
     title,
     channel,
@@ -298,17 +329,24 @@ export async function getVideoById(id: string): Promise<VideoItem | null> {
     viewCount,
     embeddable,
   };
+
+  putInCache(cacheKey, item, 1800); // 30 minutes cache for video details
+  return item;
 }
 
 // Fetches most-popular videos for a region (no query required).
-// Returns a normalized list of VideoItem, matching `searchVideos()` shape.
 export async function listTrending(regionCode: string, maxResults = MAX_RESULTS): Promise<VideoItem[]> {
+  const normRegion = regionCode.slice(0, 2).toUpperCase();
+  const cacheKey = `trending:${normRegion}:${maxResults}`;
+  const cached = getFromCache<VideoItem[]>(cacheKey);
+  if (cached) return cached;
+
   const key = ensureKey();
 
   const url = new URL(VIDEOS_ENDPOINT);
   url.searchParams.set("part", "statistics,contentDetails,snippet,status");
   url.searchParams.set("chart", "mostPopular");
-  url.searchParams.set("regionCode", regionCode.slice(0, 2).toUpperCase());
+  url.searchParams.set("regionCode", normRegion);
   url.searchParams.set("maxResults", String(maxResults));
   url.searchParams.set("key", key);
 
@@ -353,5 +391,47 @@ export async function listTrending(regionCode: string, maxResults = MAX_RESULTS)
     .filter((v): v is VideoItem => v !== null);
 
   items.sort((a, b) => b.viewCount - a.viewCount);
+  putInCache(cacheKey, items, 900); // 15 minutes cache
   return items;
+}
+
+// Fetch suggested/related videos for watch page
+export async function getRelatedVideos(video: VideoItem, maxResults = 10): Promise<VideoItem[]> {
+  const cacheKey = `related:${video.id}`;
+  const cached = getFromCache<VideoItem[]>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    // Generate clean search words from title
+    const cleanTitle = (video.title || "")
+      .replace(/[\(\)\[\]\|#\-\+\_\,\.\:\;]/g, " ")
+      .trim();
+    const words = cleanTitle
+      .split(/\s+/)
+      .filter((w) => w.length > 2)
+      .slice(0, 3)
+      .join(" ");
+
+    const query = words || video.channel;
+    const searchResults = await searchVideos(query);
+    const related = searchResults.filter((it) => it.id !== video.id);
+
+    if (related.length >= maxResults) {
+      const result = related.slice(0, maxResults);
+      putInCache(cacheKey, result, 900);
+      return result;
+    }
+
+    // Supplement with trending if needed
+    const trending = await listTrending("VN", 12);
+    const combined = [
+      ...related,
+      ...trending.filter((t) => t.id !== video.id && !related.some((r) => r.id === t.id)),
+    ];
+    const result = combined.slice(0, maxResults);
+    putInCache(cacheKey, result, 900);
+    return result;
+  } catch {
+    return [];
+  }
 }

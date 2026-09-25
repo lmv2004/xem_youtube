@@ -1,7 +1,6 @@
-# XemPhimYouTube
+# XemPhim
 
-Trang web Next.js bằng **tiếng Việt** giúp bạn chọn nhiều sở thích, tự động tìm và đề xuất
-video YouTube xu hướng, đồng thời **lưu video yêu thích vào nhiều danh sách cá nhân**.
+Trang web Next.js bằng **tiếng Việt** giúp bạn khám phá, xem video YouTube chất lượng cao theo trải nghiệm điện ảnh (Cinematic Streaming Platform), tự động tìm và đề xuất video xu hướng, đồng thời **lưu video yêu thích vào nhiều danh sách cá nhân** và **xem chung (Watch Party)** theo thời gian thực.
 
 Phiên bản này (v2) dùng shadcn/ui (dark mode), Prisma + SQLite, Auth.js v5 với email/mật khẩu
 và Google OAuth. Khoá YouTube vẫn chỉ nằm phía server, không bao giờ lọt vào bundle trình duyệt.

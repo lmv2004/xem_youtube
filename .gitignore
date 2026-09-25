@@ -42,3 +42,15 @@ logs/
 # os
 .DS_Store
 Thumbs.db
+
+# local agent environment
+.agents/
+.autoclaw/
+.claude/
+.cluster/
+AGENTS.md
+HEARTBEAT.md
+IDENTITY.md
+SOUL.md
+TOOLS.md
+USER.md

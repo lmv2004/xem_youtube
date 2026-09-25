@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CollectionManager } from "@/components/collection-manager";
 
-export const metadata = { title: "Chi tiết danh sách - XemPhimYouTube" };
+export const metadata = { title: "Chi tiết bộ sưu tập | XemPhim" };
 
 export default async function CollectionDetailPage({
   params,
