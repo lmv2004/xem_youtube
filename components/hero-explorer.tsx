@@ -35,6 +35,7 @@ import { OnboardingModal } from "@/components/onboarding-modal";
 import { useWatchLater } from "@/hooks/use-watch-later";
 import { useRecentSearches } from "@/hooks/use-recent-searches";
 import { DEFAULT_FILTERS, filtersToSearchParams, type VideoFilters } from "@/lib/filters";
+import { extractYouTubeId } from "@/lib/youtube-url";
 import { cn } from "@/lib/utils";
 
 const STORAGE_INTERESTS = "xemphim:interests";
@@ -286,6 +287,11 @@ export function HeroExplorer() {
   const submitSearch = useCallback(
     (term: string) => {
       const t = term.trim();
+      const videoId = extractYouTubeId(t);
+      if (videoId) {
+        router.push(`/watch/${videoId}`);
+        return;
+      }
       setChip(null);
       setTopicInput(t);
       setQuery(t);
@@ -317,7 +323,14 @@ export function HeroExplorer() {
       />
 
       {/* Discovery Hero Search & Categories Bar */}
-      <section className="space-y-4">
+      <section className="space-y-5 rounded-3xl border border-border bg-card/70 p-4 shadow-sm sm:p-6">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary">Không gian giải trí của bạn</p>
+            <h1 className="font-display text-2xl font-bold tracking-tight sm:text-4xl">Hôm nay, bạn muốn xem gì?</h1>
+            <p className="mt-2 text-sm text-muted-foreground">Khám phá chủ đề yêu thích hoặc dán link YouTube để xem ngay.</p>
+          </div>
+        </div>
         {/* Prominent Discovery Search Bar */}
         <div className="relative">
           <form
@@ -335,7 +348,8 @@ export function HeroExplorer() {
               onChange={(e) => setTopicInput(e.target.value)}
               onFocus={() => setSuggestOpen(true)}
               onBlur={() => setTimeout(() => setSuggestOpen(false), 150)}
-              placeholder="Tìm video, chủ đề, kênh..."
+              aria-label="Tìm video hoặc dán liên kết YouTube"
+              placeholder="Tìm video hoặc dán link YouTube..."
               className="h-12 sm:h-14 w-full rounded-2xl border border-border/70 bg-card/70 pl-11 pr-28 text-base text-foreground shadow-sm backdrop-blur transition placeholder:text-muted-foreground/80 focus:border-primary/50 focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
             <div className="absolute right-2.5 flex items-center gap-1.5">
@@ -347,6 +361,7 @@ export function HeroExplorer() {
                     setQuery("");
                     setChip(null);
                   }}
+                  aria-label="Xóa tìm kiếm"
                   className="grid h-8 w-8 place-items-center rounded-xl text-muted-foreground hover:text-foreground"
                 >
                   <X className="h-4 w-4" />
