@@ -1,3 +1,4 @@
+import { messageCursor, parseMessageCursor } from "@/lib/room-sync";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
@@ -20,7 +21,8 @@ const SCOPE = "api:rooms.sync";
 const syncSchema = z.object({
   clientId: z.string().trim().min(1).max(64),
   displayName: z.string().trim().min(1).max(60),
-  after: z.string().trim().max(40).nullish(),
+  after: z.string().trim().max(120).nullish(),
+  heartbeat: z.boolean().default(true),
 });
 
 /**
@@ -48,50 +50,64 @@ export const POST = withRequestLog(SCOPE, async (request, context) => {
     return NextResponse.json({ message: "Phòng không tồn tại." }, { status: 404 });
   }
 
-  const session = await auth();
   const now = new Date();
+  if (parsed.data.heartbeat) {
+    const session = await auth();
 
-  // Heartbeat first, then drop anyone who stopped sending one.
-  await prisma.roomPresence.upsert({
-    where: { roomId_clientId: { roomId: room.id, clientId } },
-    create: {
-      roomId: room.id,
-      clientId,
-      userId: session?.user?.id ?? null,
-      name: displayName,
-      image: session?.user?.image ?? null,
-      lastSeenAt: now,
-    },
-    update: {
-      lastSeenAt: now,
-      name: displayName,
-      userId: session?.user?.id ?? null,
-      image: session?.user?.image ?? null,
-    },
-  });
+    // Ordinary state polls stay read-only; authenticate/write on heartbeats only.
+    try {
+    await prisma.roomPresence.upsert({
+      where: { roomId_clientId: { roomId: room.id, clientId } },
+      create: {
+        roomId: room.id,
+        clientId,
+        userId: session?.user?.id ?? null,
+        name: displayName,
+        image: session?.user?.image ?? null,
+        lastSeenAt: now,
+      },
+      update: {
+        lastSeenAt: now,
+        name: displayName,
+        userId: session?.user?.id ?? null,
+        image: session?.user?.image ?? null,
+      },
+    });
 
-  await prisma.roomPresence.deleteMany({
-    where: {
-      roomId: room.id,
-      lastSeenAt: { lt: new Date(now.getTime() - PRESENCE_TIMEOUT_MS) },
-    },
-  });
+    } catch (error) {
+      // The host can delete the room while this heartbeat is in flight.
+      if (!await prisma.room.findUnique({ where: { code } })) {
+        return NextResponse.json({ message: "Phòng đã đóng." }, { status: 404 });
+      }
+      throw error;
+    }
 
-  const afterDate = after ? new Date(after) : null;
-  const validAfter = afterDate && !Number.isNaN(afterDate.getTime()) ? afterDate : null;
+    await prisma.roomPresence.deleteMany({
+      where: {
+        roomId: room.id,
+        lastSeenAt: { lt: new Date(now.getTime() - PRESENCE_TIMEOUT_MS) },
+      },
+    });
+
+  }
+
+  const cursor = parseMessageCursor(after);
 
   const [rows, presences] = await Promise.all([
     prisma.roomMessage.findMany({
       where: {
         roomId: room.id,
-        ...(validAfter ? { createdAt: { gt: validAfter } } : {}),
+        ...(cursor ? cursor.id ? { OR: [
+          { createdAt: { gt: cursor.createdAt } },
+          { createdAt: cursor.createdAt, id: { gt: cursor.id } },
+        ] } : { createdAt: { gte: cursor.createdAt } } : {}),
       },
-      orderBy: { createdAt: validAfter ? "asc" : "desc" },
+      orderBy: [{ createdAt: cursor ? "asc" : "desc" }, { id: cursor ? "asc" : "desc" }],
       take: MESSAGE_PAGE_SIZE,
       include: { user: { select: { id: true, name: true, image: true } } },
     }),
     prisma.roomPresence.findMany({
-      where: { roomId: room.id },
+      where: { roomId: room.id, lastSeenAt: { gte: new Date(now.getTime() - PRESENCE_TIMEOUT_MS) } },
       orderBy: { joinedAt: "asc" },
       take: 100,
     }),
@@ -99,7 +115,7 @@ export const POST = withRequestLog(SCOPE, async (request, context) => {
 
   // Without a cursor we fetch the newest page descending, then flip it so the
   // client always receives messages oldest-first.
-  const ordered = validAfter ? rows : [...rows].reverse();
+  const ordered = cursor ? rows : [...rows].reverse();
 
   const messages = ordered.map((m) => ({
     id: m.id,
@@ -136,11 +152,11 @@ export const POST = withRequestLog(SCOPE, async (request, context) => {
       joinedAt: p.joinedAt.toISOString(),
     })),
     hostOnlyControl: room.hostOnlyControl,
-    cursor: messages.length > 0 ? messages[messages.length - 1].createdAt : after ?? null,
-    serverTime: now.toISOString(),
+    cursor: messages.length > 0 ? messageCursor(messages[messages.length - 1]) : after ?? null,
+    serverTime: new Date().toISOString(),
   };
 
   return NextResponse.json(payload, {
     headers: { "Cache-Control": "no-store" },
   });
-});
+}, { authenticate: false });

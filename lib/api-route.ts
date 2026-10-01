@@ -13,13 +13,13 @@ type RouteContext = { params: Promise<Record<string, string | string[]>> };
 
 type Handler = (request: Request, context: RouteContext) => Promise<Response> | Response;
 
-export function withRequestLog(scope: string, handler: Handler): Handler {
+export function withRequestLog(scope: string, handler: Handler, options: { authenticate?: boolean } = {}): Handler {
   return async (request, context) => {
     const start = Date.now();
     const url = new URL(request.url);
     let session: { user?: { id?: string } } | null = null;
     try {
-      session = await auth();
+      if (options.authenticate !== false) session = await auth();
     } catch {
       session = null;
     }

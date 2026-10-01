@@ -104,9 +104,11 @@ export function SyncPlayer({ videoId, onStateChange, onReady }: Props) {
     void loadYouTubeApi().then((YT) => {
       if (cancelled || !containerRef.current || playerRef.current) return;
 
-      const player = new YT.Player(containerRef.current, {
+      const mount = document.createElement("div");
+      containerRef.current.replaceChildren(mount);
+      const player = new YT.Player(mount, {
         videoId,
-        playerVars: { rel: 0, modestbranding: 1, playsinline: 1 },
+        playerVars: { rel: 0, playsinline: 1, origin: window.location.origin },
         events: {
           onReady: () => {
             onReadyRef.current?.({
@@ -121,7 +123,7 @@ export function SyncPlayer({ videoId, onStateChange, onReady }: Props) {
           onStateChange: (event) => {
             if (event.data === YT.PlayerState.PLAYING) {
               onStateChangeRef.current?.(true, player.getCurrentTime());
-            } else if (event.data === YT.PlayerState.PAUSED) {
+            } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
               onStateChangeRef.current?.(false, player.getCurrentTime());
             }
           },
@@ -143,7 +145,7 @@ export function SyncPlayer({ videoId, onStateChange, onReady }: Props) {
 
   return (
     <div className="aspect-video w-full overflow-hidden rounded-2xl bg-black">
-      <div ref={containerRef} className="h-full w-full" />
+      <div ref={containerRef} className="h-full w-full [&_iframe]:h-full [&_iframe]:w-full" />
     </div>
   );
 }

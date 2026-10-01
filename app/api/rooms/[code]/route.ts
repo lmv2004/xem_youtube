@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { auth } from "@/auth";
+import { deleteOwnedRoom } from "@/lib/delete-room";
 import { prisma } from "@/lib/db";
 import { log } from "@/lib/logger";
 import { withRequestLog } from "@/lib/api-route";
 import {
   canControlPlayback,
   normalizeRoomCode,
+  PRESENCE_TIMEOUT_MS,
   type PlaybackActionKind,
   type RoomDto,
 } from "@/lib/rooms";
@@ -106,7 +109,9 @@ export const PATCH = withRequestLog(SCOPE + ".update", async (request, context) 
   const presence = await prisma.roomPresence.findUnique({
     where: { roomId_clientId: { roomId: room.id, clientId } },
   });
-  if (!presence) {
+  const session = await auth();
+  if (!presence || presence.lastSeenAt.getTime() < Date.now() - PRESENCE_TIMEOUT_MS ||
+    (presence.userId !== null && presence.userId !== session?.user?.id)) {
     return NextResponse.json(
       { message: "Bạn cần tham gia phòng trước khi điều khiển." },
       { status: 403 },
@@ -115,7 +120,7 @@ export const PATCH = withRequestLog(SCOPE + ".update", async (request, context) 
 
   // The host is identified by account, not by clientId: they stay the host
   // across devices and tabs.
-  const isHost = presence.userId !== null && presence.userId === room.hostId;
+  const isHost = session?.user?.id === room.hostId;
 
   // --- Lock toggle -------------------------------------------------------
   if (hostOnlyControl !== undefined && hostOnlyControl !== room.hostOnlyControl) {
@@ -165,7 +170,8 @@ export const PATCH = withRequestLog(SCOPE + ".update", async (request, context) 
     where: { code },
     data: {
       ...(isPlaying === undefined ? {} : { isPlaying }),
-      ...(positionSeconds === undefined ? {} : { positionSeconds }),
+      positionSeconds: positionSeconds ?? Math.min(86_400, room.positionSeconds +
+        (room.isPlaying ? Math.max(0, Date.now() - room.lastSyncAt.getTime()) / 1000 : 0)),
       ...(video
         ? {
             videoId: video.videoId,
@@ -204,4 +210,10 @@ export const PATCH = withRequestLog(SCOPE + ".update", async (request, context) 
     hostOnlyControl: updated.hostOnlyControl,
     serverTime: new Date().toISOString(),
   });
+});
+
+export const DELETE = withRequestLog(SCOPE + ".delete", async (_request, context) => {
+  const session = await auth();
+  const result = await deleteOwnedRoom(prisma.room, await readCode(context), session?.user?.id);
+  return NextResponse.json({ message: result.message }, { status: result.status });
 });

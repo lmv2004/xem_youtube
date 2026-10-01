@@ -28,7 +28,7 @@ import {
 import { normalizeRoomCode, ROOM_CODE_LENGTH } from "@/lib/rooms";
 import { extractYouTubeId } from "@/lib/youtube-url";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
+import { DeleteRoomButton } from "./delete-room-button";
 
 type RoomListItem = {
   code: string;
@@ -108,13 +108,18 @@ export function RoomsIndex() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: roomTitle.trim() || "Phòng xem chung",
-          videoId,
+          video: {
+            videoId, title: `YouTube · ${videoId}`, channel: "",
+            thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+            embedUrl: `https://www.youtube.com/embed/${videoId}`,
+            watchUrl: `https://www.youtube.com/watch?v=${videoId}`, duration: 0,
+          },
         }),
       });
 
       if (!res.ok) {
-        const err = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(err.error ?? "Không thể tạo phòng");
+        const err = (await res.json().catch(() => ({}))) as { message?: string };
+        throw new Error(err.message ?? "Không thể tạo phòng");
       }
 
       const json = (await res.json()) as { code: string };
@@ -215,7 +220,7 @@ export function RoomsIndex() {
             <span>Đồng bộ phát video thông minh</span>
           </div>
           <ul className="space-y-2.5 text-xs text-muted-foreground leading-relaxed">
-            <li>• Khi chủ phòng tạm dừng, tua hoặc đổi video, tất cả thành viên trong phòng đều được đồng bộ tức thì.</li>
+            <li>• Khi chủ phòng tạm dừng, tua hoặc đổi video, tất cả thành viên trong phòng đều được đồng bộ tự động.</li>
             <li>• Hỗ trợ trò chuyện văn bản và thả phản ứng emoji trực tiếp.</li>
             <li>• Hoàn toàn miễn phí, không gián đoạn, chia sẻ liên kết dễ dàng.</li>
           </ul>
@@ -254,20 +259,20 @@ export function RoomsIndex() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {rooms.map((r) => (
+              <div key={r.code} className="min-w-0 rounded-2xl border bg-card p-3">
               <Link
-                key={r.code}
                 href={"/rooms/" + r.code}
-                className="group flex gap-3.5 rounded-2xl border border-white/10 bg-card/65 p-3.5 transition-all duration-300 hover:border-purple-500/40 hover:bg-card/90 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/40"
+                className="group flex min-w-0 gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 {r.thumbnail ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={r.thumbnail}
                     alt=""
-                    className="aspect-video w-32 shrink-0 rounded-xl object-cover ring-1 ring-white/10 transition-transform duration-300 group-hover:scale-105"
+                    className="aspect-video w-24 shrink-0 rounded-xl object-cover ring-1 ring-white/10 transition-transform duration-300 group-hover:scale-105"
                   />
                 ) : (
-                  <div className="aspect-video w-32 shrink-0 rounded-xl bg-black/60 flex items-center justify-center text-xs">
+                  <div className="aspect-video w-24 shrink-0 rounded-xl bg-black/60 flex items-center justify-center text-xs">
                     <Video className="h-5 w-5 text-muted-foreground" />
                   </div>
                 )}
@@ -286,6 +291,12 @@ export function RoomsIndex() {
                   </p>
                 </div>
               </Link>
+              <div className="mt-3 flex items-center justify-between gap-2 border-t pt-2">
+                <span className="truncate text-xs text-muted-foreground">{r.title}</span>
+                <DeleteRoomButton code={r.code} title={r.title}
+                  onDeleted={() => setRooms((previous) => previous.filter((item) => item.code !== r.code))} />
+              </div>
+              </div>
             ))}
           </div>
         )}
