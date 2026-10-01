@@ -25,7 +25,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
         <Suspense fallback={<aside className="hidden w-56 shrink-0 lg:block" />}>
           <AppSidebar />
         </Suspense>
-        <main className="min-w-0 flex-1 space-y-7 sm:space-y-10">{children}</main>
+        <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 space-y-7 sm:space-y-10">{children}</main>
       </div>
 
       <SiteFooter />

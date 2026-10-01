@@ -31,7 +31,7 @@ export function VideoGrid({
     <div
       className={cn(
         view === "grid"
-          ? "grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 sm:gap-5"
+          ? "grid grid-cols-1 gap-x-5 gap-y-7 min-[520px]:grid-cols-2 xl:grid-cols-3"
           : "flex flex-col gap-3",
         className,
       )}
@@ -64,7 +64,7 @@ export function VideoGridSkeleton({
     <div
       className={cn(
         view === "grid"
-          ? "grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 sm:gap-5"
+          ? "grid grid-cols-1 gap-x-5 gap-y-7 min-[520px]:grid-cols-2 xl:grid-cols-3"
           : "flex flex-col gap-3",
         className,
       )}

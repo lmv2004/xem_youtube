@@ -50,13 +50,14 @@ function NavLink({
     <Link
       href={href}
       title={collapsed ? label : undefined}
+      aria-label={label}
       aria-current={active ? "page" : undefined}
       className={cn(
         "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200",
         collapsed && "justify-center px-0",
         active
-          ? "bg-gradient-to-r from-rose-500/20 via-purple-500/10 to-transparent font-semibold text-foreground border-l-2 border-rose-500 shadow-sm shadow-rose-500/10"
-          : "text-muted-foreground hover:bg-white/5 hover:text-foreground hover:translate-x-0.5",
+          ? "bg-primary/10 font-semibold text-primary"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground hover:translate-x-0.5",
       )}
     >
       <Icon
@@ -67,16 +68,16 @@ function NavLink({
       />
       {collapsed ? null : <span className="truncate">{label}</span>}
       {active && !collapsed && (
-        <span className="ml-auto h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
+        <span className="ml-auto h-1.5 w-1.5 rounded-full bg-rose-500 " />
       )}
     </Link>
   );
 }
 
 function SectionLabel({ children, hidden }: { children: React.ReactNode; hidden: boolean }) {
-  if (hidden) return <div className="my-2 h-px bg-white/10" />;
+  if (hidden) return <div className="my-2 h-px bg-border" />;
   return (
-    <p className="px-3 pb-1 pt-4 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60">
+    <p className="px-3 pb-1 pt-4 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
       {children}
     </p>
   );
@@ -110,10 +111,10 @@ export function AppSidebar() {
     <aside
       className={cn(
         "sticky top-24 hidden shrink-0 self-start lg:block transition-all duration-300",
-        collapsed ? "w-[68px]" : "w-60",
+        collapsed ? "w-[68px]" : "w-48",
       )}
     >
-      <div className="rounded-2xl border border-white/10 bg-card/75 p-2 shadow-2xl backdrop-blur-2xl">
+      <div className="rounded-2xl p-2">
         <div className={cn("flex pb-1", collapsed ? "justify-center" : "justify-end")}>
           <Button
             type="button"
@@ -121,7 +122,7 @@ export function AppSidebar() {
             variant="ghost"
             onClick={toggle}
             aria-label={collapsed ? "Mở rộng thanh bên" : "Thu gọn thanh bên"}
-            className="h-8 w-8 text-muted-foreground hover:bg-white/10 hover:text-foreground rounded-lg"
+            className="h-8 w-8 text-muted-foreground hover:bg-border hover:text-foreground rounded-lg"
           >
             {collapsed ? (
               <PanelLeftOpen className="h-4 w-4" />

@@ -126,7 +126,7 @@ export function Logo({ className, size = 32 }: Props) {
         <path
           d="M34 10 C34 11.8 35.8 13.5 37.5 13.5 C35.8 13.5 34 15.2 34 17 C34 15.2 32.2 13.5 30.5 13.5 C32.2 13.5 34 11.8 34 10 Z"
           fill="#FFFFFF"
-          className="animate-pulse transition-transform duration-300 group-hover/logo:scale-125"
+          className=" transition-transform duration-300 group-hover/logo:scale-125"
           style={{ transformOrigin: "34px 13.5px" }}
         />
       </svg>
@@ -150,12 +150,9 @@ export function Wordmark({
         )}
       >
         <span className="text-[19px] font-extrabold text-foreground tracking-tight">
-          Xem<span className="bg-gradient-to-r from-rose-500 via-purple-500 to-cyan-400 bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(244,63,94,0.3)]">Phim</span>
+          Xem<span className="text-primary">Phim</span>
         </span>
-        <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/10 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-rose-400 uppercase shadow-[0_0_10px_rgba(244,63,94,0.2)]">
-          <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-ping" />
-          PRO
-        </span>
+
       </span>
     </span>
   );

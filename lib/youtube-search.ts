@@ -5,6 +5,7 @@
 // adding paging there would be a breaking change. Everything here is
 // self-contained.
 import "server-only";
+import { matchVideoSnippet } from "./youtube-metadata";
 import type { ErrorCode, VideoItem } from "./types";
 import type { DurationFilter, SortOrder } from "./filters";
 
@@ -165,9 +166,9 @@ async function hydrate(ids: string[], searchItems: SearchListItem[], key: string
     if (v.id) detailById.set(v.id, v);
   }
 
-  return ids.map((id, idx) => {
+  return ids.map((id) => {
     const detail = detailById.get(id);
-    const snip = searchItems[idx]?.snippet ?? detail?.snippet;
+    const snip = matchVideoSnippet(id, searchItems, detail);
     return toVideoItem(id, snip, detail);
   });
 }
