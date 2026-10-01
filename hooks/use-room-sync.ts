@@ -1,170 +1,139 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  SYNC_INTERVAL_MS,
-  type RoomMemberDto,
-  type RoomMessageDto,
-  type RoomPlayback,
-  type RoomSyncResponse,
-  type RoomVideo,
-} from "@/lib/rooms";
+import { HEARTBEAT_INTERVAL_MS, type RoomSyncResponse, type RoomMessageDto } from "@/lib/rooms";
+import { mergeMessages, syncDelay } from "@/lib/room-sync";
 
-type State = {
-  playback: RoomPlayback | null;
-  video: RoomVideo | null;
-  messages: RoomMessageDto[];
-  members: RoomMemberDto[];
-  hostOnlyControl: boolean;
-  serverTime: string | null;
+type State = Omit<RoomSyncResponse, "cursor" | "playback" | "video"> & {
+  playback: RoomSyncResponse["playback"] | null;
+  video: RoomSyncResponse["video"] | null;
   isOffline: boolean;
+  isClosed: boolean;
+  receivedAt: number;
 };
-
-type Options = {
-  enabled: boolean;
-  clientId: string | null;
-  displayName: string;
+const initialState: State = {
+  playback: null, video: null, messages: [], members: [], hostOnlyControl: false,
+  serverTime: "", isOffline: false, isClosed: false, receivedAt: 0,
 };
+type Options = { enabled: boolean; clientId: string | null; displayName: string };
 
-/**
- * Polls the room every couple of seconds.
- *
- * The poll is a POST because it doubles as the presence heartbeat: the server
- * refreshes this client's `lastSeenAt` and returns the current member list in
- * the same response, so showing who is watching costs no extra requests.
- *
- * Polling pauses while the tab is hidden — a backgrounded tab does not need
- * updates and browsers throttle its timers anyway. We refresh immediately on
- * the way back so the player catches up at once.
- */
 export function useRoomSync(code: string, { enabled, clientId, displayName }: Options) {
-  const [state, setState] = useState<State>({
-    playback: null,
-    video: null,
-    messages: [],
-    members: [],
-    hostOnlyControl: false,
-    serverTime: null,
-    isOffline: false,
-  });
-
-  const cursorRef = useRef<string | null>(null);
-  const inFlightRef = useRef(false);
-  const seenIdsRef = useRef<Set<string>>(new Set());
-
-  // Read inside the poll so a rename does not restart the interval.
+  const [state, setState] = useState(initialState);
   const nameRef = useRef(displayName);
   nameRef.current = displayName;
-
-  const poll = useCallback(async () => {
-    if (!clientId) return;
-    // Skip if a previous request is still running, otherwise a slow network
-    // would stack up requests faster than they resolve.
-    if (inFlightRef.current) return;
-    inFlightRef.current = true;
-
-    try {
-      const res = await fetch("/api/rooms/" + code + "/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        cache: "no-store",
-        body: JSON.stringify({
-          clientId,
-          displayName: nameRef.current,
-          after: cursorRef.current,
-        }),
-      });
-
-      if (!res.ok) {
-        setState((s) => ({ ...s, isOffline: res.status >= 500 }));
-        return;
-      }
-
-      const json = (await res.json()) as RoomSyncResponse;
-      cursorRef.current = json.cursor ?? cursorRef.current;
-
-      setState((prev) => {
-        const fresh = json.messages.filter((m) => !seenIdsRef.current.has(m.id));
-        fresh.forEach((m) => seenIdsRef.current.add(m.id));
-        return {
-          playback: json.playback,
-          video: json.video,
-          members: json.members,
-          hostOnlyControl: json.hostOnlyControl,
-          messages: fresh.length > 0 ? [...prev.messages, ...fresh] : prev.messages,
-          serverTime: json.serverTime,
-          isOffline: false,
-        };
-      });
-    } catch {
-      setState((s) => ({ ...s, isOffline: true }));
-    } finally {
-      inFlightRef.current = false;
-    }
-  }, [code, clientId]);
+  const refreshRef = useRef<() => void>(() => {});
+  const stopRef = useRef<() => void>(() => {});
 
   useEffect(() => {
+    setState(initialState);
     if (!enabled || !clientId) return;
-
-    let timer: ReturnType<typeof setInterval> | null = null;
-
-    const start = () => {
-      if (timer !== null) return;
-      void poll();
-      timer = setInterval(() => void poll(), SYNC_INTERVAL_MS);
-    };
+    let stopped = false;
+    let running = false;
+    let queued = false;
+    let cursor: string | null = null;
+    let heartbeatAt = 0;
+    let playing = false;
+    let failures = 0;
+    let controller: AbortController | null = null;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     const stop = () => {
-      if (timer === null) return;
-      clearInterval(timer);
-      timer = null;
+      stopped = true;
+      clearTimeout(timer);
+      controller?.abort();
     };
+    stopRef.current = stop;
 
-    const onVisibility = () => {
-      if (document.hidden) stop();
-      else start();
+    const poll = async () => {
+      if (stopped) return;
+      clearTimeout(timer);
+      if (running) { queued = true; return; }
+      running = true;
+      const requestController = new AbortController();
+      controller = requestController;
+      const timeout = setTimeout(() => requestController.abort(), 10_000);
+      const sentAt = Date.now();
+      const heartbeat = sentAt - heartbeatAt >= HEARTBEAT_INTERVAL_MS;
+      try {
+        const res = await fetch(`/api/rooms/${code}/sync`, {
+          method: "POST", cache: "no-store", signal: requestController.signal,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ clientId, displayName: nameRef.current, after: cursor, heartbeat }),
+        });
+        if (stopped) return;
+        if (res.status === 404) {
+          stop();
+          setState((prev) => ({ ...prev, isClosed: true, isOffline: false }));
+          return;
+        }
+        if (!res.ok) throw new Error(`Sync failed: ${res.status}`);
+        const json = await res.json() as RoomSyncResponse;
+        if (stopped) return;
+        const receivedAt = Date.now();
+        if (heartbeat) heartbeatAt = sentAt;
+        cursor = json.cursor;
+        playing = json.playback.isPlaying;
+        failures = 0;
+        setState((prev) => ({
+          ...json, messages: mergeMessages(prev.messages, json.messages),
+          // Estimate the response trip without trusting the device's wall clock.
+          serverTime: new Date(Date.parse(json.serverTime) + Math.min(1000, (receivedAt - sentAt) / 2)).toISOString(),
+          receivedAt, isOffline: false, isClosed: false,
+        }));
+      } catch {
+        if (!stopped) {
+          failures += 1;
+          setState((prev) => ({ ...prev, isOffline: true }));
+        }
+      } finally {
+        clearTimeout(timeout);
+        running = false;
+        controller = null;
+        if (!stopped) {
+          timer = setTimeout(() => void poll(), queued ? 0 : syncDelay(playing, document.hidden, failures));
+          queued = false;
+        }
+      }
     };
-
-    // Closing the tab should remove us from the list right away rather than
-    // waiting for the heartbeat to go stale. sendBeacon survives unload.
+    const refresh = () => { void poll(); };
+    const onVisibility = () => { if (!document.hidden) { heartbeatAt = 0; refresh(); } };
+    const onOnline = () => { heartbeatAt = 0; refresh(); };
     const onPageHide = () => {
-      navigator.sendBeacon?.(
-        "/api/rooms/" + code + "/leave",
-        new Blob([JSON.stringify({ clientId })], { type: "text/plain" }),
-      );
+      stop();
+      navigator.sendBeacon?.(`/api/rooms/${code}/leave`,
+        new Blob([JSON.stringify({ clientId })], { type: "text/plain" }));
     };
-
-    start();
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) { stopped = false; heartbeatAt = 0; refresh(); }
+    };
+    refreshRef.current = refresh;
+    refresh();
     document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("online", onOnline);
     window.addEventListener("pagehide", onPageHide);
+    window.addEventListener("pageshow", onPageShow);
     return () => {
       stop();
+      refreshRef.current = () => {};
       document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("online", onOnline);
       window.removeEventListener("pagehide", onPageHide);
+      window.removeEventListener("pageshow", onPageShow);
     };
-  }, [enabled, clientId, code, poll]);
+  }, [enabled, clientId, code]);
 
-  /** Optimistically append a message the current user just sent. */
+  const refresh = useCallback(() => refreshRef.current(), []);
   const appendLocal = useCallback((message: RoomMessageDto) => {
-    if (seenIdsRef.current.has(message.id)) return;
-    seenIdsRef.current.add(message.id);
-    if (!cursorRef.current || message.createdAt > cursorRef.current) {
-      cursorRef.current = message.createdAt;
-    }
-    setState((prev) => ({ ...prev, messages: [...prev.messages, message] }));
+    setState((prev) => ({ ...prev, messages: mergeMessages(prev.messages, [message]) }));
+    refreshRef.current();
   }, []);
-
   const leave = useCallback(async () => {
+    stopRef.current();
     if (!clientId) return;
     try {
-      await fetch("/api/rooms/" + code + "/leave", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId }),
-        keepalive: true,
+      await fetch(`/api/rooms/${code}/leave`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId }), keepalive: true,
       });
-    } catch {
-      /* the row goes stale on its own */
-    }
+    } catch { /* Presence expires if the network is unavailable. */ }
   }, [code, clientId]);
-
-  return { ...state, refresh: poll, appendLocal, leave };
+  return { ...state, refresh, appendLocal, leave };
 }

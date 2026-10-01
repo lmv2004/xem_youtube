@@ -1,7 +1,8 @@
 // Shared watch-party helpers. Safe to import from both server and client:
 // no Prisma, no server-only imports.
 
-export const SYNC_INTERVAL_MS = 2000;
+export const SYNC_INTERVAL_MS = 1500;
+export const HEARTBEAT_INTERVAL_MS = 15_000;
 
 /**
  * How far a viewer may drift from the room before we hard-seek them.
@@ -14,7 +15,7 @@ export const DRIFT_TOLERANCE_SECONDS = 2.5;
  * A member is dropped after missing several polls in a row. Generous enough
  * to survive one slow request, short enough that the list stays believable.
  */
-export const PRESENCE_TIMEOUT_MS = 12_000;
+export const PRESENCE_TIMEOUT_MS = 60_000;
 
 export const MAX_MESSAGE_LENGTH = 500;
 export const MESSAGE_PAGE_SIZE = 50;
@@ -39,7 +40,7 @@ export function normalizeRoomCode(raw: string): string {
   return raw.trim().toUpperCase();
 }
 
-/** Stable per-browser identity so guests can be counted and attributed. */
+/** A distinct connection identity for each mounted room/tab. */
 export function createClientId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
@@ -143,7 +144,7 @@ export function canControlPlayback(opts: {
  */
 export function effectivePosition(
   playback: RoomPlayback,
-  opts: { now?: number; serverTime?: string } = {},
+  opts: { now?: number; serverTime?: string; receivedAt?: number } = {},
 ): number {
   if (!playback.isPlaying) return Math.max(0, playback.positionSeconds);
 
@@ -154,8 +155,7 @@ export function effectivePosition(
     return Math.max(0, playback.positionSeconds);
   }
 
-  const skew = now - reference;
-  const elapsed = (now - skew - anchored) / 1000;
+  const elapsed = (reference + (opts.receivedAt ? now - opts.receivedAt : 0) - anchored) / 1000;
   return Math.max(0, playback.positionSeconds + elapsed);
 }
 

@@ -22,6 +22,7 @@ import { SyncPlayer, type SyncPlayerHandle } from "./sync-player";
 import { RoomChat } from "./room-chat";
 import { RoomMembers } from "./room-members";
 import { RoomSearch } from "./room-search";
+import { DeleteRoomButton } from "./delete-room-button";
 import { JoinGate } from "./join-gate";
 import { useRoomSync } from "@/hooks/use-room-sync";
 import { useRoomIdentity } from "@/hooks/use-room-identity";
@@ -57,6 +58,10 @@ export function RoomClient({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
   const [tab, setTab] = useState<"chat" | "search">("chat");
 
+  const [playerReady, setPlayerReady] = useState(false);
+  const actionQueueRef = useRef<Promise<boolean>>(Promise.resolve(true));
+  const actionPendingRef = useRef(false);
+  const localActionAtRef = useRef(0);
   const handleRef = useRef<SyncPlayerHandle | null>(null);
   const currentVideoRef = useRef<string | null>(null);
   // Programmatic play/pause/seek fires the same events a human would, so we
@@ -110,37 +115,50 @@ export function RoomClient({ code }: { code: string }) {
 
   const pushPlayback = useCallback(
     async (payload: Record<string, unknown>) => {
-      if (!identity.clientId) return;
+      if (!identity.clientId) return false;
       // In a locked room, stay quiet instead of firing requests we know the
       // server will reject.
-      if (!canControlRef.current) return;
+      if (!canControlRef.current) return false;
+      const send = async () => {
+        actionPendingRef.current = true;
+        localActionAtRef.current = Date.now();
 
-      try {
-        const res = await fetch("/api/rooms/" + code, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ clientId: identity.clientId, ...payload }),
-        });
-        if (res.status === 403) {
-          const json = (await res.json().catch(() => null)) as
-            | { message?: string }
-            | null;
-          toast({ title: json?.message ?? "Bạn không có quyền điều khiển phòng" });
+        try {
+          const res = await fetch("/api/rooms/" + code, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ clientId: identity.clientId, ...payload }),
+          });
+          if (!res.ok) {
+            const json = (await res.json().catch(() => null)) as
+              | { message?: string }
+              | null;
+            toast({ title: json?.message ?? "Không cập nhật được phòng" });
+            return false;
+          }
+          return true;
+        } catch {
+          toast({ title: "Mất kết nối, chưa cập nhật được phòng" });
+          return false;
+        } finally {
+          actionPendingRef.current = false;
+          refresh();
         }
-      } catch {
-        /* the next poll will reconcile */
-      }
+      };
+      const result = actionQueueRef.current.then(send, send);
+      actionQueueRef.current = result;
+      return result;
     },
-    [code, identity.clientId, toast],
+    [code, identity.clientId, toast, refresh],
   );
 
-  // Follow the room. The only thing that decides whether we apply an update
-  // is whether *we* were the one who made it.
+  // Reconcile all players, including our own after the short echo window.
   useEffect(() => {
     const handle = handleRef.current;
     const playback = sync.playback;
     const video = sync.video;
-    if (!handle || !playback || !video) return;
+    if (!handle || !playback || !video || !playerReady || actionPendingRef.current) return;
+    if (Date.now() < suppressUntilRef.current) return;
 
     // A video swap wins over any seek: correcting the position of a player
     // that is about to load a different video is pointless.
@@ -149,19 +167,19 @@ export function RoomClient({ code }: { code: string }) {
       suppressUntilRef.current = Date.now() + VIDEO_SWAP_WINDOW_MS;
       handle.loadVideo(
         video.videoId,
-        effectivePosition(playback, { serverTime: sync.serverTime ?? undefined }),
+        effectivePosition(playback, { serverTime: sync.serverTime || undefined, receivedAt: sync.receivedAt }),
       );
       return;
     }
     if (!currentVideoRef.current) currentVideoRef.current = video.videoId;
 
     // Our own action coming back through polling — the player is already there.
-    if (playback.lastActionById && playback.lastActionById === identity.clientId) {
+    if (playback.lastActionById === identity.clientId && Date.now() - localActionAtRef.current < ECHO_WINDOW_MS) {
       return;
     }
 
     const target = effectivePosition(playback, {
-      serverTime: sync.serverTime ?? undefined,
+      serverTime: sync.serverTime || undefined, receivedAt: sync.receivedAt,
     });
 
     if (Math.abs(handle.getCurrentTime() - target) > DRIFT_TOLERANCE_SECONDS) {
@@ -176,7 +194,7 @@ export function RoomClient({ code }: { code: string }) {
       suppressUntilRef.current = Date.now() + ECHO_WINDOW_MS;
       handle.pause();
     }
-  }, [sync.playback, sync.video, sync.serverTime, identity.clientId]);
+  }, [sync.playback, sync.video, sync.serverTime, sync.receivedAt, identity.clientId, playerReady]);
 
   const onSend = useCallback(
     async (body: string) => {
@@ -215,7 +233,7 @@ export function RoomClient({ code }: { code: string }) {
 
   const changeVideo = useCallback(
     async (item: VideoItem) => {
-      await pushPlayback({
+      const changed = await pushPlayback({
         isPlaying: true,
         video: {
           videoId: item.id,
@@ -227,6 +245,7 @@ export function RoomClient({ code }: { code: string }) {
           duration: item.durationSeconds ?? 0,
         },
       });
+      if (!changed) return;
       toast({ title: "Đã đổi video cho cả phòng", description: item.title });
       setTab("chat");
     },
@@ -289,10 +308,10 @@ export function RoomClient({ code }: { code: string }) {
     router.push("/rooms");
   };
 
-  if (loadError) {
+  if (loadError || sync.isClosed) {
     return (
       <Glass intensity="soft" className="p-6 text-center">
-        <p className="font-medium">{loadError}</p>
+        <p className="font-medium">{sync.isClosed ? "Phòng đã đóng hoặc bị xóa bởi chủ phòng." : loadError}</p>
         <Button asChild variant="outline" size="sm" className="mt-3">
           <Link href="/rooms">Về danh sách phòng</Link>
         </Button>
@@ -367,6 +386,10 @@ export function RoomClient({ code }: { code: string }) {
             </Badge>
           ) : null}
 
+          {isHost && <DeleteRoomButton code={code} title={room.title} onDeleted={() => {
+            void leave();
+            router.replace("/rooms");
+          }} />}
           <Button type="button" size="sm" variant="outline" onClick={copyLink}>
             {copied ? (
               <>
@@ -413,6 +436,8 @@ export function RoomClient({ code }: { code: string }) {
             videoId={room.video.videoId}
             onReady={(handle) => {
               handleRef.current = handle;
+              currentVideoRef.current = room.video.videoId;
+              setPlayerReady(true);
             }}
             onStateChange={(playing, currentTime) => {
               // Ignore the events caused by our own sync corrections.
