@@ -22,6 +22,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { YouTubeFrame } from "@/components/youtube-frame";
 import confetti from "canvas-confetti";
 import type { VideoItem } from "@/lib/types";
 import { formatDuration, formatViews } from "@/lib/format";
@@ -83,10 +84,6 @@ export const FeaturedPlayer = forwardRef<FeaturedPlayerHandle, Props>(function F
 
   const blocked = item.embeddable === false;
 
-  const iframeSrc = loop
-    ? `${item.embedUrl}?autoplay=1&rel=0&modestbranding=1&playsinline=1&loop=1&playlist=${encodeURIComponent(item.id)}`
-    : `${item.embedUrl}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
-
   const handleSaveCollection = () => {
     confetti({
       particleCount: 35,
@@ -112,13 +109,7 @@ export const FeaturedPlayer = forwardRef<FeaturedPlayerHandle, Props>(function F
             {blocked ? (
               <BlockedEmbed item={item} />
             ) : playing && !minimized ? (
-              <iframe
-                src={iframeSrc}
-                title={item.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                className="h-full w-full"
-              />
+              <YouTubeFrame id={item.id} title={item.title} loop={loop} />
             ) : (
               <div
                 onClick={() => setPlaying(true)}
@@ -126,7 +117,7 @@ export const FeaturedPlayer = forwardRef<FeaturedPlayerHandle, Props>(function F
                 role="button"
                 tabIndex={0}
                 aria-label={`Phát video ${item.title}`}
-                onKeyDown={(e) => e.key === "Enter" && setPlaying(true)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPlaying(true); } }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -145,7 +136,7 @@ export const FeaturedPlayer = forwardRef<FeaturedPlayerHandle, Props>(function F
                     TIÊU ĐIỂM THỊNH HÀNH
                   </span>
                   <span className="rounded-full border border-white/20 bg-black/70 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-md">
-                    4K ULTRA HD
+                    YOUTUBE
                   </span>
                 </div>
 
@@ -167,7 +158,7 @@ export const FeaturedPlayer = forwardRef<FeaturedPlayerHandle, Props>(function F
                   <div className="mt-2 flex items-center gap-3 text-xs sm:text-sm text-white/80 font-medium">
                     <span className="text-white font-semibold">{item.channel}</span>
                     <span>•</span>
-                    <span>{formatViews(item.viewCount)} lượt xem</span>
+                    <span>{formatViews(item.viewCount)}</span>
                     {item.durationSeconds > 0 && (
                       <>
                         <span>•</span>

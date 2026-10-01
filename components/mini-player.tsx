@@ -1,7 +1,8 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { VideoItem } from "@/lib/types";
-import { Expand, PictureInPicture2 } from "lucide-react";
+import { Expand, PictureInPicture2, X } from "lucide-react";
+import { YouTubeFrame } from "@/components/youtube-frame";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -58,7 +59,7 @@ function readState(): State {
 }
 
 // TvMini: a borderless, draggable, resizable video window.
-// Closes only via right-click → "Đóng mini-player".
+// Drag using the title bar; the video itself remains interactive.
 export function MiniPlayer({ item, onClose, onExpand }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<State>({ left: 80, top: 80, width: 380, height: 230 });
@@ -221,7 +222,7 @@ export function MiniPlayer({ item, onClose, onExpand }: Props) {
     <div
       ref={ref}
       role="dialog"
-      aria-label="Mini player — chuột phải để đóng"
+      aria-label="Trình phát thu nhỏ"
       onContextMenu={(e) => {
         e.preventDefault();
         onClose();
@@ -238,7 +239,11 @@ export function MiniPlayer({ item, onClose, onExpand }: Props) {
       onPointerUp={endInteraction}
       onPointerCancel={endInteraction}
     >
-      <div className="relative h-full w-full cursor-grab active:cursor-grabbing">
+      <div className="flex h-9 cursor-grab items-center justify-between gap-2 bg-zinc-900 px-3 text-xs text-white active:cursor-grabbing">
+        <span className="truncate">{item.title}</span>
+        <button data-menu type="button" onClick={onClose} aria-label="Đóng trình phát thu nhỏ" className="shrink-0 rounded p-1 hover:bg-white/20"><X className="h-4 w-4" /></button>
+      </div>
+      <div data-menu className="relative h-[calc(100%-2.25rem)] w-full">
         {blocked ? (
           <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-foreground/90 p-3 text-center text-background">
             <p className="text-xs">Video chặn nhúng.</p>
@@ -251,13 +256,7 @@ export function MiniPlayer({ item, onClose, onExpand }: Props) {
             </button>
           </div>
         ) : (
-          <iframe
-            src={`${item.embedUrl}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
-            title={item.title}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
-            className="pointer-events-none h-full w-full"
-          />
+          <YouTubeFrame id={item.id} title={item.title} />
         )}
       </div>
 
@@ -265,7 +264,7 @@ export function MiniPlayer({ item, onClose, onExpand }: Props) {
       <div
         data-menu
         className={cn(
-          "pointer-events-none absolute inset-x-0 bottom-2 flex justify-center gap-1.5 opacity-0 transition group-hover/tv:opacity-100",
+          "pointer-events-none absolute right-10 top-1 flex justify-center gap-1.5 opacity-0 transition group-hover/tv:opacity-100 group-focus-within/tv:opacity-100",
         )}
       >
         <button

@@ -1,4 +1,5 @@
 "use client";
+import { YouTubeFrame } from "@/components/youtube-frame";
 import { useState } from "react";
 import { ExternalLink, Play } from "lucide-react";
 import type { VideoItem } from "@/lib/types";
@@ -15,22 +16,12 @@ type Props = {
   loop?: boolean;
 };
 
-// Reusable YouTube embed wrapper. Shows a thumbnail + play button until the
-// user clicks, then swaps to the iframe. Lazy-loads by deferring the iframe
-// until interaction — keeps pages light and avoids multiple simultaneous
-// autoplay instances on the favorites/history lists.
-//
-// When `item.embeddable === false` (the channel blocks embedding on this
-// origin — common on LAN / company proxies), we skip the iframe entirely and
-// show a "Mở YouTube" button so the user can still watch the video.
-export function VideoEmbed({ item, className, autoPlay = false, loop = false }: Props) {
+export function VideoEmbed(props: Props) {
+  return <VideoEmbedContent key={`${props.item.id}:${props.autoPlay}`} {...props} />;
+}
+
+function VideoEmbedContent({ item, className, autoPlay = false, loop = false }: Props) {
   const [playing, setPlaying] = useState(autoPlay);
-  // YouTube quirk: `loop=1` is ignored unless `playlist=<id>` is also set, so we
-  // always emit the two together (and only when looping is requested).
-  const loopParams = loop ? `&loop=1&playlist=${encodeURIComponent(item.id)}` : "";
-  const src = autoPlay
-    ? `${item.embedUrl}?autoplay=1&rel=0&modestbranding=1&playsinline=1${loopParams}`
-    : `${item.embedUrl}?rel=0&modestbranding=1&playsinline=1${loopParams}`;
 
   return (
     <div className={cn("relative aspect-video w-full overflow-hidden bg-black", className)}>
@@ -44,14 +35,7 @@ export function VideoEmbed({ item, className, autoPlay = false, loop = false }: 
           </Button>
         </div>
       ) : playing ? (
-        <iframe
-          src={src}
-          title={item.title}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowFullScreen
-          loading="lazy"
-          className="h-full w-full"
-        />
+        <YouTubeFrame id={item.id} title={item.title} loop={loop} />
       ) : (
         <button
           type="button"

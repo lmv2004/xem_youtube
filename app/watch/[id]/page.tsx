@@ -31,19 +31,35 @@ export async function generateMetadata({ params }: Params) {
 export default async function WatchPage({ params, searchParams }: Params) {
   const { id } = await params;
   const { loop } = await searchParams;
+  if (!/^[A-Za-z0-9_-]{11}$/.test(id)) notFound();
   const wantLoop = loop === "1" || loop === "true";
 
   let video: Awaited<ReturnType<typeof getVideoById>> = null;
+  let metadataUnavailable = false;
   try {
     video = await getVideoById(id);
   } catch {
-    /* fall through to notFound */
+    // Embedding does not require a Data API key. Keep playback available when
+    // metadata is unavailable (quota, missing key, or a temporary API outage).
+    metadataUnavailable = true;
+    video = {
+      id,
+      title: "Video YouTube",
+      description: "",
+      channel: "YouTube",
+      publishedAt: "",
+      thumbnail: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+      embedUrl: `https://www.youtube.com/embed/${id}`,
+      watchUrl: `https://www.youtube.com/watch?v=${id}`,
+      durationSeconds: 0,
+      viewCount: 0,
+    };
   }
   if (!video) notFound();
 
   let relatedVideos: Awaited<ReturnType<typeof getRelatedVideos>> = [];
   try {
-    relatedVideos = await getRelatedVideos(video, 8);
+    if (!metadataUnavailable) relatedVideos = await getRelatedVideos(video, 8);
   } catch {
     relatedVideos = [];
   }
@@ -53,6 +69,11 @@ export default async function WatchPage({ params, searchParams }: Params) {
       <GradientMesh />
       <SiteHeader />
       <main className="container flex-1 py-6 sm:py-8">
+        {metadataUnavailable && (
+          <p role="status" className="mx-auto mb-4 max-w-6xl rounded-xl border border-border bg-muted/60 px-4 py-3 text-sm text-muted-foreground">
+            Chưa tải được thông tin video. Bạn vẫn có thể thử phát bên dưới hoặc mở trên YouTube.
+          </p>
+        )}
         <WatchView video={video} relatedVideos={relatedVideos} loop={wantLoop} />
       </main>
       <SiteFooter />

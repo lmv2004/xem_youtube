@@ -27,7 +27,6 @@ import { VideoEmbed } from "@/components/video-embed";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AddToCollectionDialog } from "@/components/add-to-collection-dialog";
-import { VideoCard } from "@/components/video-card";
 import { useCreateRoom } from "@/hooks/use-create-room";
 import { useToast } from "@/hooks/use-toast";
 import { useWatchLater } from "@/hooks/use-watch-later";
@@ -184,7 +183,7 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
             >
               <VideoEmbed
                 item={video}
-                autoPlay
+                autoPlay={autoplay}
                 loop={loop}
                 className="aspect-video w-full"
               />
@@ -233,7 +232,7 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
                   {video.channel}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {video.viewCount > 0 ? `${formatViews(video.viewCount)} lượt xem` : ""}
+                  {video.viewCount > 0 ? formatViews(video.viewCount) : ""}
                   {video.viewCount > 0 && publishedDateFormatted ? " • " : ""}
                   {publishedDateFormatted}
                 </p>
@@ -367,10 +366,12 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
             {/* Autoplay Toggle */}
             <button
               type="button"
+              role="switch"
+              aria-checked={autoplay}
               onClick={toggleAutoplay}
               className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground"
             >
-              <span>Tự động phát</span>
+              <span>Phát khi mở video</span>
               <span
                 className={cn(
                   "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
@@ -390,7 +391,18 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
           {/* Suggestions List */}
           <div className="flex flex-col gap-3">
             {relatedVideos.map((item) => (
-              <VideoCard key={item.id} item={item} view="list" />
+              <Link key={item.id} href={`/watch/${item.id}`} className="group flex gap-3 rounded-xl border border-border bg-card/60 p-2.5 transition hover:border-primary/40 hover:bg-muted/60">
+                <div className="relative aspect-video w-28 shrink-0 self-start overflow-hidden rounded-lg sm:w-32">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={item.thumbnail} alt="" loading="lazy" className="h-full w-full object-cover" />
+                  <span className="absolute bottom-1 right-1 rounded bg-black/80 px-1 text-[10px] text-white">{formatDuration(item.durationSeconds)}</span>
+                </div>
+                <div className="min-w-0">
+                  <h3 className="line-clamp-2 text-sm font-semibold leading-snug group-hover:text-primary">{item.title}</h3>
+                  <p className="mt-1 truncate text-xs text-muted-foreground">{item.channel}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{formatViews(item.viewCount)}</p>
+                </div>
+              </Link>
             ))}
           </div>
         </div>
