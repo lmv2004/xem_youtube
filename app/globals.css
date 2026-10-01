@@ -252,3 +252,12 @@
     transition-duration: 0.001ms !important;
   }
 }
+
+/* Shared interaction and surface rules for the discovery and watch flows. */
+@layer base {
+  :root { --primary: 347 78% 46%; --background: 220 20% 98%; --muted-foreground: 225 10% 40%; }
+  .dark { --background: 225 16% 7%; --card: 225 14% 10%; --muted-foreground: 220 10% 69%; --border: 225 12% 20%; }
+  :where(a, button, input, select, textarea):focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 3px; }
+  html { scroll-padding-top: 5rem; }
+}
+.discovery-intro { background: linear-gradient(115deg, hsl(var(--card)), hsl(var(--primary) / 0.055)); }

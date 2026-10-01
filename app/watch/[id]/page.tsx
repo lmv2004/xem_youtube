@@ -3,6 +3,7 @@ import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { GradientMesh } from "@/components/site/gradient-mesh";
 import { getVideoById, getRelatedVideos } from "@/lib/youtube";
+import { MobileNav } from "@/components/site/mobile-nav";
 import { WatchView } from "@/components/watch-view";
 
 export const dynamic = "force-dynamic";
@@ -65,10 +66,10 @@ export default async function WatchPage({ params, searchParams }: Params) {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col pb-20 lg:pb-0">
       <GradientMesh />
       <SiteHeader />
-      <main className="container flex-1 py-6 sm:py-8">
+      <main id="main-content" tabIndex={-1} className="container flex-1 py-6 sm:py-8">
         {metadataUnavailable && (
           <p role="status" className="mx-auto mb-4 max-w-6xl rounded-xl border border-border bg-muted/60 px-4 py-3 text-sm text-muted-foreground">
             Chưa tải được thông tin video. Bạn vẫn có thể thử phát bên dưới hoặc mở trên YouTube.
@@ -77,6 +78,7 @@ export default async function WatchPage({ params, searchParams }: Params) {
         <WatchView video={video} relatedVideos={relatedVideos} loop={wantLoop} />
       </main>
       <SiteFooter />
+      <MobileNav />
     </div>
   );
 }

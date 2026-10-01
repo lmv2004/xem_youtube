@@ -1,6 +1,7 @@
 // Server-only YouTube Data API v3 helper.
 // Reads YOUTUBE_API_KEY from process.env; never imported by client code.
 import "server-only";
+import { matchVideoSnippet } from "./youtube-metadata";
 import type { ErrorCode, VideoItem } from "./types";
 
 const API_BASE = "https://www.googleapis.com/youtube/v3";
@@ -235,10 +236,9 @@ export async function searchVideos(topic: string): Promise<VideoItem[]> {
 
   // Build a stable order: search relevance preserved, but tie-break by viewCount desc.
   const items: VideoItem[] = ids
-    .map((id, idx): VideoItem | null => {
-      const searchItem = (searchJson.items ?? [])[idx];
+    .map((id): VideoItem | null => {
       const detail = detailById.get(id);
-      const snip = searchItem?.snippet ?? detail?.snippet;
+      const snip = matchVideoSnippet(id, searchJson.items ?? [], detail);
       if (!snip) return null;
       const title = snip.title ?? "Không rõ tiêu đề";
       const channel = snip.channelTitle ?? "Không rõ kênh";
