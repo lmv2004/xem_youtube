@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { HEARTBEAT_INTERVAL_MS, type RoomSyncResponse, type RoomMessageDto } from "@/lib/rooms";
+import { HEARTBEAT_INTERVAL_MS, type RoomSyncResponse, type RoomMessageDto, type RoomPlaybackUpdate } from "@/lib/rooms";
 import { mergeMessages, syncDelay } from "@/lib/room-sync";
 
 type State = Omit<RoomSyncResponse, "cursor" | "playback" | "video"> & {
@@ -22,6 +22,7 @@ export function useRoomSync(code: string, { enabled, clientId, displayName }: Op
   nameRef.current = displayName;
   const refreshRef = useRef<() => void>(() => {});
   const stopRef = useRef<() => void>(() => {});
+  const mutationRef = useRef(0);
 
   useEffect(() => {
     setState(initialState);
@@ -51,6 +52,7 @@ export function useRoomSync(code: string, { enabled, clientId, displayName }: Op
       controller = requestController;
       const timeout = setTimeout(() => requestController.abort(), 10_000);
       const sentAt = Date.now();
+      const mutation = mutationRef.current;
       const heartbeat = sentAt - heartbeatAt >= HEARTBEAT_INTERVAL_MS;
       try {
         const res = await fetch(`/api/rooms/${code}/sync`, {
@@ -72,11 +74,17 @@ export function useRoomSync(code: string, { enabled, clientId, displayName }: Op
         cursor = json.cursor;
         playing = json.playback.isPlaying;
         failures = 0;
+        const stalePlayback = mutation !== mutationRef.current;
         setState((prev) => ({
           ...json, messages: mergeMessages(prev.messages, json.messages),
           // Estimate the response trip without trusting the device's wall clock.
           serverTime: new Date(Date.parse(json.serverTime) + Math.min(1000, (receivedAt - sentAt) / 2)).toISOString(),
           receivedAt, isOffline: false, isClosed: false,
+          // A poll started before a mutation acknowledgement must not undo it.
+          ...(stalePlayback ? {
+            playback: prev.playback, video: prev.video, hostOnlyControl: prev.hostOnlyControl,
+            serverTime: prev.serverTime, receivedAt: prev.receivedAt,
+          } : {}),
         }));
       } catch {
         if (!stopped) {
@@ -121,6 +129,10 @@ export function useRoomSync(code: string, { enabled, clientId, displayName }: Op
   }, [enabled, clientId, code]);
 
   const refresh = useCallback(() => refreshRef.current(), []);
+  const applyPlayback = useCallback((update: RoomPlaybackUpdate) => {
+    mutationRef.current += 1;
+    setState((prev) => ({ ...prev, ...update, receivedAt: Date.now(), isOffline: false }));
+  }, []);
   const appendLocal = useCallback((message: RoomMessageDto) => {
     setState((prev) => ({ ...prev, messages: mergeMessages(prev.messages, [message]) }));
     refreshRef.current();
@@ -135,5 +147,5 @@ export function useRoomSync(code: string, { enabled, clientId, displayName }: Op
       });
     } catch { /* Presence expires if the network is unavailable. */ }
   }, [code, clientId]);
-  return { ...state, refresh, appendLocal, leave };
+  return { ...state, refresh, appendLocal, leave, applyPlayback };
 }

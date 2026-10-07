@@ -121,6 +121,8 @@ export type RoomSyncResponse = {
   serverTime: string;
 };
 
+export type RoomPlaybackUpdate = Pick<RoomSyncResponse, "playback" | "video" | "hostOnlyControl" | "serverTime">;
+
 /**
  * Single source of truth for "may this person drive playback?", shared by the
  * API and the UI so a disabled button and a rejected request can never

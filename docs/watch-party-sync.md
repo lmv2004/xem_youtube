@@ -20,6 +20,14 @@ Playback uses the server timestamp, a bounded half-round-trip estimate, and elap
 
 Chat cursors use timestamp plus ID for stable pagination. Local sends never move the server cursor, avoiding skipped concurrent messages. Merging deduplicates messages and retains the newest 300 in browser memory; stored history is unchanged until the room is deleted.
 
+## Send feedback and latency
+
+The sender previously waited for the message POST before seeing it, and the completion callback unconditionally cleared the editor. Typing a second draft while the first POST was pending therefore lost the new draft. Submitted text now moves immediately into a bounded outbox (20 items), independent of the editor. Text and emoji submissions share one sequential queue. Pending messages show their status; failed or timed-out submissions remain visible and can be restored only when the editor is empty. They are not retried automatically because an interrupted response does not prove that the database write failed. The queue is in memory and ends when leaving the room.
+
+Playback PATCH responses now include the video and playback snapshot, which the sender applies directly. A sync request started before this acknowledgement cannot overwrite that snapshot. Chat and playback writes each authenticate in their handler without repeating that lookup in the logging wrapper. Both requests have a 15-second client timeout.
+
+Other devices still receive changes on their next successful poll: the polling interval plus HTTP/database time is inherent latency, not a push delivery guarantee. Immediate local feedback does not remove that remote delay. Production latency has not been measured by these tests.
+
 ## Validation
 
 Run `node --import tsx --test lib/*.test.ts`, `npm run typecheck`, and `npm run build`. CI also runs the regression tests.
@@ -27,3 +35,5 @@ Run `node --import tsx --test lib/*.test.ts`, `npm run typecheck`, and `npm run 
 Local production API checks with disposable users/rooms verified: creation, authenticated host controls, anonymous/non-host delete rejection, forged host client-ID rejection, read-only polls preserving `lastSeenAt`, same-timestamp chat pagination, host deletion, subsequent 404 responses, and cascade cleanup. All disposable fixtures were removed afterward.
 
 Cross-device playback under real network jitter and browser background throttling still requires manual acceptance testing. Polling does not guarantee instantaneous room closure or frame-exact playback.
+
+A browser harness using the actual RoomChat component and manually delayed responses verified: acknowledging A preserves draft B; B/C submit in sequence while draft D remains editable; failure retains C without replacing D. Outbox regression tests cover serialization, failure retention, capacity, and leaving with pending requests.

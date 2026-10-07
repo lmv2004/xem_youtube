@@ -65,4 +65,4 @@ export const POST = withRequestLog(SCOPE + ".create", async (request, context) =
     },
     { status: 201 },
   );
-});
+}, { authenticate: false });

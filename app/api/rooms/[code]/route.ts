@@ -208,9 +208,14 @@ export const PATCH = withRequestLog(SCOPE + ".update", async (request, context) 
       lastActionKind: (updated.lastActionKind as PlaybackActionKind | null) ?? null,
     },
     hostOnlyControl: updated.hostOnlyControl,
+    video: {
+      videoId: updated.videoId, title: updated.videoTitle, channel: updated.channel,
+      thumbnail: updated.thumbnail, embedUrl: updated.embedUrl,
+      watchUrl: updated.watchUrl, duration: updated.duration,
+    },
     serverTime: new Date().toISOString(),
   });
-});
+}, { authenticate: false });
 
 export const DELETE = withRequestLog(SCOPE + ".delete", async (_request, context) => {
   const session = await auth();
