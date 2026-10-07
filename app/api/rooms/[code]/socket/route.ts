@@ -13,7 +13,8 @@ export async function GET(request: Request, context: { params: Promise<{ code: s
   const code = normalizeRoomCode((await context.params).code);
   const clientId = url.searchParams.get("clientId") ?? "";
   const name = url.searchParams.get("name") ?? "Khách";
-  if (!/^[A-Z2-9]{6}$/.test(code) || !/^[a-zA-Z0-9-]{8,64}$/.test(clientId) || name.length > 60) {
+  const after = url.searchParams.get("after");
+  if (!/^[A-Z2-9]{6}$/.test(code) || !/^[a-zA-Z0-9-]{8,64}$/.test(clientId) || name.length > 60 || (after?.length ?? 0) > 120) {
     return new Response("Invalid room connection", { status: 400 });
   }
   const session = await auth();
@@ -23,7 +24,7 @@ export async function GET(request: Request, context: { params: Promise<{ code: s
     // Keep the invocation active while event callbacks perform asynchronous DB work.
     // The socket is already upgraded; clients need not wait for this handler to return.
     const closed = new Promise<void>((resolve) => socket.once("close", () => resolve()));
-    await serveRoomSocket(socket, code, clientId, name, session?.user ?? {}, lifetime);
+    await serveRoomSocket(socket, code, clientId, name, session?.user ?? {}, lifetime, undefined, after);
     await closed;
   }, { maxPayload: 16_384 });
 }

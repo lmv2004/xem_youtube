@@ -3,6 +3,7 @@ import type {
   RoomMemberDto,
   RoomMessageDto,
   RoomPlaybackUpdate,
+  RoomSyncResponse,
 } from "./rooms";
 
 export const playbackInput = z.object({
@@ -69,7 +70,7 @@ export const roomCommand = z.discriminatedUnion("type", [
 ]);
 export type RoomCommand = z.infer<typeof roomCommand>;
 export type RoomEvent =
-  | { type: "ready"; serverTime: string }
+  | { type: "ready"; serverTime: string; snapshot?: RoomSyncResponse }
   | { type: "chat"; message: RoomMessageDto }
   | { type: "playback"; update: RoomPlaybackUpdate }
   | { type: "members"; members: RoomMemberDto[] }
