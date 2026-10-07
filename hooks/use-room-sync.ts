@@ -18,6 +18,7 @@ type State = Omit<RoomSyncResponse, "cursor" | "playback" | "video"> & {
   video: RoomSyncResponse["video"] | null;
   queueEdits: QueueEdit[];
   isOffline: boolean;
+  hasConnected: boolean;
   showReconnectWarning: boolean;
   isClosed: boolean;
   receivedAt: number;
@@ -34,6 +35,7 @@ const initialState: State = {
   hostOnlyControl: false,
   serverTime: "",
   isOffline: true,
+  hasConnected: false,
   showReconnectWarning: false,
   isClosed: false,
   receivedAt: 0,
@@ -158,6 +160,7 @@ export function useRoomSync(
       const url = new URL(`/api/rooms/${code}/socket`, window.location.origin);
       url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
       url.searchParams.set("clientId", clientId);
+      if (cursor) url.searchParams.set("after", cursor);
       url.searchParams.set(
         "name",
         nameRef.current.trim().slice(0, 40) || "Khách",
@@ -201,36 +204,48 @@ export function useRoomSync(
           const timeout = setTimeout(() => requestController.abort(), 30_000);
           try {
             // Catch up missed pages after reconnect, then replay live events received during the snapshot.
+            let handshakeSnapshot = event.snapshot;
             let more = true;
             while (more && active()) {
-              const response = await fetch(`/api/rooms/${code}/sync`, {
-                method: "POST",
-                cache: "no-store",
-                signal: requestController.signal,
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  clientId,
-                  displayName: nameRef.current,
-                  heartbeat: false,
-                  after: cursor,
-                }),
-              });
-              if (!active()) return;
-              if (response.status === 404) {
-                stop();
-                setState((prev) => ({
-                  ...prev,
-                  isClosed: true,
-                  isOffline: false,
-                }));
-                return;
+              let snapshot: RoomSyncResponse;
+              if (handshakeSnapshot) {
+                snapshot = handshakeSnapshot;
+                handshakeSnapshot = undefined;
+              } else {
+                const response = await fetch(`/api/rooms/${code}/sync`, {
+                  method: "POST",
+                  cache: "no-store",
+                  signal: requestController.signal,
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    clientId,
+                    displayName: nameRef.current,
+                    heartbeat: false,
+                    after: cursor,
+                  }),
+                });
+                if (!active()) return;
+                if (response.status === 404) {
+                  stop();
+                  setState((prev) => ({
+                    ...prev,
+                    isClosed: true,
+                    isOffline: false,
+                  }));
+                  return;
+                }
+                if (!response.ok) throw new Error("Snapshot failed");
+                snapshot = (await response.json()) as RoomSyncResponse;
               }
-              if (!response.ok) throw new Error("Snapshot failed");
-              const snapshot = (await response.json()) as RoomSyncResponse;
               if (!active()) return;
               const oldCursor = cursor;
               cursor = snapshot.cursor;
-              more = snapshot.messages.length === 50 && cursor !== oldCursor;
+              // The initial snapshot already contains the newest page. Only
+              // reconnect catch-up can need additional pages after a cursor.
+              more =
+                !!oldCursor &&
+                snapshot.messages.length === 50 &&
+                cursor !== oldCursor;
               setState((prev) => ({
                 ...withPlayback(prev, snapshot),
                 members: snapshot.members,
@@ -243,7 +258,7 @@ export function useRoomSync(
             bootstrapping = false;
             readyRef.current = true;
             attempt = 0;
-            setState((prev) => ({ ...prev, isOffline: false }));
+            setState((prev) => ({ ...prev, isOffline: false, hasConnected: true }));
             renewal.restored();
           } catch {
             if (active()) socket.close();

@@ -8,6 +8,7 @@ import { serveRoomSocket } from "../lib/room-socket";
 import { notifyRoom } from "../lib/room-commands";
 import type { RoomEvent } from "../lib/room-protocol";
 import { generateRoomCode } from "../lib/rooms";
+import { readRoomSnapshot } from "../lib/room-snapshot";
 
 // Socket teardown can still use the shared client after an individual test ends.
 // Keep it connected for the whole suite so cleanup cannot race the next fixture.
@@ -110,7 +111,14 @@ test(
         const socket = new WebSocket(`ws://127.0.0.1:${address.port}`);
         sockets.push(socket);
         const observer = capture(socket);
-        await observer.wait((event) => event.type === "ready");
+        const ready = await observer.wait((event) => event.type === "ready");
+        assert.equal(ready.type, "ready");
+        if (ready.type === "ready") {
+          assert.ok(ready.snapshot, "handshake includes state without an HTTP sync request");
+          assert.equal(ready.snapshot.roomTitle, room.title);
+          assert.equal(ready.snapshot.video.videoId, room.videoId);
+          assert.ok(ready.snapshot.members.some((member) => member.clientId === clientId));
+        }
         return { socket, ...observer };
       };
       const host = await connect(true, "integration-host");
@@ -490,8 +498,15 @@ test(
         },
       });
       roomId = room.id;
+      const messageFixtures = (start: number, count: number) =>
+        Array.from({ length: count }, (_, index) => ({
+          id: crypto.randomUUID(), roomId, userId: user.id,
+          body: `message-${start + index}`,
+          createdAt: new Date(Date.now() - 60_000 + (start + index) * 10),
+        }));
+      await prisma.roomMessage.createMany({ data: messageFixtures(0, 52) });
       let connections = 0;
-      gateway.on("connection", (socket) => {
+      gateway.on("connection", (socket, request) => {
         socket.pause();
         void serveRoomSocket(
           socket,
@@ -501,6 +516,7 @@ test(
           { id: user.id },
           ++connections === 1 ? 1000 : 240_000,
           new RoomEventBus(),
+          new URL(request.url ?? "/", "http://localhost").searchParams.get("after"),
         );
       });
       await new Promise<void>((resolve) =>
@@ -508,8 +524,10 @@ test(
       );
       const address = server.address();
       assert.ok(address && typeof address !== "string");
-      const connect = async () => {
-        const socket = new WebSocket(`ws://127.0.0.1:${address.port}`);
+      const connect = async (after?: string | null) => {
+        const url = new URL(`ws://127.0.0.1:${address.port}`);
+        if (after) url.searchParams.set("after", after);
+        const socket = new WebSocket(url);
         sockets.push(socket);
         const closed = new Promise<{ code: number; reason: string }>(
           (resolve) =>
@@ -517,15 +535,20 @@ test(
               resolve({ code, reason: reason.toString() }),
             ),
         );
-        await new Promise<void>((resolve, reject) => {
+        const ready = await new Promise<Extract<RoomEvent, { type: "ready" }>>((resolve, reject) => {
           const timeout = setTimeout(
             () => reject(new Error("Renewed socket did not become ready")),
             15_000,
           );
           socket.on("message", (raw) => {
-            if ((JSON.parse(raw.toString()) as RoomEvent).type === "ready") {
+            const event = JSON.parse(raw.toString()) as RoomEvent;
+            if (event.type === "ready") {
               clearTimeout(timeout);
-              resolve();
+              if (!event.snapshot || !event.snapshot.playback.isPlaying || event.snapshot.playback.positionSeconds !== 45) {
+                reject(new Error("Renewal handshake did not restore playback"));
+                return;
+              }
+              resolve(event);
             }
           });
           socket.once("error", (error) => {
@@ -533,11 +556,20 @@ test(
             reject(error);
           });
         });
-        return { closed };
+        return { closed, snapshot: ready.snapshot! };
       };
       const first = await connect();
+      assert.equal(first.snapshot.messages.length, 50);
+      assert.equal(first.snapshot.messages[0].body, "message-2");
+      assert.equal(first.snapshot.messages.at(-1)?.body, "message-51");
       assert.deepEqual(await first.closed, { code: 1012, reason: "Reconnect" });
-      await connect();
+      await prisma.roomMessage.createMany({ data: messageFixtures(52, 51) });
+      const renewed = await connect(first.snapshot.cursor);
+      assert.equal(renewed.snapshot.messages.length, 50);
+      assert.equal(renewed.snapshot.messages[0].body, "message-52");
+      assert.equal(renewed.snapshot.messages.at(-1)?.body, "message-101");
+      const remaining = await readRoomSnapshot(room, renewed.snapshot.cursor);
+      assert.deepEqual(remaining.messages.map((message) => message.body), ["message-102"]);
       const restored = await prisma.room.findUniqueOrThrow({ where: { code } });
       assert.equal(restored.isPlaying, true);
       assert.equal(restored.positionSeconds, 45);

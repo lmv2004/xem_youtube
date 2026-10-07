@@ -51,7 +51,7 @@ const VIDEO_SWAP_WINDOW_MS = 2500;
 export function RoomClient({ code }: { code: string }) {
   const t = useTranslations();
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
   const { toast } = useToast();
   const identity = useRoomIdentity(session?.user?.name ?? null);
 
@@ -86,7 +86,9 @@ export function RoomClient({ code }: { code: string }) {
 
   const currentUserId = session?.user?.id ?? null;
   const sync = useRoomSync(code, {
-    enabled: joined && identity.hydrated,
+    // Resolve the account first so login hydration cannot immediately replace
+    // an initial guest connection with a second authenticated connection.
+    enabled: joined && identity.hydrated && sessionStatus !== "loading",
     clientId: identity.clientId,
     displayName: identity.name,
     userId: currentUserId,
@@ -606,8 +608,15 @@ export function RoomClient({ code }: { code: string }) {
         </div>
       </Glass>
 
-      {sync.showReconnectWarning ? (
-        <p className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm">
+      {sync.isOffline && !sync.hasConnected && !sync.isClosed ? (
+        <p role="status" className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-4 py-2 text-sm text-muted-foreground">
+          <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+          {sync.showReconnectWarning
+            ? t("Kết nối đang mất nhiều thời gian hơn dự kiến…")
+            : t("Đang kết nối với phòng…")}
+        </p>
+      ) : sync.showReconnectWarning ? (
+        <p role="status" className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm">
           {t(
             "Đang kết nối lại với phòng. Tin nhắn và điều khiển sẽ tiếp tục khi có kết nối.",
           )}{" "}

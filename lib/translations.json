@@ -1167,6 +1167,14 @@
     "en": "Leave room",
     "te": "గది నుండి నిష్క్రమించండి"
   },
+  "Đang kết nối với phòng…": {
+    "en": "Connecting to the room…",
+    "te": "గదికి కనెక్ట్ అవుతున్నాం…"
+  },
+  "Kết nối đang mất nhiều thời gian hơn dự kiến…": {
+    "en": "Connecting is taking longer than expected…",
+    "te": "కనెక్ట్ కావడానికి ఊహించిన దానికంటే ఎక్కువ సమయం పడుతోంది…"
+  },
   "Đang kết nối lại với phòng. Tin nhắn và điều khiển sẽ tiếp tục khi có kết nối.": {
     "en": "Reconnecting to the room. Chat and controls will resume when connected.",
     "te": "గదికి మళ్లీ కనెక్ట్ అవుతున్నాం. కనెక్ట్ అయిన తర్వాత చాట్, నియంత్రణలు కొనసాగుతాయి."

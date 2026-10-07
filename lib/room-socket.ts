@@ -4,9 +4,10 @@ import { roomEventBus } from "./room-event-bus";
 import { notifyRoom, renameRoom, postRoomMessage, updatePlayback, updateQueue, RoomCommandError, type RoomActor } from "./room-commands";
 import { roomCommand, type RoomEvent } from "./room-protocol";
 import { PRESENCE_TIMEOUT_MS, sanitizeDisplayName } from "./rooms";
+import { readRoomSnapshot } from "./room-snapshot";
 
 export async function serveRoomSocket(socket: WebSocket, code: string, clientId: string, displayName: string,
-  actor: RoomActor, lifetimeMs = 240_000, bus = roomEventBus) {
+  actor: RoomActor, lifetimeMs = 240_000, bus = roomEventBus, after?: string | null) {
   let disposed = false;
   let unsubscribe: (() => void) | undefined;
   let timer: ReturnType<typeof setInterval> | undefined;
@@ -102,8 +103,16 @@ export async function serveRoomSocket(socket: WebSocket, code: string, clientId:
         if (expired.count) await notifyRoom(tx, { code, kind: "members" });
       }).catch(() => socket.close(1012, "Presence unavailable")).finally(() => { renewing = false; });
     }, 25_000);
-    expiry = setTimeout(() => socket.close(1012, "Reconnect"), Math.max(1000, Math.min(240_000, lifetimeMs)));
-    send({ type: "ready", serverTime: new Date().toISOString() });
+    // The subscription is already active: clients buffer live events while this
+    // snapshot loads, then become ready without another HTTP function invocation.
+    const currentRoom = await prisma.room.findUnique({ where: { code } });
+    if (disposed) return;
+    if (!currentRoom) { send({ type: "closed" }); socket.close(1000, "Room closed"); return; }
+    const snapshot = await readRoomSnapshot(currentRoom, after);
+    if (!disposed) {
+      send({ type: "ready", serverTime: snapshot.serverTime, snapshot });
+      expiry = setTimeout(() => socket.close(1012, "Reconnect"), Math.max(1000, Math.min(240_000, lifetimeMs)));
+    }
   } catch {
     socket.close(1011, "Room connection unavailable");
     cleanup();

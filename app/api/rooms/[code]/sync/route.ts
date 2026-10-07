@@ -1,17 +1,13 @@
-import { messageCursor, parseMessageCursor } from "@/lib/room-sync";
-import { playbackDto } from "@/lib/room-commands";
+import { readRoomSnapshot } from "@/lib/room-snapshot";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { withRequestLog } from "@/lib/api-route";
 import {
-  MESSAGE_PAGE_SIZE,
   PRESENCE_TIMEOUT_MS,
   normalizeRoomCode,
   sanitizeDisplayName,
-  type PlaybackActionKind,
-  type RoomSyncResponse,
 } from "@/lib/rooms";
 
 export const runtime = "nodejs";
@@ -92,74 +88,7 @@ export const POST = withRequestLog(SCOPE, async (request, context) => {
 
   }
 
-  const cursor = parseMessageCursor(after);
-
-  const [rows, presences] = await Promise.all([
-    prisma.roomMessage.findMany({
-      where: {
-        roomId: room.id,
-        ...(cursor ? cursor.id ? { OR: [
-          { createdAt: { gt: cursor.createdAt } },
-          { createdAt: cursor.createdAt, id: { gt: cursor.id } },
-        ] } : { createdAt: { gte: cursor.createdAt } } : {}),
-      },
-      orderBy: [{ createdAt: cursor ? "asc" : "desc" }, { id: cursor ? "asc" : "desc" }],
-      take: MESSAGE_PAGE_SIZE,
-      include: { user: { select: { id: true, name: true, image: true } } },
-    }),
-    prisma.roomPresence.findMany({
-      where: { roomId: room.id, lastSeenAt: { gte: new Date(now.getTime() - PRESENCE_TIMEOUT_MS) } },
-      orderBy: { joinedAt: "asc" },
-      take: 100,
-    }),
-  ]);
-
-  // Without a cursor we fetch the newest page descending, then flip it so the
-  // client always receives messages oldest-first.
-  const ordered = cursor ? rows : [...rows].reverse();
-
-  const messages = ordered.map((m) => ({
-    id: m.id,
-    body: m.body,
-    createdAt: m.createdAt.toISOString(),
-    author: m.user,
-  }));
-
-  const payload: RoomSyncResponse = {
-    queue: playbackDto(room).queue,
-    playbackGeneration: room.playbackGeneration,
-    roomTitle: room.title,
-    revision: room.updatedAt.toISOString(),
-    playback: {
-      isPlaying: room.isPlaying,
-      positionSeconds: room.positionSeconds,
-      lastSyncAt: room.lastSyncAt.toISOString(),
-      lastActionBy: room.lastActionBy,
-      lastActionById: room.lastActionById,
-      lastActionKind: (room.lastActionKind as PlaybackActionKind | null) ?? null,
-    },
-    video: {
-      videoId: room.videoId,
-      title: room.videoTitle,
-      channel: room.channel,
-      thumbnail: room.thumbnail,
-      embedUrl: room.embedUrl,
-      watchUrl: room.watchUrl,
-      duration: room.duration,
-    },
-    messages,
-    members: presences.map((p) => ({
-      clientId: p.clientId,
-      name: p.name,
-      image: p.image,
-      isHost: p.userId === room.hostId,
-      isGuest: !p.userId,
-      joinedAt: p.joinedAt.toISOString(),
-    })),
-    hostOnlyControl: room.hostOnlyControl,
-    cursor: messages.length > 0 ? messageCursor(messages[messages.length - 1]) : after ?? null,
-    serverTime: new Date().toISOString(),
-  };
+  const payload = await readRoomSnapshot(room, after);
 
   return NextResponse.json(payload, {
     headers: { "Cache-Control": "no-store" },
