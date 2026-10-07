@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
+import { createPlayerEventGuard } from "@/lib/player-event-guard";
 
 /**
  * Minimal typings for the YouTube IFrame API.
@@ -79,6 +80,7 @@ export type SyncPlayerHandle = {
   seekTo: (seconds: number) => void;
   getCurrentTime: () => number;
   isPlaying: () => boolean;
+  isBuffering: () => boolean;
   loadVideo: (videoId: string, startSeconds: number) => void;
 };
 
@@ -110,6 +112,7 @@ export function SyncPlayer({ videoId, onStateChange, onReady, onEnded }: Props) 
       if (cancelled || !containerRef.current || playerRef.current) return;
 
       const mount = document.createElement("div");
+      const events = createPlayerEventGuard();
       containerRef.current.replaceChildren(mount);
       const player = new YT.Player(mount, {
         videoId,
@@ -117,20 +120,23 @@ export function SyncPlayer({ videoId, onStateChange, onReady, onEnded }: Props) 
         events: {
           onReady: () => {
             onReadyRef.current?.({
-              play: () => player.playVideo(),
-              pause: () => player.pauseVideo(),
-              seekTo: (s) => player.seekTo(s, true),
+              play: () => { events.expect(true); player.playVideo(); },
+              pause: () => { events.expect(false); player.pauseVideo(); },
+              seekTo: (s) => { events.expect(player.getPlayerState() === YT.PlayerState.PLAYING); player.seekTo(s, true); },
               getCurrentTime: () => player.getCurrentTime(),
               isPlaying: () => player.getPlayerState() === YT.PlayerState.PLAYING,
-              loadVideo: (id, start) => player.loadVideoById(id, start),
+              isBuffering: () => player.getPlayerState() === YT.PlayerState.BUFFERING,
+              loadVideo: (id, start) => { events.expect(true, 2500); player.loadVideoById(id, start); },
             });
           },
           onStateChange: (event) => {
             if (event.data === YT.PlayerState.PLAYING) {
+              if (events.consume(true)) return;
               onStateChangeRef.current?.(true, player.getCurrentTime());
             } else if (event.data === YT.PlayerState.ENDED) {
               endedRef.current?.(new URL(player.getVideoUrl()).searchParams.get("v") ?? "", player.getDuration());
             } else if (event.data === YT.PlayerState.PAUSED) {
+              if (events.consume(false)) return;
               onStateChangeRef.current?.(false, player.getCurrentTime());
             }
           },

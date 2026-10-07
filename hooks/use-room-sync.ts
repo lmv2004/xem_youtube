@@ -13,7 +13,7 @@ const initialState: State = { queue: [], playbackGeneration: 0, revision: "", pl
   hostOnlyControl: false, serverTime: "", isOffline: true, isClosed: false, receivedAt: 0 };
 type Options = { enabled: boolean; clientId: string | null; displayName: string; userId: string | null };
 type CommandResult = RoomMessageDto | RoomPlaybackUpdate;
-type Pending = { resolve: (data: CommandResult) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> };
+type Pending = { resolve: (data: CommandResult) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout>; controller: AbortController };
 
 function withPlayback(previous: State, update: RoomPlaybackUpdate, receivedAt = Date.now()): State {
   if (previous.revision && update.revision < previous.revision) return previous;
@@ -42,7 +42,7 @@ export function useRoomSync(code: string, { enabled, clientId, displayName, user
     let controller: AbortController | null = null;
     const pending = pendingRef.current;
     const rejectPending = () => {
-      for (const item of pending.values()) { clearTimeout(item.timer); item.reject(new Error("Mất kết nối. Chưa xác nhận được thao tác.")); }
+      for (const item of pending.values()) { clearTimeout(item.timer); item.controller.abort(); item.reject(new Error("Mất kết nối. Chưa xác nhận được thao tác.")); }
       pending.clear();
     };
     const applyEvent = (event: RoomEvent) => {
@@ -165,15 +165,34 @@ export function useRoomSync(code: string, { enabled, clientId, displayName, user
     if (!readyRef.current || socket?.readyState !== WebSocket.OPEN) return Promise.reject(new Error("Phòng đang kết nối lại. Vui lòng thử lại khi có kết nối."));
     const requestId = crypto.randomUUID();
     return new Promise((resolve, reject) => {
+      const controller = new AbortController();
       const timer = setTimeout(() => {
         pendingRef.current.delete(requestId);
+        controller.abort();
+        // A transport timeout makes the cached state uncertain. Stop local
+        // reconciliation until reconnect reloads authoritative room state.
+        readyRef.current = false;
+        setState((previous) => ({ ...previous, isOffline: true }));
+        socket.close();
         reject(new Error("Chưa nhận được xác nhận. Hãy kiểm tra trước khi gửi lại."));
       }, 15_000);
-      pendingRef.current.set(requestId, { resolve, reject, timer });
-      try { socket.send(JSON.stringify({ ...command, requestId })); }
-      catch { clearTimeout(timer); pendingRef.current.delete(requestId); reject(new Error("Mất kết nối phòng.")); }
+      pendingRef.current.set(requestId, { resolve, reject, timer, controller });
+      void fetch(`/api/rooms/${code}/commands`, {
+        method: "POST", signal: controller.signal, headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId, command: { ...command, requestId } }),
+      }).then(async (response) => {
+        const result = await response.json() as { data?: CommandResult; message?: string };
+        if (!pendingRef.current.has(requestId)) return;
+        clearTimeout(timer); pendingRef.current.delete(requestId);
+        if (response.ok && result.data) resolve(result.data);
+        else reject(new Error(result.message || "Không thực hiện được thao tác."));
+      }).catch(() => {
+        if (!pendingRef.current.has(requestId)) return;
+        clearTimeout(timer); pendingRef.current.delete(requestId);
+        reject(new Error("Mất kết nối. Chưa xác nhận được thao tác."));
+      });
     });
-  }, []);
+  }, [code, clientId]);
   const refresh = useCallback(() => reconnectRef.current(), []);
   const applyPlayback = useCallback((update: RoomPlaybackUpdate) => setState((prev) => withPlayback(prev, update)), []);
   const appendLocal = useCallback((message: RoomMessageDto) => {

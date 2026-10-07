@@ -1,6 +1,6 @@
 # Watch party WebSocket transport
 
-Chat, play/pause/seek, video changes, control locks, membership updates and room closure are delivered over the same-origin `/api/rooms/[code]/socket` WebSocket. There is no periodic HTTP state polling. The client uses the existing snapshot API when joining/reconnecting and paginates missed chat history; live events received during that fetch are replayed after the snapshot. The one-second player correction clock is local only.
+Room events (chat, playback, queue, locks, membership and closure) are pushed over the same-origin `/api/rooms/[code]/socket` WebSocket. User commands use a same-origin POST to `/api/rooms/[code]/commands` and receive an explicit response after the database transaction commits. This addresses production Vercel upgrades that delivered server events but did not acknowledge incoming commands. There is no periodic HTTP state polling: POST is triggered only by an action. The client fetches a snapshot on join/reconnect and paginates missed chat history; live events received during the fetch are replayed afterwards. The one-second player correction clock is local only.
 
 ## Deployment
 
@@ -14,9 +14,11 @@ Chat, play/pause/seek, video changes, control locks, membership updates and room
 
 The upgrade checks same-origin requests and authenticates the cookie session. Guest viewers can join, but chat still requires an account. Commands use the server's authenticated actor and connection ID; submitted host/user IDs are ignored. Playback mutations serialize under a room row lock, enforce the host control lock and emit a monotonic room revision. Clients ignore older revisions from delayed acknowledgements or snapshots.
 
-WebSocket requests carry acknowledgement IDs, have a 15-second client timeout, and are not automatically retried after an ambiguous disconnect. The chat outbox retains failed text without overwriting the next draft. Switching to video search preserves the mounted chat/outbox. Pending unsent text is in memory and ends when leaving the room.
+Commands have a 15-second client timeout and are not automatically retried after an ambiguous disconnect. A timeout marks cached state offline and reconnects before player reconciliation resumes. Permission failures return explicit 401/403 responses rather than being treated as transport timeouts. The chat outbox retains failed text without overwriting the next draft. Switching to video search preserves the mounted chat/outbox. Pending unsent text is in memory and ends when leaving the room.
 
-Sockets have a 16KB inbound payload limit, bounded command queues, per-connection rate limits and slow-consumer protection. Server ping/pong renews presence every 25 seconds without an HTTP round trip. A new connection gets a fresh presence row so cleanup from the old connection cannot delete the replacement. Host deletion is transactional, cascades chat/presence records and sends a closed event.
+Sockets retain a 16KB payload limit, bounded legacy command queues and slow-consumer protection; the POST endpoint also limits payload size and validates the authenticated actor. Server keepalive renews presence every 25 seconds without an HTTP round trip. Missing pong alone no longer terminates a managed connection; close/error and the 240-second lifetime bound cleanup. A new connection gets a fresh presence row so cleanup from the old connection cannot delete the replacement. Host deletion is transactional, cascades chat/presence records and sends a closed event.
+
+YouTube events caused by scripted play/pause/seek/load are suppressed even when delayed beyond the short UI echo window. Manual controls remain allowed after that window, and the guard expires if autoplay was blocked. Reconciliation avoids repeatedly calling play while the player is buffering.
 
 ## Checks
 
@@ -24,7 +26,7 @@ Sockets have a 16KB inbound payload limit, bounded command queues, per-connectio
 - `npm run typecheck` and `npm run build`.
 - `ROOM_REALTIME_INTEGRATION=1 node --import tsx --test integration/room-realtime.test.ts`: opt-in database integration. Creates only uniquely named disposable fixtures and removes them. CI runs it against its own Postgres service after `prisma db push`.
 - The integration uses two independent LISTEN connections and actual WebSocket clients to verify cross-gateway delivery, guest chat rejection, host lock enforcement, playback changes, presence and room deletion.
-- Browser harness using the actual sync hook verifies one initial snapshot request while idle/playing/chatting and another only after forced reconnection. Production network latency is not inferred from this test.
+- The previous browser harness verified snapshot requests only on join/reconnect. After the command transport change, HTTP commands are expected only on user actions; snapshot polling remains absent. Production command delivery and WebSocket broadcasts require deployment acceptance testing.
 
 ## Room queue
 
