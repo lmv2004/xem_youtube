@@ -15,7 +15,6 @@ export async function serveRoomSocket(socket: WebSocket, code: string, clientId:
   let presenceId: string | undefined;
   let windowStart = Date.now();
   let windowCommands = 0;
-  let lastPong = Date.now();
   let renewing = false;
   let queued = 0;
   let commands = Promise.resolve();
@@ -40,7 +39,6 @@ export async function serveRoomSocket(socket: WebSocket, code: string, clientId:
   };
   socket.once("close", cleanup);
   socket.on("error", cleanup);
-  socket.on("pong", () => { lastPong = Date.now(); });
   try {
     // Subscribe before joining/snapshot so the bootstrap cannot miss a mutation.
     unsubscribe = await bus.subscribe(code, {
@@ -91,7 +89,8 @@ export async function serveRoomSocket(socket: WebSocket, code: string, clientId:
     socket.resume();
     // Browser WebSockets answer protocol ping automatically, even in background tabs.
     timer = setInterval(() => {
-      if (Date.now() - lastPong > 60_000) { socket.terminate(); return; }
+      // Managed gateways may consume control frames. Use close/error plus the
+      // bounded connection lifetime rather than assuming pong is forwarded.
       socket.ping();
       if (renewing || disposed) return;
       renewing = true;

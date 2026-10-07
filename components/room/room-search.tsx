@@ -13,6 +13,7 @@ type Props = {
   activeVideoId?: string | null;
   /** True when the host locked control: browsing stays open, switching does not. */
   disabled?: boolean;
+  locked?: boolean;
 };
 
 /**
@@ -20,7 +21,7 @@ type Props = {
  * endpoint: with no query it returns the trending list, which doubles as the
  * suggestion feed.
  */
-export function RoomSearch({ onPick, onEnqueue, activeVideoId, disabled = false }: Props) {
+export function RoomSearch({ onPick, onEnqueue, activeVideoId, disabled = false, locked = false }: Props) {
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<VideoItem[]>([]);
   const [heading, setHeading] = useState("Đề xuất cho phòng");
@@ -94,7 +95,7 @@ export function RoomSearch({ onPick, onEnqueue, activeVideoId, disabled = false 
         </Button>
       </form>
 
-      {disabled ? (
+      {locked ? (
         <p className="flex items-start gap-1.5 border-b border-border bg-amber-500/10 px-3 py-2 text-xs text-muted-foreground">
           <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           Chủ phòng đang khoá điều khiển. Bạn vẫn xem được đề xuất nhưng chưa đổi
