@@ -1,9 +1,4 @@
-import { HEARTBEAT_INTERVAL_MS, SYNC_INTERVAL_MS, type RoomMessageDto } from "./rooms";
-
-export function syncDelay(playing: boolean, hidden: boolean, failures = 0): number {
-  if (failures) return Math.min(30_000, 3000 * 2 ** Math.min(failures - 1, 4));
-  return hidden ? HEARTBEAT_INTERVAL_MS : playing ? SYNC_INTERVAL_MS : 3000;
-}
+import type { RoomMessageDto } from "./rooms";
 
 export function messageCursor(message: { createdAt: string; id: string }): string {
   return `${message.createdAt}|${message.id}`;

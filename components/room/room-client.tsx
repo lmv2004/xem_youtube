@@ -36,6 +36,7 @@ import {
   type RoomMessageDto,
   type RoomPlaybackUpdate,
 } from "@/lib/rooms";
+import type { RoomCommand } from "@/lib/room-protocol";
 import type { VideoItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -69,13 +70,14 @@ export function RoomClient({ code }: { code: string }) {
   // would echo every change back and the room would fight itself.
   const suppressUntilRef = useRef(0);
 
+  const currentUserId = session?.user?.id ?? null;
   const sync = useRoomSync(code, {
     enabled: joined && identity.hydrated,
     clientId: identity.clientId,
     displayName: identity.name,
+    userId: currentUserId,
   });
-  const { appendLocal, leave, refresh, applyPlayback } = sync;
-  const currentUserId = session?.user?.id ?? null;
+  const { appendLocal, leave, applyPlayback, request: sendCommand } = sync;
 
   // The host is identified by account, so they keep the role across devices.
   const isHost = Boolean(currentUserId && room && currentUserId === room.host.id);
@@ -114,7 +116,7 @@ export function RoomClient({ code }: { code: string }) {
   }, [code]);
 
   const pushPlayback = useCallback(
-    async (payload: Record<string, unknown>) => {
+    async (payload: Extract<RoomCommand, { type: "playback" }>["payload"]) => {
       if (!identity.clientId) return false;
       // In a locked room, stay quiet instead of firing requests we know the
       // server will reject.
@@ -124,35 +126,21 @@ export function RoomClient({ code }: { code: string }) {
         localActionAtRef.current = Date.now();
 
         try {
-          const res = await fetch("/api/rooms/" + code, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ clientId: identity.clientId, ...payload }),
-            signal: AbortSignal.timeout(15_000),
-          });
-          if (!res.ok) {
-            const json = (await res.json().catch(() => null)) as
-              | { message?: string }
-              | null;
-            toast({ title: json?.message ?? "Không cập nhật được phòng" });
-            return false;
-          }
-          const update = await res.json() as RoomPlaybackUpdate;
+          const update = await sendCommand({ type: "playback", payload }) as RoomPlaybackUpdate;
           applyPlayback(update);
           return true;
-        } catch {
-          toast({ title: "Mất kết nối, chưa cập nhật được phòng" });
+        } catch (error) {
+          toast({ title: error instanceof Error ? error.message : "Chưa cập nhật được phòng" });
           return false;
         } finally {
           actionPendingRef.current = false;
-          refresh();
         }
       };
       const result = actionQueueRef.current.then(send, send);
       actionQueueRef.current = result;
       return result;
     },
-    [code, identity.clientId, toast, refresh, applyPlayback],
+    [identity.clientId, toast, sendCommand, applyPlayback],
   );
 
   // Reconcile all players, including our own after the short echo window.
@@ -160,7 +148,7 @@ export function RoomClient({ code }: { code: string }) {
     const handle = handleRef.current;
     const playback = sync.playback;
     const video = sync.video;
-    if (!handle || !playback || !video || !playerReady || actionPendingRef.current) return;
+    if (!handle || !playback || !video || !playerReady || actionPendingRef.current || sync.isOffline) return;
     if (Date.now() < suppressUntilRef.current) return;
 
     // A video swap wins over any seek: correcting the position of a player
@@ -197,42 +185,18 @@ export function RoomClient({ code }: { code: string }) {
       suppressUntilRef.current = Date.now() + ECHO_WINDOW_MS;
       handle.pause();
     }
-  }, [sync.playback, sync.video, sync.serverTime, sync.receivedAt, identity.clientId, playerReady]);
+  }, [sync.playback, sync.video, sync.serverTime, sync.receivedAt, sync.clockTick, sync.isOffline, identity.clientId, playerReady]);
 
-  const onSend = useCallback(
-    async (body: string) => {
-      try {
-        const res = await fetch("/api/rooms/" + code + "/messages", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ body }),
-          signal: AbortSignal.timeout(15_000),
-        });
-        const json = (await res.json().catch(() => null)) as
-          | { message?: RoomMessageDto | string }
-          | null;
-
-        if (!res.ok) {
-          const text =
-            typeof json?.message === "string" ? json.message : "Không gửi được tin nhắn.";
-          toast({ title: text });
-          return false;
-        }
-
-        // Show it right away instead of waiting up to 2s for the next poll.
-        if (json?.message && typeof json.message !== "string") {
-          appendLocal(json.message);
-          return true;
-        }
-        toast({ title: "Chưa xác nhận được tin nhắn, vui lòng kiểm tra lại" });
-        return false;
-      } catch {
-        toast({ title: "Không gọi được máy chủ" });
-        return false;
-      }
-    },
-    [code, appendLocal, toast],
-  );
+  const onSend = useCallback(async (body: string) => {
+    try {
+      const message = await sendCommand({ type: "chat", body }) as RoomMessageDto;
+      appendLocal(message);
+      return true;
+    } catch (error) {
+      toast({ title: error instanceof Error ? error.message : "Chưa gửi được tin nhắn" });
+      return false;
+    }
+  }, [sendCommand, appendLocal, toast]);
 
   const changeVideo = useCallback(
     async (item: VideoItem) => {
@@ -262,20 +226,8 @@ export function RoomClient({ code }: { code: string }) {
     setLockPending(true);
 
     try {
-      const res = await fetch("/api/rooms/" + code, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId: identity.clientId, hostOnlyControl: next }),
-      });
-
-      if (!res.ok) {
-        const json = (await res.json().catch(() => null)) as { message?: string } | null;
-        toast({ title: json?.message ?? "Không đổi được cài đặt" });
-        return;
-      }
-
-      setRoom((prev) => (prev ? { ...prev, hostOnlyControl: next } : prev));
-      await refresh();
+      const update = await sendCommand({ type: "playback", payload: { hostOnlyControl: next } }) as RoomPlaybackUpdate;
+      applyPlayback(update);
       toast({
         title: next
           ? "Đã khoá: chỉ chủ phòng điều khiển"
@@ -429,7 +381,7 @@ export function RoomClient({ code }: { code: string }) {
 
       {sync.isOffline ? (
         <p className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm">
-          Mất kết nối tới phòng. Đang thử lại...
+          Đang kết nối lại với phòng. Tin nhắn và điều khiển sẽ tiếp tục khi có kết nối.
         </p>
       ) : null}
 

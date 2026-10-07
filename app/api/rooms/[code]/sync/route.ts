@@ -125,6 +125,7 @@ export const POST = withRequestLog(SCOPE, async (request, context) => {
   }));
 
   const payload: RoomSyncResponse = {
+    revision: room.updatedAt.toISOString(),
     playback: {
       isPlaying: room.isPlaying,
       positionSeconds: room.positionSeconds,

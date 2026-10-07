@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "dev:lan": "next dev -H 0.0.0.0 -p 3000",
+    "dev": "npx --yes vercel@62.7.0 dev",
+    "dev:lan": "npx --yes vercel@62.7.0 dev --listen 0.0.0.0:3000",
     "build": "next build",
     "start": "next start",
     "start:lan": "next start -H 0.0.0.0 -p 3000",
@@ -14,7 +14,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:push": "prisma db push",
-    "prisma:seed": "node --env-file=.env --import tsx prisma/seed.ts"
+    "prisma:seed": "node --env-file=.env --import tsx prisma/seed.ts",
+    "dev:next": "next dev"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",
@@ -31,6 +32,7 @@
     "@radix-ui/react-toast": "^1.2.23",
     "@radix-ui/react-tooltip": "^1.2.16",
     "@types/canvas-confetti": "^1.9.0",
+    "@vercel/functions": "^3.9.11",
     "bcryptjs": "^3.0.3",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
@@ -38,18 +40,22 @@
     "lucide-react": "^1.27.0",
     "next": "^15.5.22",
     "next-auth": "^5.0.0-beta.32",
+    "pg": "^8.23.1",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-hook-form": "^7.83.0",
     "tailwind-merge": "^3.6.0",
+    "ws": "^8.22.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@prisma/client": "^6.19.3",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "22.10.5",
+    "@types/pg": "^8.23.1",
     "@types/react": "19.0.7",
     "@types/react-dom": "19.0.3",
+    "@types/ws": "^8.18.2",
     "autoprefixer": "10.4.20",
     "eslint": "9.18.0",
     "eslint-config-next": "^15.5.22",

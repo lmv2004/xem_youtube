@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mergeMessages, messageCursor, parseMessageCursor, syncDelay } from "./room-sync";
+import { mergeMessages, messageCursor, parseMessageCursor } from "./room-sync";
 import { effectivePosition, type RoomMessageDto, type RoomPlayback } from "./rooms";
 import { deleteOwnedRoom } from "./delete-room";
 
@@ -29,15 +29,6 @@ test("cursor distinguishes messages sharing a timestamp and accepts legacy curso
   assert.deepEqual(parseMessageCursor(at), { createdAt: new Date(at), id: undefined });
   assert.equal(parseMessageCursor("invalid"), null);
   assert.equal(parseMessageCursor(null), null);
-});
-
-test("polling adapts to playback, background tabs, and network failures", () => {
-  assert.equal(syncDelay(true, false), 1500);
-  assert.equal(syncDelay(false, false), 3000);
-  assert.equal(syncDelay(true, true), 15000);
-  assert.equal(syncDelay(true, false, 1), 3000);
-  assert.equal(syncDelay(true, false, 3), 12000);
-  assert.equal(syncDelay(true, false, 50), 30000);
 });
 
 test("playback accounts for elapsed time since receipt even on a skewed device", () => {
