@@ -12,8 +12,7 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Mutations use ordinary request/response acknowledgement. Room events are
-// still pushed over the existing WebSocket; this endpoint is never polled.
+// Mutations use request/response acknowledgement; room snapshots are polled separately.
 export async function POST(
   request: Request,
   context: { params: Promise<{ code: string }> },
