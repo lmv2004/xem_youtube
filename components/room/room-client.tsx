@@ -205,7 +205,9 @@ export function RoomClient({ code }: { code: string }) {
     if (Date.now() < suppressUntilRef.current) return;
     // Let a buffering player finish its current load. Repeated seeks on the
     // one-second clock can keep restarting that load on a slow connection.
-    if (playback.isPlaying && handle.isBuffering()) return;
+    // A local play starts buffering before YouTube emits PLAYING and we can
+    // publish the intent. Applying the old paused snapshot here cancels it.
+    if (handle.isBuffering()) return;
 
     // Our own action coming back through polling — the player is already there.
     if (playback.lastActionById === identity.clientId && Date.now() - localActionAtRef.current < ECHO_WINDOW_MS) {
@@ -224,7 +226,7 @@ export function RoomClient({ code }: { code: string }) {
       suppressUntilRef.current = Date.now() + ECHO_WINDOW_MS;
       handle.play();
     }
-    if (!playback.isPlaying && (handle.isPlaying() || handle.isBuffering())) {
+    if (!playback.isPlaying && handle.isPlaying()) {
       suppressUntilRef.current = Date.now() + ECHO_WINDOW_MS;
       handle.pause();
     }
