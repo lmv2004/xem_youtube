@@ -109,6 +109,8 @@ export type RoomMessageDto = {
 };
 
 export type RoomSyncResponse = {
+  queue: RoomQueueItem[];
+  playbackGeneration: number;
   revision: string;
   playback: RoomPlayback;
   video: RoomVideo;
@@ -120,7 +122,8 @@ export type RoomSyncResponse = {
   serverTime: string;
 };
 
-export type RoomPlaybackUpdate = Pick<RoomSyncResponse, "playback" | "video" | "hostOnlyControl" | "serverTime" | "revision">;
+export type RoomQueueItem = RoomVideo & { id: string };
+export type RoomPlaybackUpdate = Pick<RoomSyncResponse, "playback" | "video" | "hostOnlyControl" | "serverTime" | "revision" | "queue" | "playbackGeneration">;
 
 /**
  * Single source of truth for "may this person drive playback?", shared by the

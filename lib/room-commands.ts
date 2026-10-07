@@ -1,6 +1,7 @@
 import { Prisma, type Room } from "@prisma/client";
 import { prisma } from "./db";
-import { playbackInput, NOTICE_CHANNEL, type RoomNotice } from "./room-protocol";
+import { playbackInput, NOTICE_CHANNEL, type RoomNotice, type RoomCommand } from "./room-protocol";
+import type { RoomQueueItem } from "./rooms";
 import { PRESENCE_TIMEOUT_MS, type RoomPlaybackUpdate, type PlaybackActionKind } from "./rooms";
 
 export type RoomActor = { id?: string; name?: string | null; image?: string | null };
@@ -13,6 +14,7 @@ export async function notifyRoom(tx: Prisma.TransactionClient, notice: RoomNotic
 }
 export function playbackDto(room: Room): RoomPlaybackUpdate {
   return {
+    queue: room.queue as RoomQueueItem[], playbackGeneration: room.playbackGeneration,
     revision: room.updatedAt.toISOString(),
     playback: { isPlaying: room.isPlaying, positionSeconds: room.positionSeconds,
       lastSyncAt: room.lastSyncAt.toISOString(), lastActionBy: room.lastActionBy,
@@ -50,8 +52,52 @@ export async function updatePlayback(code: string, clientId: string, actor: Room
         lastActionKind: video ? "video" : isPlaying === true ? "play" : isPlaying === false ? "pause" : "seek",
       } : {}),
       ...(video ? { videoId: video.videoId, videoTitle: video.title, channel: video.channel,
+        playbackGeneration: { increment: 1 },
         thumbnail: video.thumbnail, embedUrl: video.embedUrl, watchUrl: video.watchUrl, duration: video.duration } : {}),
     } });
+    await notifyRoom(tx, { code, kind: "playback" });
+    return playbackDto(updated);
+  });
+}
+export async function updateQueue(code: string, clientId: string, actor: RoomActor,
+  command: Extract<RoomCommand, { type: "queue" }>["payload"]) {
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "Room" WHERE code = ${code} FOR UPDATE`;
+    const room = await tx.room.findUnique({ where: { code } });
+    if (!room) throw new RoomCommandError(404, "Phòng đã đóng.");
+    const presence = await tx.roomPresence.findUnique({ where: { roomId_clientId: { roomId: room.id, clientId } } });
+    if (!presence || presence.lastSeenAt.getTime() < Date.now() - PRESENCE_TIMEOUT_MS ||
+      (presence.userId && presence.userId !== actor.id)) throw new RoomCommandError(403, "Bạn cần tham gia phòng.");
+    // Any active viewer can report a genuine end, even if the host is absent.
+    if (command.action !== "ended" && room.hostOnlyControl && actor.id !== room.hostId) {
+      throw new RoomCommandError(403, "Chỉ chủ phòng được sửa hàng đợi khi đang khóa.");
+    }
+    const queue = room.queue as RoomQueueItem[];
+    const now = new Date();
+    const data: Prisma.RoomUpdateInput = { updatedAt: new Date(Math.max(now.getTime(), room.updatedAt.getTime() + 1)) };
+    if (command.action === "add") {
+      if (queue.length >= 50) throw new RoomCommandError(400, "Hàng đợi tối đa 50 video.");
+      data.queue = [...queue, { ...command.video, id: crypto.randomUUID() }];
+    } else if (command.action === "remove") {
+      data.queue = queue.filter((item) => item.id !== command.id);
+    } else {
+      // Row lock + generation protect against simultaneous / delayed ENDED reports,
+      // including consecutive entries containing the exact same YouTube video.
+      if (command.generation !== room.playbackGeneration) return playbackDto(room);
+      if (command.action === "ended") {
+        const duration = room.duration || command.duration;
+        const position = room.positionSeconds + Math.max(0, now.getTime() - room.lastSyncAt.getTime()) / 1000;
+        if (!room.isPlaying || position < duration - 2) return playbackDto(room);
+      }
+      const [next, ...remaining] = queue;
+      if (!next && command.action === "next") return playbackDto(room);
+      Object.assign(data, { queue: remaining, playbackGeneration: { increment: 1 },
+        isPlaying: Boolean(next), positionSeconds: next ? 0 : room.duration || (command.action === "ended" ? command.duration : 0),
+        lastSyncAt: now, lastActionBy: presence.name, lastActionById: clientId, lastActionKind: next ? "video" : "pause" });
+      if (next) Object.assign(data, { videoId: next.videoId, videoTitle: next.title, channel: next.channel,
+        thumbnail: next.thumbnail, embedUrl: next.embedUrl, watchUrl: next.watchUrl, duration: next.duration });
+    }
+    const updated = await tx.room.update({ where: { code }, data });
     await notifyRoom(tx, { code, kind: "playback" });
     return playbackDto(updated);
   });

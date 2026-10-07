@@ -1,7 +1,7 @@
 import type { WebSocket } from "ws";
 import { prisma } from "./db";
 import { roomEventBus } from "./room-event-bus";
-import { notifyRoom, postRoomMessage, updatePlayback, RoomCommandError, type RoomActor } from "./room-commands";
+import { notifyRoom, postRoomMessage, updatePlayback, updateQueue, RoomCommandError, type RoomActor } from "./room-commands";
 import { roomCommand, type RoomEvent } from "./room-protocol";
 import { PRESENCE_TIMEOUT_MS, sanitizeDisplayName } from "./rooms";
 
@@ -76,6 +76,7 @@ export async function serveRoomSocket(socket: WebSocket, code: string, clientId:
         try {
           const data = command.type === "chat"
             ? await postRoomMessage(code, actor, command.body)
+            : command.type === "queue" ? await updateQueue(code, clientId, actor, command.payload)
             : await updatePlayback(code, clientId, actor, command.payload);
           send({ type: "ack", requestId: command.requestId, ok: true, data });
         } catch (error) {

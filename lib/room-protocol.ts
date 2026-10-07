@@ -13,6 +13,12 @@ export const playbackInput = z.object({
   }).optional(),
 });
 export const roomCommand = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("queue"), requestId: z.string().min(1).max(64), payload: z.discriminatedUnion("action", [
+    z.object({ action: z.literal("add"), video: playbackInput.shape.video.unwrap() }),
+    z.object({ action: z.literal("remove"), id: z.string().min(1).max(64) }),
+    z.object({ action: z.literal("next"), generation: z.number().int().nonnegative() }),
+    z.object({ action: z.literal("ended"), generation: z.number().int().nonnegative(), duration: z.number().positive().max(86400) }),
+  ]) }),
   z.object({ type: z.literal("chat"), requestId: z.string().min(1).max(64), body: z.string().trim().min(1).max(500) }),
   z.object({ type: z.literal("playback"), requestId: z.string().min(1).max(64), payload: playbackInput }),
 ]);

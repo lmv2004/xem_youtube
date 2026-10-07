@@ -13,6 +13,7 @@ import {
   MessageSquare,
   Radio,
   Search,
+  ListVideo,
   Unlock,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +23,7 @@ import { SyncPlayer, type SyncPlayerHandle } from "./sync-player";
 import { RoomChat } from "./room-chat";
 import { RoomMembers } from "./room-members";
 import { RoomSearch } from "./room-search";
+import { RoomQueue } from "./room-queue";
 import { DeleteRoomButton } from "./delete-room-button";
 import { JoinGate } from "./join-gate";
 import { useRoomSync } from "@/hooks/use-room-sync";
@@ -57,7 +59,11 @@ export function RoomClient({ code }: { code: string }) {
   const [leaving, setLeaving] = useState(false);
   const [lockPending, setLockPending] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [tab, setTab] = useState<"chat" | "search">("chat");
+  const [tab, setTab] = useState<"chat" | "search" | "queue">("chat");
+  const [queuePending, setQueuePending] = useState(false);
+  const currentGenerationRef = useRef<number | null>(null);
+  const endedRef = useRef<{ generation: number; duration: number; anchor: string; lastSent: number } | null>(null);
+  const endingPendingRef = useRef(false);
 
   const [playerReady, setPlayerReady] = useState(false);
   const actionQueueRef = useRef<Promise<boolean>>(Promise.resolve(true));
@@ -115,6 +121,35 @@ export function RoomClient({ code }: { code: string }) {
     };
   }, [code]);
 
+  const changeQueue = useCallback(async (payload: Extract<RoomCommand, { type: "queue" }>["payload"]) => {
+    setQueuePending(true);
+    try {
+      applyPlayback(await sendCommand({ type: "queue", payload }) as RoomPlaybackUpdate);
+      return true;
+    } catch (error) {
+      toast({ title: error instanceof Error ? error.message : "Không cập nhật được hàng đợi" });
+      return false;
+    } finally { setQueuePending(false); }
+  }, [sendCommand, applyPlayback, toast]);
+
+  const reportEnded = useCallback(async () => {
+    const ended = endedRef.current;
+    if (!ended || endingPendingRef.current || sync.isOffline || Date.now() - ended.lastSent < 3000) return;
+    ended.lastSent = Date.now();
+    endingPendingRef.current = true;
+    try {
+      applyPlayback(await sendCommand({ type: "queue", payload: { action: "ended", generation: ended.generation, duration: ended.duration } }) as RoomPlaybackUpdate);
+    } catch { /* Keep the end report for reconnect; never discard a queued video locally. */ }
+    finally { endingPendingRef.current = false; }
+  }, [sync.isOffline, sendCommand, applyPlayback]);
+
+  useEffect(() => {
+    const ended = endedRef.current;
+    if (!ended) return;
+    if (ended.generation !== sync.playbackGeneration || ended.anchor !== sync.playback?.lastSyncAt) endedRef.current = null;
+    else void reportEnded();
+  }, [sync.clockTick, sync.playbackGeneration, sync.playback?.lastSyncAt, reportEnded]);
+
   const pushPlayback = useCallback(
     async (payload: Extract<RoomCommand, { type: "playback" }>["payload"]) => {
       if (!identity.clientId) return false;
@@ -149,12 +184,14 @@ export function RoomClient({ code }: { code: string }) {
     const playback = sync.playback;
     const video = sync.video;
     if (!handle || !playback || !video || !playerReady || actionPendingRef.current || sync.isOffline) return;
-    if (Date.now() < suppressUntilRef.current) return;
+    if (endedRef.current) return;
 
     // A video swap wins over any seek: correcting the position of a player
     // that is about to load a different video is pointless.
-    if (currentVideoRef.current && video.videoId !== currentVideoRef.current) {
+    if (currentVideoRef.current && (video.videoId !== currentVideoRef.current ||
+      (currentGenerationRef.current !== null && currentGenerationRef.current !== sync.playbackGeneration && playback.isPlaying))) {
       currentVideoRef.current = video.videoId;
+      currentGenerationRef.current = sync.playbackGeneration;
       suppressUntilRef.current = Date.now() + VIDEO_SWAP_WINDOW_MS;
       handle.loadVideo(
         video.videoId,
@@ -163,6 +200,8 @@ export function RoomClient({ code }: { code: string }) {
       return;
     }
     if (!currentVideoRef.current) currentVideoRef.current = video.videoId;
+    currentGenerationRef.current = sync.playbackGeneration;
+    if (Date.now() < suppressUntilRef.current) return;
 
     // Our own action coming back through polling — the player is already there.
     if (playback.lastActionById === identity.clientId && Date.now() - localActionAtRef.current < ECHO_WINDOW_MS) {
@@ -185,7 +224,7 @@ export function RoomClient({ code }: { code: string }) {
       suppressUntilRef.current = Date.now() + ECHO_WINDOW_MS;
       handle.pause();
     }
-  }, [sync.playback, sync.video, sync.serverTime, sync.receivedAt, sync.clockTick, sync.isOffline, identity.clientId, playerReady]);
+  }, [sync.playback, sync.video, sync.serverTime, sync.receivedAt, sync.clockTick, sync.playbackGeneration, sync.isOffline, identity.clientId, playerReady]);
 
   const onSend = useCallback(async (body: string) => {
     try {
@@ -399,6 +438,11 @@ export function RoomClient({ code }: { code: string }) {
               if (Date.now() < suppressUntilRef.current) return;
               void pushPlayback({ isPlaying: playing, positionSeconds: currentTime });
             }}
+            onEnded={(id, duration) => {
+              if (id !== currentVideoRef.current || currentGenerationRef.current === null || !Number.isFinite(duration) || duration <= 0) return;
+              endedRef.current = { generation: currentGenerationRef.current, duration, anchor: sync.playback?.lastSyncAt ?? "", lastSent: 0 };
+              void reportEnded();
+            }}
           />
 
           <div>
@@ -455,7 +499,11 @@ export function RoomClient({ code }: { code: string }) {
               ) : (
                 <Lock className="h-4 w-4" />
               )}
-              Đổi video
+              Tìm video
+            </button>
+            <button type="button" onClick={() => setTab("queue")}
+              className={cn("flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-sm font-medium transition", tab === "queue" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+              <ListVideo className="h-4 w-4" /> Chờ ({sync.queue.length})
             </button>
           </div>
 
@@ -470,10 +518,20 @@ export function RoomClient({ code }: { code: string }) {
           {tab === "search" && (
             <RoomSearch
               onPick={changeVideo}
+              onEnqueue={async (item) => {
+                const added = await changeQueue({ action: "add", video: { videoId: item.id, title: item.title,
+                  channel: item.channel ?? "", thumbnail: item.thumbnail ?? "", embedUrl: item.embedUrl,
+                  watchUrl: item.watchUrl, duration: item.durationSeconds ?? 0 } });
+                if (added) toast({ title: "Đã thêm vào hàng đợi", description: item.title });
+              }}
               activeVideoId={video.videoId}
-              disabled={!canControl}
+              disabled={!canControl || sync.isOffline || queuePending}
             />
           )}
+          {tab === "queue" && <RoomQueue items={sync.queue} disabled={!canControl || sync.isOffline} pending={queuePending}
+            onRemove={(id) => void changeQueue({ action: "remove", id })}
+            onNext={() => void changeQueue({ action: "next", generation: sync.playbackGeneration })}
+            onSearch={() => setTab("search")} />}
         </div>
       </div>
     </div>

@@ -13,7 +13,7 @@ GitHub Actions (.github/workflows/ci.yml)
    │  typecheck + build + lint
    ▼
 Vercel (auto import qua GitHub App)
-   │  build = "prisma generate && next build"
+   │  build = "prisma generate && node scripts/ensure-room-queue.mjs && next build"
    ▼
 Vercel Functions
    │
@@ -56,12 +56,12 @@ git push -u origin main
    | `AUTH_GOOGLE_ID`    | (tuỳ chọn)                                           | Production + Preview |
    | `AUTH_GOOGLE_SECRET` | (tuỳ chọn)                                           | Production + Preview |
 
-4. **Deploy**. Vercel sẽ chạy `prisma generate && next build` theo `vercel.json`.
+4. **Deploy**. Vercel sẽ chạy `prisma generate && node scripts/ensure-room-queue.mjs && next build` theo `vercel.json`.
 5. Sau khi deploy xong, vào **Project Settings → Functions → DATABASE_URL** đã set chưa.
 
 ## 4. Migrate database production
 
-Vercel không chạy migration tự động. Cách 1 (khuyến nghị):
+Build tự bổ sung hai cột hàng đợi vào bảng Room hiện có, không xóa dữ liệu. Với database mới, vẫn cần khởi tạo toàn bộ schema trước. Cách 1 (khuyến nghị):
 
 ```bash
 # Lấy DATABASE_URL production từ Vercel dashboard, paste vào terminal

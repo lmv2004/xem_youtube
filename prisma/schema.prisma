@@ -138,6 +138,9 @@ model Room {
   watchUrl   String
   duration   Int    @default(0)
 
+  queue Json @default("[]")
+  playbackGeneration Int @default(0)
+
   isPlaying       Boolean  @default(false)
   positionSeconds Float    @default(0)
   lastSyncAt      DateTime @default(now())

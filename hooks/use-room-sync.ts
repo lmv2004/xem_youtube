@@ -9,7 +9,7 @@ type State = Omit<RoomSyncResponse, "cursor" | "playback" | "video"> & {
   video: RoomSyncResponse["video"] | null;
   isOffline: boolean; isClosed: boolean; receivedAt: number;
 };
-const initialState: State = { revision: "", playback: null, video: null, messages: [], members: [],
+const initialState: State = { queue: [], playbackGeneration: 0, revision: "", playback: null, video: null, messages: [], members: [],
   hostOnlyControl: false, serverTime: "", isOffline: true, isClosed: false, receivedAt: 0 };
 type Options = { enabled: boolean; clientId: string | null; displayName: string; userId: string | null };
 type CommandResult = RoomMessageDto | RoomPlaybackUpdate;
@@ -160,7 +160,7 @@ export function useRoomSync(code: string, { enabled, clientId, displayName, user
   }, [code, clientId, enabled, userId]);
 
   const request = useCallback((command: Omit<Extract<RoomCommand, { type: "chat" }>, "requestId"> |
-    Omit<Extract<RoomCommand, { type: "playback" }>, "requestId">): Promise<CommandResult> => {
+    Omit<Extract<RoomCommand, { type: "playback" | "queue" }>, "requestId">): Promise<CommandResult> => {
     const socket = socketRef.current;
     if (!readyRef.current || socket?.readyState !== WebSocket.OPEN) return Promise.reject(new Error("Phòng đang kết nối lại. Vui lòng thử lại khi có kết nối."));
     const requestId = crypto.randomUUID();

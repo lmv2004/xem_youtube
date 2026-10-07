@@ -1,4 +1,5 @@
 import { messageCursor, parseMessageCursor } from "@/lib/room-sync";
+import { playbackDto } from "@/lib/room-commands";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
@@ -125,6 +126,8 @@ export const POST = withRequestLog(SCOPE, async (request, context) => {
   }));
 
   const payload: RoomSyncResponse = {
+    queue: playbackDto(room).queue,
+    playbackGeneration: room.playbackGeneration,
     revision: room.updatedAt.toISOString(),
     playback: {
       isPlaying: room.isPlaying,

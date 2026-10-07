@@ -56,6 +56,9 @@ jobs:
       - name: Prepare isolated integration database
         run: npx prisma db push --skip-generate
 
+      - name: Verify additive queue upgrade on existing schema
+        run: node scripts/ensure-room-queue.mjs
+
       - name: WebSocket integration
         run: node --import tsx --test integration/room-realtime.test.ts
         env:

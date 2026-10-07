@@ -11,7 +11,7 @@ import { generateRoomCode } from "../lib/rooms";
 
 // Opt-in: creates/deletes only uniquely named fixtures, never existing accounts/rooms.
 test("two independent gateways deliver chat, controls, presence and room closure", {
-  skip: process.env.ROOM_REALTIME_INTEGRATION !== "1", timeout: 60_000,
+  skip: process.env.ROOM_REALTIME_INTEGRATION !== "1", timeout: 180_000,
 }, async () => {
   const users: string[] = [];
   const sockets: WebSocket[] = [];
@@ -72,6 +72,52 @@ test("two independent gateways deliver chat, controls, presence and room closure
     host.socket.send(JSON.stringify({ type: "playback", requestId: "pause", payload: { isPlaying: false, positionSeconds: 14 } }));
     await guest.wait((event) => event.type === "playback" && !event.update.playback.isPlaying);
     assert.equal(await prisma.roomMessage.count({ where: { roomId: room.id } }), 1);
+    const command = async (peer: typeof host, payload: Record<string, unknown>) => {
+      const requestId = crypto.randomUUID();
+      peer.socket.send(JSON.stringify({ ...payload, requestId }));
+      const reply = await peer.wait((event) => event.type === "ack" && event.requestId === requestId);
+      assert.equal(reply.type, "ack");
+      return reply as Extract<RoomEvent, { type: "ack" }>;
+    };
+    const video = { videoId: "aqz-KE-bpKQ", title: "Queued video", channel: "QA", thumbnail: "",
+      embedUrl: "https://www.youtube.com/embed/aqz-KE-bpKQ", watchUrl: "https://www.youtube.com/watch?v=aqz-KE-bpKQ", duration: 100 };
+    assert.equal((await command(guest, { type: "queue", payload: { action: "add", video } })).ok, false);
+    await command(host, { type: "queue", payload: { action: "add", video } });
+    await command(host, { type: "queue", payload: { action: "add", video } });
+    const queued = await guest.wait((event) => event.type === "playback" && event.update.queue.length === 2);
+    assert.ok(queued.type === "playback");
+    assert.notEqual(queued.update.queue[0].id, queued.update.queue[1].id);
+    const generation = queued.update.playbackGeneration;
+    assert.equal((await command(guest, { type: "queue", payload: { action: "next", generation } })).ok, false);
+    assert.equal((await command(guest, { type: "queue", payload: { action: "remove", id: queued.update.queue[0].id } })).ok, false);
+    // Simultaneous requests remove exactly one entry, even when the video IDs match.
+    await Promise.all([command(host, { type: "queue", payload: { action: "next", generation } }),
+      command(host, { type: "queue", payload: { action: "next", generation } })]);
+    let stored = await prisma.room.findUniqueOrThrow({ where: { code } });
+    assert.equal(stored.playbackGeneration, generation + 1);
+    assert.equal((stored.queue as unknown[]).length, 1);
+    assert.equal(stored.videoId, video.videoId);
+    assert.equal(stored.isPlaying, true);
+    await command(guest, { type: "queue", payload: { action: "ended", generation: stored.playbackGeneration, duration: 1 } });
+    assert.equal((await prisma.room.findUniqueOrThrow({ where: { code } })).playbackGeneration, generation + 1, "early end must not skip");
+    await command(host, { type: "playback", payload: { isPlaying: true, positionSeconds: 100 } });
+    await Promise.all([command(host, { type: "queue", payload: { action: "ended", generation: generation + 1, duration: 100 } }),
+      command(guest, { type: "queue", payload: { action: "ended", generation: generation + 1, duration: 100 } })]);
+    stored = await prisma.room.findUniqueOrThrow({ where: { code } });
+    assert.equal(stored.playbackGeneration, generation + 2);
+    assert.equal((stored.queue as unknown[]).length, 0);
+    assert.equal(stored.videoId, video.videoId, "consecutive identical videos restart as separate entries");
+    assert.equal(stored.positionSeconds, 0);
+    await command(host, { type: "queue", payload: { action: "add", video } });
+    const toRemove = await prisma.room.findUniqueOrThrow({ where: { code } });
+    const entry = (toRemove.queue as { id: string }[])[0];
+    await command(host, { type: "queue", payload: { action: "remove", id: entry.id } });
+    await command(host, { type: "playback", payload: { isPlaying: true, positionSeconds: 100 } });
+    // A viewer may finish the queue without the host, even in a locked room.
+    await command(guest, { type: "queue", payload: { action: "ended", generation: generation + 2, duration: 100 } });
+    stored = await prisma.room.findUniqueOrThrow({ where: { code } });
+    assert.equal(stored.isPlaying, false);
+    assert.equal((stored.queue as unknown[]).length, 0);
     await prisma.$transaction(async (tx) => {
       await tx.room.delete({ where: { code } });
       await notifyRoom(tx, { code, kind: "closed" });
