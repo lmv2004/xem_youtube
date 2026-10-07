@@ -42,7 +42,11 @@ test(
             };
             const timer = setTimeout(() => {
               waiters.delete(check);
-              reject(new Error(`Expected websocket event did not arrive: ${predicate.toString()}; buffered events: ${events.map((event) => event.type === "ack" ? `ack:${event.requestId}:${event.ok}:${event.message ?? ""}` : event.type === "playback" ? `playback:${event.update.roomTitle}:${event.update.queue.length}` : event.type).join(", ")}`));
+              reject(
+                new Error(
+                  `Expected websocket event did not arrive: ${predicate.toString()}; buffered events: ${events.map((event) => (event.type === "ack" ? `ack:${event.requestId}:${event.ok}:${event.message ?? ""}` : event.type === "playback" ? `playback:${event.update.roomTitle}:${event.update.queue.length}` : event.type)).join(", ")}`,
+                ),
+              );
             }, 10_000);
             waiters.add(check);
             check();
@@ -444,6 +448,111 @@ test(
         ),
       );
       for (const id of users) await prisma.user.deleteMany({ where: { id } });
+      await prisma.$disconnect();
+    }
+  },
+);
+
+test(
+  "scheduled socket expiry can rejoin with the same identity without resetting playback",
+  { skip: process.env.ROOM_REALTIME_INTEGRATION !== "1", timeout: 60_000 },
+  async () => {
+    const user = await prisma.user.create({
+      data: {
+        name: "Renewal integration",
+        email: `renewal-${crypto.randomUUID()}@example.invalid`,
+      },
+    });
+    const code = generateRoomCode();
+    const sockets: WebSocket[] = [];
+    const server = createServer();
+    const gateway = new WebSocketServer({ server });
+    let roomId = "";
+    try {
+      const room = await prisma.room.create({
+        data: {
+          code,
+          title: "Disposable renewal integration",
+          hostId: user.id,
+          videoId: "dQw4w9WgXcQ",
+          videoTitle: "QA",
+          channel: "",
+          thumbnail: "",
+          embedUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+          watchUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          isPlaying: true,
+          positionSeconds: 45,
+        },
+      });
+      roomId = room.id;
+      let connections = 0;
+      gateway.on("connection", (socket) => {
+        socket.pause();
+        void serveRoomSocket(
+          socket,
+          code,
+          "renewal-same-tab",
+          "Host",
+          { id: user.id },
+          ++connections === 1 ? 1000 : 240_000,
+          new RoomEventBus(),
+        );
+      });
+      await new Promise<void>((resolve) =>
+        server.listen(0, "127.0.0.1", resolve),
+      );
+      const address = server.address();
+      assert.ok(address && typeof address !== "string");
+      const connect = async () => {
+        const socket = new WebSocket(`ws://127.0.0.1:${address.port}`);
+        sockets.push(socket);
+        const closed = new Promise<{ code: number; reason: string }>(
+          (resolve) =>
+            socket.once("close", (code, reason) =>
+              resolve({ code, reason: reason.toString() }),
+            ),
+        );
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(
+            () => reject(new Error("Renewed socket did not become ready")),
+            15_000,
+          );
+          socket.on("message", (raw) => {
+            if ((JSON.parse(raw.toString()) as RoomEvent).type === "ready") {
+              clearTimeout(timeout);
+              resolve();
+            }
+          });
+          socket.once("error", (error) => {
+            clearTimeout(timeout);
+            reject(error);
+          });
+        });
+        return { closed };
+      };
+      const first = await connect();
+      assert.deepEqual(await first.closed, { code: 1012, reason: "Reconnect" });
+      await connect();
+      const restored = await prisma.room.findUniqueOrThrow({ where: { code } });
+      assert.equal(restored.isPlaying, true);
+      assert.equal(restored.positionSeconds, 45);
+      assert.equal(
+        restored.lastSyncAt.toISOString(),
+        room.lastSyncAt.toISOString(),
+      );
+      assert.equal(restored.playbackGeneration, room.playbackGeneration);
+      assert.equal(
+        await prisma.roomPresence.count({
+          where: { roomId, clientId: "renewal-same-tab" },
+        }),
+        1,
+      );
+    } finally {
+      for (const socket of sockets) socket.terminate();
+      for (const peer of gateway.clients) peer.terminate();
+      await new Promise<void>((resolve) => gateway.close(() => resolve()));
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+      await prisma.user.delete({ where: { id: user.id } });
       await prisma.$disconnect();
     }
   },

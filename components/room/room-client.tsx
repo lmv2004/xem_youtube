@@ -606,7 +606,7 @@ export function RoomClient({ code }: { code: string }) {
         </div>
       </Glass>
 
-      {sync.isOffline ? (
+      {sync.showReconnectWarning ? (
         <p className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm">
           {t(
             "Đang kết nối lại với phòng. Tin nhắn và điều khiển sẽ tiếp tục khi có kết nối.",

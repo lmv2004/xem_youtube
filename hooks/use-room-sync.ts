@@ -6,6 +6,10 @@ import {
   type RoomPlaybackUpdate,
 } from "@/lib/rooms";
 import { projectQueue, type QueueEdit } from "@/lib/room-optimistic-queue";
+import {
+  createRoomReconnectNotice,
+  isScheduledRoomRenewal,
+} from "@/lib/room-reconnect";
 import { mergeMessages } from "@/lib/room-sync";
 import type { RoomEvent, RoomCommand } from "@/lib/room-protocol";
 
@@ -14,6 +18,7 @@ type State = Omit<RoomSyncResponse, "cursor" | "playback" | "video"> & {
   video: RoomSyncResponse["video"] | null;
   queueEdits: QueueEdit[];
   isOffline: boolean;
+  showReconnectWarning: boolean;
   isClosed: boolean;
   receivedAt: number;
 };
@@ -29,6 +34,7 @@ const initialState: State = {
   hostOnlyControl: false,
   serverTime: "",
   isOffline: true,
+  showReconnectWarning: false,
   isClosed: false,
   receivedAt: 0,
 };
@@ -68,6 +74,9 @@ export function useRoomSync(
   nameRef.current = displayName;
   const socketRef = useRef<WebSocket | null>(null);
   const readyRef = useRef(false);
+  const renewalRef = useRef<ReturnType<
+    typeof createRoomReconnectNotice
+  > | null>(null);
   const pendingRef = useRef(new Map<string, Pending>());
   const stopRef = useRef<() => void>(() => {});
   const reconnectRef = useRef<() => void>(() => {});
@@ -83,6 +92,10 @@ export function useRoomSync(
     let connectTimer: ReturnType<typeof setTimeout> | undefined;
     let controller: AbortController | null = null;
     const pending = pendingRef.current;
+    const renewal = createRoomReconnectNotice((showReconnectWarning) => {
+      setState((prev) => ({ ...prev, showReconnectWarning }));
+    });
+    renewalRef.current = renewal;
     const rejectPending = () => {
       for (const item of pending.values()) {
         clearTimeout(item.timer);
@@ -119,9 +132,10 @@ export function useRoomSync(
       if (event.type === "members")
         setState((prev) => ({ ...prev, members: event.members }));
     };
-    const stop = () => {
+    const stop = (disposeNotice = true) => {
       stopped = true;
       generation++;
+      if (disposeNotice) renewal.dispose();
       readyRef.current = false;
       clearTimeout(retryTimer);
       clearTimeout(connectTimer);
@@ -139,7 +153,8 @@ export function useRoomSync(
       const current = ++generation;
       socketRef.current?.close();
       readyRef.current = false;
-      rejectPending();
+      // HTTP commands already in flight survive a scheduled socket renewal.
+      if (!renewal.renewing) rejectPending();
       const url = new URL(`/api/rooms/${code}/socket`, window.location.origin);
       url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
       url.searchParams.set("clientId", clientId);
@@ -229,6 +244,7 @@ export function useRoomSync(
             readyRef.current = true;
             attempt = 0;
             setState((prev) => ({ ...prev, isOffline: false }));
+            renewal.restored();
           } catch {
             if (active()) socket.close();
           } finally {
@@ -241,17 +257,21 @@ export function useRoomSync(
           if (buffered.length > 500) socket.close();
         } else applyEvent(event);
       };
-      socket.onclose = () => {
+      socket.onclose = (event) => {
         if (!active()) return;
         clearTimeout(connectTimer);
         controller?.abort();
         readyRef.current = false;
-        rejectPending();
+        const scheduled = isScheduledRoomRenewal(event);
+        renewal.begin(scheduled);
+        if (!scheduled) rejectPending();
         setState((prev) => ({ ...prev, isOffline: true }));
         retryTimer = setTimeout(
           connect,
-          Math.min(30_000, 1000 * 2 ** Math.min(attempt++, 5)) +
-            Math.random() * 300,
+          scheduled
+            ? 0
+            : Math.min(30_000, 1000 * 2 ** Math.min(attempt++, 5)) +
+                Math.random() * 300,
         );
       };
       socket.onerror = () => {
@@ -269,13 +289,15 @@ export function useRoomSync(
     const visibility = () => {
       if (!document.hidden) reconnect();
     };
-    const pageHide = () => stop();
+    const pageHide = () => stop(false);
     const pageShow = (event: PageTransitionEvent) => {
       if (event.persisted) {
         stopped = false;
+        renewal.begin(true);
         connect();
       }
     };
+    renewal.begin(true);
     connect();
     // Purely local playback clock; this interval performs no network requests.
     const clock = setInterval(() => {
@@ -287,6 +309,7 @@ export function useRoomSync(
     window.addEventListener("pageshow", pageShow);
     return () => {
       stop();
+      if (renewalRef.current === renewal) renewalRef.current = null;
       clearInterval(clock);
       reconnectRef.current = () => {};
       window.removeEventListener("online", reconnect);
@@ -297,7 +320,7 @@ export function useRoomSync(
   }, [code, clientId, enabled, userId]);
 
   const request = useCallback(
-    (
+    async (
       command:
         | Omit<Extract<RoomCommand, { type: "chat" }>, "requestId">
         | Omit<
@@ -307,6 +330,9 @@ export function useRoomSync(
         | Omit<Extract<RoomCommand, { type: "rename" }>, "requestId">,
       chosenRequestId?: string,
     ): Promise<CommandResult> => {
+      if (!readyRef.current && renewalRef.current?.renewing) {
+        await renewalRef.current.waitForReady();
+      }
       const socket = socketRef.current;
       if (!readyRef.current || socket?.readyState !== WebSocket.OPEN)
         return Promise.reject(
@@ -322,7 +348,8 @@ export function useRoomSync(
           // reconciliation until reconnect reloads authoritative room state.
           readyRef.current = false;
           setState((previous) => ({ ...previous, isOffline: true }));
-          socket.close();
+          renewalRef.current?.begin(false);
+          socketRef.current?.close();
           reject(
             new Error(
               "Chưa nhận được xác nhận. Hãy kiểm tra trước khi gửi lại.",
