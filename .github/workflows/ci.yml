@@ -10,11 +10,23 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test-only
+          POSTGRES_DB: room_realtime_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
-      # Read-only placeholders so build + typecheck can complete without
-      # real secrets. The actual values are only needed at runtime, not
-      # at build time.
-      DATABASE_URL: "postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public"
+      # Disposable Postgres service for integration tests; no production secrets.
+      DATABASE_URL: "postgresql://postgres:test-only@localhost:5432/room_realtime_ci?schema=public"
       AUTH_SECRET: "ci-placeholder-secret-32-bytes-minimum-len"
       AUTH_URL: "http://localhost:3000"
       YOUTUBE_API_KEY: "ci-placeholder"
@@ -40,6 +52,17 @@ jobs:
 
       - name: Regression tests
         run: node --import tsx --test lib/*.test.ts
+
+      - name: Prepare isolated integration database
+        run: npx prisma db push --skip-generate
+
+      - name: Verify additive queue upgrade on existing schema
+        run: node scripts/ensure-room-queue.mjs
+
+      - name: WebSocket integration
+        run: node --import tsx --test integration/room-realtime.test.ts
+        env:
+          ROOM_REALTIME_INTEGRATION: "1"
 
       - name: Build
         run: npm run build

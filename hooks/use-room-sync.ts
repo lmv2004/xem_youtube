@@ -1,139 +1,184 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { HEARTBEAT_INTERVAL_MS, type RoomSyncResponse, type RoomMessageDto } from "@/lib/rooms";
-import { mergeMessages, syncDelay } from "@/lib/room-sync";
+import { type RoomSyncResponse, type RoomMessageDto, type RoomPlaybackUpdate } from "@/lib/rooms";
+import { mergeMessages } from "@/lib/room-sync";
+import type { RoomEvent, RoomCommand } from "@/lib/room-protocol";
 
 type State = Omit<RoomSyncResponse, "cursor" | "playback" | "video"> & {
   playback: RoomSyncResponse["playback"] | null;
   video: RoomSyncResponse["video"] | null;
-  isOffline: boolean;
-  isClosed: boolean;
-  receivedAt: number;
+  isOffline: boolean; isClosed: boolean; receivedAt: number;
 };
-const initialState: State = {
-  playback: null, video: null, messages: [], members: [], hostOnlyControl: false,
-  serverTime: "", isOffline: false, isClosed: false, receivedAt: 0,
-};
-type Options = { enabled: boolean; clientId: string | null; displayName: string };
+const initialState: State = { queue: [], playbackGeneration: 0, revision: "", playback: null, video: null, messages: [], members: [],
+  hostOnlyControl: false, serverTime: "", isOffline: true, isClosed: false, receivedAt: 0 };
+type Options = { enabled: boolean; clientId: string | null; displayName: string; userId: string | null };
+type CommandResult = RoomMessageDto | RoomPlaybackUpdate;
+type Pending = { resolve: (data: CommandResult) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> };
 
-export function useRoomSync(code: string, { enabled, clientId, displayName }: Options) {
+function withPlayback(previous: State, update: RoomPlaybackUpdate, receivedAt = Date.now()): State {
+  if (previous.revision && update.revision < previous.revision) return previous;
+  return { ...previous, ...update, receivedAt };
+}
+export function useRoomSync(code: string, { enabled, clientId, displayName, userId }: Options) {
   const [state, setState] = useState(initialState);
+  const [clockTick, setClockTick] = useState(0);
   const nameRef = useRef(displayName);
   nameRef.current = displayName;
-  const refreshRef = useRef<() => void>(() => {});
+  const socketRef = useRef<WebSocket | null>(null);
+  const readyRef = useRef(false);
+  const pendingRef = useRef(new Map<string, Pending>());
   const stopRef = useRef<() => void>(() => {});
+  const reconnectRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     setState(initialState);
     if (!enabled || !clientId) return;
     let stopped = false;
-    let running = false;
-    let queued = false;
+    let generation = 0;
+    let attempt = 0;
     let cursor: string | null = null;
-    let heartbeatAt = 0;
-    let playing = false;
-    let failures = 0;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    let connectTimer: ReturnType<typeof setTimeout> | undefined;
     let controller: AbortController | null = null;
-    let timer: ReturnType<typeof setTimeout> | undefined;
+    const pending = pendingRef.current;
+    const rejectPending = () => {
+      for (const item of pending.values()) { clearTimeout(item.timer); item.reject(new Error("Mất kết nối. Chưa xác nhận được thao tác.")); }
+      pending.clear();
+    };
+    const applyEvent = (event: RoomEvent) => {
+      if (event.type === "chat") setState((prev) => ({ ...prev, messages: mergeMessages(prev.messages, [event.message]) }));
+      if (event.type === "playback") setState((prev) => withPlayback(prev, event.update));
+      if (event.type === "members") setState((prev) => ({ ...prev, members: event.members }));
+    };
     const stop = () => {
-      stopped = true;
-      clearTimeout(timer);
+      stopped = true; generation++;
+      readyRef.current = false;
+      clearTimeout(retryTimer); clearTimeout(connectTimer);
       controller?.abort();
+      socketRef.current?.close(); socketRef.current = null;
+      rejectPending();
     };
     stopRef.current = stop;
-
-    const poll = async () => {
+    const connect = () => {
       if (stopped) return;
-      clearTimeout(timer);
-      if (running) { queued = true; return; }
-      running = true;
-      const requestController = new AbortController();
-      controller = requestController;
-      const timeout = setTimeout(() => requestController.abort(), 10_000);
-      const sentAt = Date.now();
-      const heartbeat = sentAt - heartbeatAt >= HEARTBEAT_INTERVAL_MS;
-      try {
-        const res = await fetch(`/api/rooms/${code}/sync`, {
-          method: "POST", cache: "no-store", signal: requestController.signal,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ clientId, displayName: nameRef.current, after: cursor, heartbeat }),
-        });
-        if (stopped) return;
-        if (res.status === 404) {
-          stop();
-          setState((prev) => ({ ...prev, isClosed: true, isOffline: false }));
+      clearTimeout(retryTimer); clearTimeout(connectTimer);
+      controller?.abort();
+      const current = ++generation;
+      socketRef.current?.close();
+      readyRef.current = false;
+      rejectPending();
+      const url = new URL(`/api/rooms/${code}/socket`, window.location.origin);
+      url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+      url.searchParams.set("clientId", clientId);
+      url.searchParams.set("name", nameRef.current.trim().slice(0, 40) || "Khách");
+      const socket = new WebSocket(url);
+      socketRef.current = socket;
+      let bootstrapping = true;
+      const buffered: RoomEvent[] = [];
+      const active = () => !stopped && current === generation;
+      connectTimer = setTimeout(() => socket.close(), 15_000);
+      socket.onmessage = async (message) => {
+        if (!active()) return;
+        let event: RoomEvent;
+        try { event = JSON.parse(message.data); } catch { socket.close(); return; }
+        if (event.type === "closed") {
+          stop(); setState((prev) => ({ ...prev, isClosed: true, isOffline: false })); return;
+        }
+        if (event.type === "ack") {
+          const item = pending.get(event.requestId);
+          if (!item) return;
+          pending.delete(event.requestId); clearTimeout(item.timer);
+          if (event.ok && event.data) item.resolve(event.data);
+          else item.reject(new Error(event.message || "Không thực hiện được thao tác."));
           return;
         }
-        if (!res.ok) throw new Error(`Sync failed: ${res.status}`);
-        const json = await res.json() as RoomSyncResponse;
-        if (stopped) return;
-        const receivedAt = Date.now();
-        if (heartbeat) heartbeatAt = sentAt;
-        cursor = json.cursor;
-        playing = json.playback.isPlaying;
-        failures = 0;
-        setState((prev) => ({
-          ...json, messages: mergeMessages(prev.messages, json.messages),
-          // Estimate the response trip without trusting the device's wall clock.
-          serverTime: new Date(Date.parse(json.serverTime) + Math.min(1000, (receivedAt - sentAt) / 2)).toISOString(),
-          receivedAt, isOffline: false, isClosed: false,
-        }));
-      } catch {
-        if (!stopped) {
-          failures += 1;
-          setState((prev) => ({ ...prev, isOffline: true }));
+        if (event.type === "ready") {
+          clearTimeout(connectTimer);
+          controller = new AbortController();
+          const requestController = controller;
+          const timeout = setTimeout(() => requestController.abort(), 30_000);
+          try {
+            // Catch up missed pages after reconnect, then replay live events received during the snapshot.
+            let more = true;
+            while (more && active()) {
+              const response = await fetch(`/api/rooms/${code}/sync`, { method: "POST", cache: "no-store",
+                signal: requestController.signal, headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ clientId, displayName: nameRef.current, heartbeat: false, after: cursor }) });
+              if (!active()) return;
+              if (response.status === 404) { stop(); setState((prev) => ({ ...prev, isClosed: true, isOffline: false })); return; }
+              if (!response.ok) throw new Error("Snapshot failed");
+              const snapshot = await response.json() as RoomSyncResponse;
+              if (!active()) return;
+              const oldCursor = cursor;
+              cursor = snapshot.cursor;
+              more = snapshot.messages.length === 50 && cursor !== oldCursor;
+              setState((prev) => ({ ...withPlayback(prev, snapshot), members: snapshot.members,
+                messages: mergeMessages(prev.messages, snapshot.messages) }));
+            }
+            if (!active()) return;
+            for (const bufferedEvent of buffered) applyEvent(bufferedEvent);
+            buffered.length = 0;
+            bootstrapping = false; readyRef.current = true; attempt = 0;
+            setState((prev) => ({ ...prev, isOffline: false }));
+          } catch { if (active()) socket.close(); }
+          finally { clearTimeout(timeout); }
+          return;
         }
-      } finally {
-        clearTimeout(timeout);
-        running = false;
-        controller = null;
-        if (!stopped) {
-          timer = setTimeout(() => void poll(), queued ? 0 : syncDelay(playing, document.hidden, failures));
-          queued = false;
-        }
-      }
+        if (bootstrapping) {
+          buffered.push(event);
+          if (buffered.length > 500) socket.close();
+        } else applyEvent(event);
+      };
+      socket.onclose = () => {
+        if (!active()) return;
+        clearTimeout(connectTimer); controller?.abort(); readyRef.current = false;
+        rejectPending();
+        setState((prev) => ({ ...prev, isOffline: true }));
+        retryTimer = setTimeout(connect, Math.min(30_000, 1000 * 2 ** Math.min(attempt++, 5)) + Math.random() * 300);
+      };
+      socket.onerror = () => { if (active()) socket.close(); };
     };
-    const refresh = () => { void poll(); };
-    const onVisibility = () => { if (!document.hidden) { heartbeatAt = 0; refresh(); } };
-    const onOnline = () => { heartbeatAt = 0; refresh(); };
-    const onPageHide = () => {
-      stop();
-      navigator.sendBeacon?.(`/api/rooms/${code}/leave`,
-        new Blob([JSON.stringify({ clientId })], { type: "text/plain" }));
+    const reconnect = () => {
+      if (socketRef.current?.readyState !== WebSocket.OPEN && socketRef.current?.readyState !== WebSocket.CONNECTING) connect();
     };
-    const onPageShow = (event: PageTransitionEvent) => {
-      if (event.persisted) { stopped = false; heartbeatAt = 0; refresh(); }
-    };
-    refreshRef.current = refresh;
-    refresh();
-    document.addEventListener("visibilitychange", onVisibility);
-    window.addEventListener("online", onOnline);
-    window.addEventListener("pagehide", onPageHide);
-    window.addEventListener("pageshow", onPageShow);
+    reconnectRef.current = reconnect;
+    const visibility = () => { if (!document.hidden) reconnect(); };
+    const pageHide = () => stop();
+    const pageShow = (event: PageTransitionEvent) => { if (event.persisted) { stopped = false; connect(); } };
+    connect();
+    // Purely local playback clock; this interval performs no network requests.
+    const clock = setInterval(() => { if (!document.hidden) setClockTick((tick) => tick + 1); }, 1000);
+    window.addEventListener("online", reconnect);
+    document.addEventListener("visibilitychange", visibility);
+    window.addEventListener("pagehide", pageHide); window.addEventListener("pageshow", pageShow);
     return () => {
-      stop();
-      refreshRef.current = () => {};
-      document.removeEventListener("visibilitychange", onVisibility);
-      window.removeEventListener("online", onOnline);
-      window.removeEventListener("pagehide", onPageHide);
-      window.removeEventListener("pageshow", onPageShow);
+      stop(); clearInterval(clock); reconnectRef.current = () => {};
+      window.removeEventListener("online", reconnect);
+      document.removeEventListener("visibilitychange", visibility);
+      window.removeEventListener("pagehide", pageHide); window.removeEventListener("pageshow", pageShow);
     };
-  }, [enabled, clientId, code]);
+  }, [code, clientId, enabled, userId]);
 
-  const refresh = useCallback(() => refreshRef.current(), []);
+  const request = useCallback((command: Omit<Extract<RoomCommand, { type: "chat" }>, "requestId"> |
+    Omit<Extract<RoomCommand, { type: "playback" | "queue" }>, "requestId">): Promise<CommandResult> => {
+    const socket = socketRef.current;
+    if (!readyRef.current || socket?.readyState !== WebSocket.OPEN) return Promise.reject(new Error("Phòng đang kết nối lại. Vui lòng thử lại khi có kết nối."));
+    const requestId = crypto.randomUUID();
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        pendingRef.current.delete(requestId);
+        reject(new Error("Chưa nhận được xác nhận. Hãy kiểm tra trước khi gửi lại."));
+      }, 15_000);
+      pendingRef.current.set(requestId, { resolve, reject, timer });
+      try { socket.send(JSON.stringify({ ...command, requestId })); }
+      catch { clearTimeout(timer); pendingRef.current.delete(requestId); reject(new Error("Mất kết nối phòng.")); }
+    });
+  }, []);
+  const refresh = useCallback(() => reconnectRef.current(), []);
+  const applyPlayback = useCallback((update: RoomPlaybackUpdate) => setState((prev) => withPlayback(prev, update)), []);
   const appendLocal = useCallback((message: RoomMessageDto) => {
     setState((prev) => ({ ...prev, messages: mergeMessages(prev.messages, [message]) }));
-    refreshRef.current();
   }, []);
-  const leave = useCallback(async () => {
-    stopRef.current();
-    if (!clientId) return;
-    try {
-      await fetch(`/api/rooms/${code}/leave`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId }), keepalive: true,
-      });
-    } catch { /* Presence expires if the network is unavailable. */ }
-  }, [code, clientId]);
-  return { ...state, refresh, appendLocal, leave };
+  const leave = useCallback(async () => stopRef.current(), []);
+  return { ...state, clockTick, request, refresh, appendLocal, applyPlayback, leave };
 }

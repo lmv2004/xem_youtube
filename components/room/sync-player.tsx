@@ -13,6 +13,8 @@ type YTPlayer = {
   pauseVideo: () => void;
   seekTo: (seconds: number, allowSeekAhead: boolean) => void;
   getCurrentTime: () => number;
+  getDuration: () => number;
+  getVideoUrl: () => string;
   getPlayerState: () => number;
   loadVideoById: (videoId: string, startSeconds?: number) => void;
   destroy: () => void;
@@ -85,9 +87,10 @@ type Props = {
   /** Fired when the local viewer presses play/pause on the player itself. */
   onStateChange?: (playing: boolean, currentTime: number) => void;
   onReady?: (handle: SyncPlayerHandle) => void;
+  onEnded?: (videoId: string, duration: number) => void;
 };
 
-export function SyncPlayer({ videoId, onStateChange, onReady }: Props) {
+export function SyncPlayer({ videoId, onStateChange, onReady, onEnded }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<YTPlayer | null>(null);
 
@@ -97,6 +100,8 @@ export function SyncPlayer({ videoId, onStateChange, onReady }: Props) {
   const onReadyRef = useRef(onReady);
   onStateChangeRef.current = onStateChange;
   onReadyRef.current = onReady;
+  const endedRef = useRef(onEnded);
+  endedRef.current = onEnded;
 
   useEffect(() => {
     let cancelled = false;
@@ -123,7 +128,9 @@ export function SyncPlayer({ videoId, onStateChange, onReady }: Props) {
           onStateChange: (event) => {
             if (event.data === YT.PlayerState.PLAYING) {
               onStateChangeRef.current?.(true, player.getCurrentTime());
-            } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
+            } else if (event.data === YT.PlayerState.ENDED) {
+              endedRef.current?.(new URL(player.getVideoUrl()).searchParams.get("v") ?? "", player.getDuration());
+            } else if (event.data === YT.PlayerState.PAUSED) {
               onStateChangeRef.current?.(false, player.getCurrentTime());
             }
           },

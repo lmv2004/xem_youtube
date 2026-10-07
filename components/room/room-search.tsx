@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, Lock, Play, Search, Sparkles } from "lucide-react";
+import { Loader2, Lock, Play, ListPlus, Search, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDuration } from "@/lib/format";
@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   onPick: (item: VideoItem) => Promise<void> | void;
+  onEnqueue: (item: VideoItem) => Promise<void> | void;
   activeVideoId?: string | null;
   /** True when the host locked control: browsing stays open, switching does not. */
   disabled?: boolean;
@@ -19,7 +20,7 @@ type Props = {
  * endpoint: with no query it returns the trending list, which doubles as the
  * suggestion feed.
  */
-export function RoomSearch({ onPick, activeVideoId, disabled = false }: Props) {
+export function RoomSearch({ onPick, onEnqueue, activeVideoId, disabled = false }: Props) {
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<VideoItem[]>([]);
   const [heading, setHeading] = useState("Đề xuất cho phòng");
@@ -60,10 +61,10 @@ export function RoomSearch({ onPick, activeVideoId, disabled = false }: Props) {
     void run("");
   }, [run]);
 
-  const pick = async (item: VideoItem) => {
+  const pick = async (item: VideoItem, enqueue = false) => {
     setPickingId(item.id);
     try {
-      await onPick(item);
+      await (enqueue ? onEnqueue(item) : onPick(item));
     } finally {
       setPickingId(null);
     }
@@ -145,7 +146,11 @@ export function RoomSearch({ onPick, activeVideoId, disabled = false }: Props) {
                       : ""}
                   </p>
 
-                  <div className="mt-auto pt-1">
+                  <div className="mt-auto flex flex-wrap gap-1 pt-1">
+                    <Button type="button" size="sm" variant="secondary" className="h-7 text-xs"
+                      disabled={disabled || pickingId !== null} onClick={() => void pick(item, true)}>
+                      <ListPlus className="mr-1 h-3 w-3" /> Thêm vào hàng đợi
+                    </Button>
                     {isActive ? (
                       <span className="text-[11px] font-medium text-primary">
                         Đang phát trong phòng
@@ -166,7 +171,7 @@ export function RoomSearch({ onPick, activeVideoId, disabled = false }: Props) {
                         ) : (
                           <Play className="mr-1 h-3 w-3" />
                         )}
-                        Phát cho cả phòng
+                        Phát ngay
                       </Button>
                     )}
                   </div>

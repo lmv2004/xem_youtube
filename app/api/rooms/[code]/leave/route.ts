@@ -1,3 +1,4 @@
+import { notifyRoom } from "@/lib/room-commands";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { log } from "@/lib/logger";
@@ -39,7 +40,10 @@ export const POST = withRequestLog(SCOPE, async (request, context) => {
     return NextResponse.json({ ok: true });
   }
 
-  await prisma.roomPresence.deleteMany({ where: { roomId: room.id, clientId } });
+  await prisma.$transaction(async (tx) => {
+    const removed = await tx.roomPresence.deleteMany({ where: { roomId: room.id, clientId } });
+    if (removed.count) await notifyRoom(tx, { code, kind: "members" });
+  });
   log.info(SCOPE, "member left", { code });
 
   return NextResponse.json({ ok: true });

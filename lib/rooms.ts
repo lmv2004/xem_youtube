@@ -1,8 +1,6 @@
 // Shared watch-party helpers. Safe to import from both server and client:
 // no Prisma, no server-only imports.
 
-export const SYNC_INTERVAL_MS = 1500;
-export const HEARTBEAT_INTERVAL_MS = 15_000;
 
 /**
  * How far a viewer may drift from the room before we hard-seek them.
@@ -111,6 +109,9 @@ export type RoomMessageDto = {
 };
 
 export type RoomSyncResponse = {
+  queue: RoomQueueItem[];
+  playbackGeneration: number;
+  revision: string;
   playback: RoomPlayback;
   video: RoomVideo;
   messages: RoomMessageDto[];
@@ -120,6 +121,9 @@ export type RoomSyncResponse = {
   cursor: string | null;
   serverTime: string;
 };
+
+export type RoomQueueItem = RoomVideo & { id: string };
+export type RoomPlaybackUpdate = Pick<RoomSyncResponse, "playback" | "video" | "hostOnlyControl" | "serverTime" | "revision" | "queue" | "playbackGeneration">;
 
 /**
  * Single source of truth for "may this person drive playback?", shared by the
