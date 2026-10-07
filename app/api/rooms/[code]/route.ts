@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { notifyRoom, updatePlayback, RoomCommandError } from "@/lib/room-commands";
+import { updatePlayback, RoomCommandError } from "@/lib/room-commands";
 import { auth } from "@/auth";
 import { deleteOwnedRoom } from "@/lib/delete-room";
 import { prisma } from "@/lib/db";
@@ -78,10 +78,8 @@ export const PATCH = withRequestLog(SCOPE + ".update", async (request, context) 
 export const DELETE = withRequestLog(SCOPE + ".delete", async (_request, context) => {
   const session = await auth();
   const code = await readCode(context);
-  const result = await prisma.$transaction(async (tx) => {
-    const result = await deleteOwnedRoom(tx.room, code, session?.user?.id);
-    if (result.status === 200) await notifyRoom(tx, { code, kind: "closed" });
-    return result;
-  });
+  const result = await prisma.$transaction((tx) =>
+    deleteOwnedRoom(tx.room, code, session?.user?.id),
+  );
   return NextResponse.json({ message: result.message }, { status: result.status });
 });

@@ -59,10 +59,10 @@ jobs:
       - name: Verify additive queue upgrade on existing schema
         run: node scripts/ensure-room-queue.mjs
 
-      - name: WebSocket integration
-        run: node --import tsx --test integration/room-realtime.test.ts
-        env:
-          ROOM_REALTIME_INTEGRATION: "1"
-
       - name: Build
         run: npm run build
+
+      - name: HTTP room sync integration
+        run: node --import tsx --test integration/room-http.test.ts
+        env:
+          ROOM_HTTP_INTEGRATION: "1"

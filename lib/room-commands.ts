@@ -3,8 +3,6 @@ import { prisma } from "./db";
 import { placeQueueItem } from "./room-queue-placement";
 import {
   playbackInput,
-  NOTICE_CHANNEL,
-  type RoomNotice,
   type RoomCommand,
 } from "./room-protocol";
 import type { RoomQueueItem } from "./rooms";
@@ -26,13 +24,6 @@ export class RoomCommandError extends Error {
   ) {
     super(message);
   }
-}
-export async function notifyRoom(
-  tx: Prisma.TransactionClient,
-  notice: RoomNotice,
-) {
-  // Only small record references cross NOTIFY; payloads stay below its 8KB limit.
-  await tx.$queryRaw`SELECT pg_notify(${NOTICE_CHANNEL}, ${JSON.stringify(notice)})::text`;
 }
 export function playbackDto(room: Room): RoomPlaybackUpdate {
   return {
@@ -151,7 +142,6 @@ export async function updatePlayback(
           : {}),
       },
     });
-    await notifyRoom(tx, { code, kind: "playback" });
     return playbackDto(updated);
   });
 }
@@ -254,7 +244,6 @@ export async function updateQueue(
         });
     }
     const updated = await tx.room.update({ where: { code }, data });
-    await notifyRoom(tx, { code, kind: "playback", commandId });
     return { ...playbackDto(updated), confirmedCommandId: commandId };
   });
 }
@@ -295,7 +284,6 @@ export async function postRoomMessage(
         },
         include: { user: { select: { id: true, name: true, image: true } } },
       }));
-    await notifyRoom(tx, { code, kind: "chat", id: row.id });
     return {
       id: row.id,
       body: row.body,
@@ -327,7 +315,6 @@ export async function renameRoom(
         updatedAt: new Date(Math.max(Date.now(), room.updatedAt.getTime() + 1)),
       },
     });
-    await notifyRoom(tx, { code, kind: "playback" });
     return playbackDto(updated);
   });
 }

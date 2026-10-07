@@ -1,10 +1,4 @@
 import { z } from "zod";
-import type {
-  RoomMemberDto,
-  RoomMessageDto,
-  RoomPlaybackUpdate,
-  RoomSyncResponse,
-} from "./rooms";
 
 export const playbackInput = z.object({
   isPlaying: z.boolean().optional(),
@@ -69,23 +63,3 @@ export const roomCommand = z.discriminatedUnion("type", [
   }),
 ]);
 export type RoomCommand = z.infer<typeof roomCommand>;
-export type RoomEvent =
-  | { type: "ready"; serverTime: string; snapshot?: RoomSyncResponse }
-  | { type: "chat"; message: RoomMessageDto }
-  | { type: "playback"; update: RoomPlaybackUpdate }
-  | { type: "members"; members: RoomMemberDto[] }
-  | { type: "closed" }
-  | {
-      type: "ack";
-      requestId: string;
-      ok: boolean;
-      data?: RoomMessageDto | RoomPlaybackUpdate;
-      message?: string;
-    };
-export type RoomNotice = {
-  code: string;
-  kind: "chat" | "playback" | "members" | "closed";
-  id?: string;
-  commandId?: string;
-};
-export const NOTICE_CHANNEL = "xemphim_rooms_v1";

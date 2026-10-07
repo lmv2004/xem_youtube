@@ -4,7 +4,7 @@ import { playbackDto } from "./room-commands";
 import { messageCursor, parseMessageCursor } from "./room-sync";
 import { MESSAGE_PAGE_SIZE, PRESENCE_TIMEOUT_MS, type RoomSyncResponse } from "./rooms";
 
-/** Used by both the WebSocket handshake and paginated reconnect catch-up. */
+/** Authoritative snapshot for HTTP polling and paginated chat catch-up. */
 export async function readRoomSnapshot(room: Room, after?: string | null): Promise<RoomSyncResponse> {
   const cursor = parseMessageCursor(after);
   const [rows, presences] = await Promise.all([

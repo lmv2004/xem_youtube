@@ -1179,6 +1179,10 @@
     "en": "Reconnecting to the room. Chat and controls will resume when connected.",
     "te": "గదికి మళ్లీ కనెక్ట్ అవుతున్నాం. కనెక్ట్ అయిన తర్వాత చాట్, నియంత్రణలు కొనసాగుతాయి."
   },
+  "Đồng bộ phòng đang gián đoạn. Video vẫn tiếp tục; đang thử lại.": {
+    "en": "Room sync is temporarily unavailable. Video continues; retrying.",
+    "te": "గది సమకాలీకరణ తాత్కాలికంగా అందుబాటులో లేదు. వీడియో కొనసాగుతుంది; మళ్లీ ప్రయత్నిస్తున్నాం."
+  },
   "Bạn đang khoá phòng: chỉ bạn điều khiển được.": {
     "en": "You locked the room: only you can control playback.",
     "te": "మీరు గదిని లాక్ చేశారు: మీరు మాత్రమే ప్లేబ్యాక్ నియంత్రించగలరు."

@@ -1,3 +1,5 @@
+> Historical implementation, superseded by HTTP polling. See [watch-party-sync.md](watch-party-sync.md).
+
 # Quiet room connection renewal
 
 The existing server closes each WebSocket with code `1012` and reason `Reconnect` after at most four minutes, before the Vercel function duration limit. This remains in place.

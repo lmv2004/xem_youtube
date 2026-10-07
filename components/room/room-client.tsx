@@ -219,7 +219,7 @@ export function RoomClient({ code }: { code: string }) {
         })) as RoomPlaybackUpdate,
       );
     } catch {
-      /* Keep the end report for reconnect; never discard a queued video locally. */
+      /* Keep the end report for the next successful sync; never discard a queued video locally. */
     } finally {
       endingPendingRef.current = false;
     }
@@ -611,14 +611,14 @@ export function RoomClient({ code }: { code: string }) {
       {sync.isOffline && !sync.hasConnected && !sync.isClosed ? (
         <p role="status" className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-4 py-2 text-sm text-muted-foreground">
           <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-          {sync.showReconnectWarning
+          {sync.showSyncWarning
             ? t("Kết nối đang mất nhiều thời gian hơn dự kiến…")
             : t("Đang kết nối với phòng…")}
         </p>
-      ) : sync.showReconnectWarning ? (
+      ) : sync.showSyncWarning ? (
         <p role="status" className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm">
           {t(
-            "Đang kết nối lại với phòng. Tin nhắn và điều khiển sẽ tiếp tục khi có kết nối.",
+            "Đồng bộ phòng đang gián đoạn. Video vẫn tiếp tục; đang thử lại.",
           )}{" "}
         </p>
       ) : null}
