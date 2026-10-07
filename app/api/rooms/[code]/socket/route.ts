@@ -19,5 +19,11 @@ export async function GET(request: Request, context: { params: Promise<{ code: s
   const session = await auth();
   const lifetime = session?.expires ? Date.parse(session.expires) - Date.now() : 240_000;
   if (lifetime <= 0) return new Response("Session expired", { status: 401 });
-  return experimental_upgradeWebSocket((socket) => serveRoomSocket(socket, code, clientId, name, session?.user ?? {}, lifetime), { maxPayload: 16_384 });
+  return experimental_upgradeWebSocket(async (socket) => {
+    // Keep the invocation active while event callbacks perform asynchronous DB work.
+    // The socket is already upgraded; clients need not wait for this handler to return.
+    const closed = new Promise<void>((resolve) => socket.once("close", () => resolve()));
+    await serveRoomSocket(socket, code, clientId, name, session?.user ?? {}, lifetime);
+    await closed;
+  }, { maxPayload: 16_384 });
 }
