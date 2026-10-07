@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,7 @@ type Props = {
 };
 
 export function InterestPicker({ value, onChange }: Props) {
+  const t = useTranslations();
   const [internal, setInternal] = useState<string[]>([]);
 
   // Hydrate from localStorage on mount.
@@ -65,14 +67,15 @@ export function InterestPicker({ value, onChange }: Props) {
   return (
     <div className="space-y-2">
       <p className="text-sm text-muted-foreground">
-        Chọn tối đa {MAX_INTERESTS} sở thích để cá nhân hoá đề xuất. Sở thích được lưu cục bộ.
+        {t("Chọn tối đa")} {MAX_INTERESTS}{" "}
+        {t("sở thích để cá nhân hoá đề xuất. Sở thích được lưu cục bộ.")}{" "}
       </p>
       <div className="flex flex-wrap gap-2">
         {SUGGESTIONS.map((s) => {
           const active = current.includes(s);
           return (
             <button
-              key={s}
+              key={t(s)}
               type="button"
               onClick={() => toggle(s)}
               className={cn(
@@ -84,7 +87,7 @@ export function InterestPicker({ value, onChange }: Props) {
               aria-pressed={active}
             >
               {active ? <Check className="h-3 w-3" /> : null}
-              {s}
+              {t(s)}
             </button>
           );
         })}

@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/locale-server";
 import { Suspense } from "react";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
@@ -7,40 +8,47 @@ import { GradientMesh } from "@/components/site/gradient-mesh";
 import { AccountDashboard } from "@/components/account-dashboard";
 import { prisma } from "@/lib/db";
 
-export const metadata = {
-  title: "Tài khoản & Cài đặt | XemPhim",
-  description: "Quản lý thông tin tài khoản, sở thích đề xuất và cài đặt giao diện trên XemPhim.",
-};
+export async function generateMetadata() {
+  const t = await getTranslator();
+  return {
+    title: t("Tài khoản & Cài đặt"),
+    description: t(
+      "Quản lý thông tin tài khoản, sở thích đề xuất và cài đặt giao diện trên XemPhim.",
+    ),
+  };
+}
 
 export const dynamic = "force-dynamic";
 
 export default async function AccountPage() {
+  const t = await getTranslator();
   const session = await auth();
   if (!session?.user?.id) redirect("/login?callbackUrl=/account");
 
-  const [totalWatched, totalSeconds, topChannels, recentDate] = await Promise.all([
-    prisma.viewHistory.count({ where: { userId: session.user.id } }),
-    prisma.viewHistory.aggregate({
-      where: { userId: session.user.id },
-      _sum: { duration: true },
-    }),
-    prisma.viewHistory.groupBy({
-      by: ["channel"],
-      where: { userId: session.user.id },
-      _count: { channel: true },
-      orderBy: { _count: { channel: "desc" } },
-      take: 5,
-    }),
-    prisma.viewHistory.findFirst({
-      where: { userId: session.user.id },
-      orderBy: { createdAt: "desc" },
-      select: { createdAt: true, title: true },
-    }),
-  ]);
+  const [totalWatched, totalSeconds, topChannels, recentDate] =
+    await Promise.all([
+      prisma.viewHistory.count({ where: { userId: session.user.id } }),
+      prisma.viewHistory.aggregate({
+        where: { userId: session.user.id },
+        _sum: { duration: true },
+      }),
+      prisma.viewHistory.groupBy({
+        by: ["channel"],
+        where: { userId: session.user.id },
+        _count: { channel: true },
+        orderBy: { _count: { channel: "desc" } },
+        take: 5,
+      }),
+      prisma.viewHistory.findFirst({
+        where: { userId: session.user.id },
+        orderBy: { createdAt: "desc" },
+        select: { createdAt: true, title: true },
+      }),
+    ]);
 
   const minutes = Math.round((totalSeconds._sum.duration ?? 0) / 60);
   const lastSeenDate = recentDate
-    ? new Date(recentDate.createdAt).toLocaleDateString("vi-VN", {
+    ? new Date(recentDate.createdAt).toLocaleDateString(t.locale, {
         day: "2-digit",
         month: "short",
         year: "numeric",
@@ -69,7 +77,13 @@ export default async function AccountPage() {
       <GradientMesh />
       <SiteHeader />
       <main className="container max-w-4xl flex-1 py-10">
-        <Suspense fallback={<div className="text-center py-10 text-muted-foreground">Đang tải tài khoản...</div>}>
+        <Suspense
+          fallback={
+            <div className="text-center py-10 text-muted-foreground">
+              {t("Đang tải tài khoản...")}
+            </div>
+          }
+        >
           <AccountDashboard user={userInfo} stats={stats} />
         </Suspense>
       </main>

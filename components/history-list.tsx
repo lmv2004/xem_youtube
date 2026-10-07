@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -71,6 +72,7 @@ function groupTimeline(items: HistoryItem[]) {
 }
 
 export function HistoryList({ initialItems }: { initialItems: HistoryItem[] }) {
+  const t = useTranslations();
   const router = useRouter();
   const { toast } = useToast();
   const [items, setItems] = useState<HistoryItem[]>(initialItems);
@@ -83,7 +85,9 @@ export function HistoryList({ initialItems }: { initialItems: HistoryItem[] }) {
     if (!search.trim()) return items;
     const q = search.toLowerCase();
     return items.filter(
-      (it) => it.title.toLowerCase().includes(q) || it.channel.toLowerCase().includes(q),
+      (it) =>
+        it.title.toLowerCase().includes(q) ||
+        it.channel.toLowerCase().includes(q),
     );
   }, [items, search]);
 
@@ -92,9 +96,11 @@ export function HistoryList({ initialItems }: { initialItems: HistoryItem[] }) {
   const deleteItem = async (historyId: string) => {
     setItems((prev) => prev.filter((it) => it.historyId !== historyId));
     try {
-      const res = await fetch(`/api/history?id=${historyId}`, { method: "DELETE" });
+      const res = await fetch(`/api/history?id=${historyId}`, {
+        method: "DELETE",
+      });
       if (res.ok) {
-        toast({ title: "Đã xóa video khỏi lịch sử" });
+        toast({ title: t("Đã xóa video khỏi lịch sử") });
       }
     } catch {
       /* ignore */
@@ -108,10 +114,10 @@ export function HistoryList({ initialItems }: { initialItems: HistoryItem[] }) {
       if (res.ok) {
         setItems([]);
         setClearDialogOpen(false);
-        toast({ title: "Đã xóa toàn bộ lịch sử xem" });
+        toast({ title: t("Đã xóa toàn bộ lịch sử xem") });
       }
     } catch {
-      toast({ title: "Không thể xóa lịch sử", variant: "destructive" });
+      toast({ title: t("Không thể xóa lịch sử"), variant: "destructive" });
     } finally {
       setIsClearing(false);
     }
@@ -124,14 +130,16 @@ export function HistoryList({ initialItems }: { initialItems: HistoryItem[] }) {
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-              Lịch sử xem video
+              {t("Lịch sử xem video")}{" "}
             </h1>
             <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-0.5 text-xs font-bold text-cyan-400">
               {items.length} video
             </span>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            Xem lại các nội dung bạn đã từng thưởng thức, được phân loại theo mốc thời gian.
+            {t(
+              "Xem lại các nội dung bạn đã từng thưởng thức, được phân loại theo mốc thời gian.",
+            )}{" "}
           </p>
         </div>
 
@@ -144,7 +152,7 @@ export function HistoryList({ initialItems }: { initialItems: HistoryItem[] }) {
               className="rounded-xl border-white/10 text-xs text-muted-foreground hover:border-destructive/40 hover:text-destructive hover:bg-destructive/10"
             >
               <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-              <span>Xóa toàn bộ</span>
+              <span>{t("Xóa toàn bộ")}</span>
             </Button>
           )}
         </div>
@@ -157,7 +165,7 @@ export function HistoryList({ initialItems }: { initialItems: HistoryItem[] }) {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm kiếm trong lịch sử xem..."
+            placeholder={t("Tìm kiếm trong lịch sử xem...")}
             className="h-10 rounded-xl border-white/10 bg-white/5 pl-9 text-xs sm:text-sm focus:border-cyan-500/50"
           />
         </div>
@@ -170,27 +178,39 @@ export function HistoryList({ initialItems }: { initialItems: HistoryItem[] }) {
             <History className="h-7 w-7" />
           </div>
           <div className="space-y-1">
-            <p className="font-display text-lg font-bold text-foreground">Lịch sử xem đang trống</p>
+            <p className="font-display text-lg font-bold text-foreground">
+              {t("Lịch sử xem đang trống")}
+            </p>
             <p className="text-xs sm:text-sm text-muted-foreground max-w-sm mx-auto">
-              Khi bạn phát các video trên XemPhim khi đã đăng nhập, chúng sẽ tự động được ghi nhớ tại đây.
+              {t(
+                "Khi bạn phát các video trên XemPhim khi đã đăng nhập, chúng sẽ tự động được ghi nhớ tại đây.",
+              )}{" "}
             </p>
           </div>
-          <Button asChild size="sm" className="rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-semibold shadow-[0_0_20px_rgba(6,182,212,0.4)]">
-            <Link href="/">Khám phá video ngay</Link>
+          <Button
+            asChild
+            size="sm"
+            className="rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-semibold shadow-[0_0_20px_rgba(6,182,212,0.4)]"
+          >
+            <Link href="/">{t("Khám phá video ngay")}</Link>
           </Button>
         </div>
       ) : filtered.length === 0 ? (
         <div className="p-8 text-center rounded-3xl border border-white/10 bg-card/40 backdrop-blur-2xl">
-          <p className="font-semibold text-foreground">Không tìm thấy video phù hợp</p>
-          <p className="text-xs text-muted-foreground mt-1">Hãy thử tìm với từ khóa khác.</p>
+          <p className="font-semibold text-foreground">
+            {t("Không tìm thấy video phù hợp")}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {t("Hãy thử tìm với từ khóa khác.")}
+          </p>
         </div>
       ) : (
         <div className="space-y-8">
           {timelineGroups.map((group) => (
-            <section key={group.label} className="space-y-3.5">
+            <section key={t(group.label)} className="space-y-3.5">
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground/80">
                 <Calendar className="h-3.5 w-3.5 text-cyan-400" />
-                <span>{group.label}</span>
+                <span>{t(group.label)}</span>
                 <span className="text-[11px] font-normal text-muted-foreground/60">
                   ({group.items.length})
                 </span>
@@ -234,10 +254,17 @@ export function HistoryList({ initialItems }: { initialItems: HistoryItem[] }) {
                       >
                         {item.title}
                       </h3>
-                      <p className="text-xs text-muted-foreground font-medium">{item.channel}</p>
+                      <p className="text-xs text-muted-foreground font-medium">
+                        {item.channel}
+                      </p>
                       <div className="flex items-center gap-2 text-[11px] text-muted-foreground/75">
-                        <span>Đã xem {formatDistanceToNow(item.watchedAt)}</span>
-                        {item.viewCount > 0 ? <span>• {formatViews(item.viewCount)}</span> : null}
+                        <span>
+                          {t("Đã xem")}{" "}
+                          {formatDistanceToNow(item.watchedAt, t.locale)}
+                        </span>
+                        {item.viewCount > 0 ? (
+                          <span>• {formatViews(item.viewCount, t.locale)}</span>
+                        ) : null}
                       </div>
                     </div>
 
@@ -250,12 +277,12 @@ export function HistoryList({ initialItems }: { initialItems: HistoryItem[] }) {
                         className="h-8 gap-1.5 rounded-xl border border-white/10 text-xs hover:border-cyan-500/40 hover:text-cyan-400"
                       >
                         <Play className="h-3 w-3 fill-current" />
-                        <span>Xem lại</span>
+                        <span>{t("Xem lại")}</span>
                       </Button>
                       <button
                         type="button"
                         onClick={() => deleteItem(item.historyId)}
-                        title="Xóa khỏi lịch sử"
+                        title={t("Xóa khỏi lịch sử")}
                         className="grid h-8 w-8 place-items-center rounded-xl text-muted-foreground hover:bg-white/10 hover:text-destructive transition"
                       >
                         <X className="h-4 w-4" />
@@ -273,9 +300,13 @@ export function HistoryList({ initialItems }: { initialItems: HistoryItem[] }) {
       <Dialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
         <DialogContent className="sm:max-w-md rounded-3xl border-white/10 bg-card/95 shadow-2xl backdrop-blur-2xl p-6">
           <DialogHeader>
-            <DialogTitle className="font-display text-xl font-bold">Xác nhận xóa toàn bộ lịch sử?</DialogTitle>
+            <DialogTitle className="font-display text-xl font-bold">
+              {t("Xác nhận xóa toàn bộ lịch sử?")}
+            </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground leading-relaxed pt-1">
-              Thao tác này sẽ xóa tất cả các video đã lưu trong lịch sử xem của bạn. Hành động này không thể hoàn tác.
+              {t(
+                "Thao tác này sẽ xóa tất cả các video đã lưu trong lịch sử xem của bạn. Hành động này không thể hoàn tác.",
+              )}{" "}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="pt-3">
@@ -285,7 +316,7 @@ export function HistoryList({ initialItems }: { initialItems: HistoryItem[] }) {
               onClick={() => setClearDialogOpen(false)}
               className="rounded-xl"
             >
-              Hủy
+              {t("Hủy")}{" "}
             </Button>
             <Button
               type="button"
@@ -294,7 +325,7 @@ export function HistoryList({ initialItems }: { initialItems: HistoryItem[] }) {
               onClick={clearAllHistory}
               className="rounded-xl"
             >
-              {isClearing ? "Đang xóa..." : "Xóa vĩnh viễn"}
+              {isClearing ? t("Đang xóa...") : t("Xóa vĩnh viễn")}
             </Button>
           </DialogFooter>
         </DialogContent>

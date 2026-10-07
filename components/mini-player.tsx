@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { VideoItem } from "@/lib/types";
 import { Expand, PictureInPicture2, X } from "lucide-react";
@@ -48,8 +49,14 @@ function readState(): State {
       return clampPosition({
         left: parsed.left,
         top: parsed.top,
-        width: Math.min(Math.max(parsed.width, 220), Math.min(window.innerWidth - 40, 720)),
-        height: Math.min(Math.max(parsed.height, 140), Math.min(window.innerHeight - 40, 480)),
+        width: Math.min(
+          Math.max(parsed.width, 220),
+          Math.min(window.innerWidth - 40, 720),
+        ),
+        height: Math.min(
+          Math.max(parsed.height, 140),
+          Math.min(window.innerHeight - 40, 480),
+        ),
       });
     }
   } catch {
@@ -61,8 +68,14 @@ function readState(): State {
 // TvMini: a borderless, draggable, resizable video window.
 // Drag using the title bar; the video itself remains interactive.
 export function MiniPlayer({ item, onClose, onExpand }: Props) {
+  const t = useTranslations();
   const ref = useRef<HTMLDivElement>(null);
-  const [state, setState] = useState<State>({ left: 80, top: 80, width: 380, height: 230 });
+  const [state, setState] = useState<State>({
+    left: 80,
+    top: 80,
+    width: 380,
+    height: 230,
+  });
   const dragState = useRef<{
     pointerId: number;
     startX: number;
@@ -97,7 +110,11 @@ export function MiniPlayer({ item, onClose, onExpand }: Props) {
     (e: React.PointerEvent<HTMLDivElement>) => {
       // Skip if the user is interacting with the resize handle or the menu.
       const target = e.target as HTMLElement;
-      if (target.closest("[data-resize-handle]") || target.closest("[data-menu]")) return;
+      if (
+        target.closest("[data-resize-handle]") ||
+        target.closest("[data-menu]")
+      )
+        return;
       if (!ref.current) return;
       const rect = ref.current.getBoundingClientRect();
       dragState.current = {
@@ -121,8 +138,14 @@ export function MiniPlayer({ item, onClose, onExpand }: Props) {
         clampPosition({
           left: prev.left,
           top: prev.top,
-          width: Math.min(Math.max(r.startWidth + dx, 220), Math.min(window.innerWidth - 40, 720)),
-          height: Math.min(Math.max(r.startHeight + dy, 140), Math.min(window.innerHeight - 40, 480)),
+          width: Math.min(
+            Math.max(r.startWidth + dx, 220),
+            Math.min(window.innerWidth - 40, 720),
+          ),
+          height: Math.min(
+            Math.max(r.startHeight + dy, 140),
+            Math.min(window.innerHeight - 40, 480),
+          ),
         }),
       );
       return;
@@ -132,15 +155,24 @@ export function MiniPlayer({ item, onClose, onExpand }: Props) {
       const dx = e.clientX - d.startX;
       const dy = e.clientY - d.startY;
       setState((prev) =>
-        clampPosition({ ...prev, left: d.startLeft + dx, top: d.startTop + dy }),
+        clampPosition({
+          ...prev,
+          left: d.startLeft + dx,
+          top: d.startTop + dy,
+        }),
       );
     }
   }, []);
 
-  const endInteraction = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    if (dragState.current?.pointerId === e.pointerId) dragState.current = null;
-    if (resizeState.current?.pointerId === e.pointerId) resizeState.current = null;
-  }, []);
+  const endInteraction = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (dragState.current?.pointerId === e.pointerId)
+        dragState.current = null;
+      if (resizeState.current?.pointerId === e.pointerId)
+        resizeState.current = null;
+    },
+    [],
+  );
 
   const startResize = useCallback(
     (e: React.PointerEvent<HTMLButtonElement>) => {
@@ -182,8 +214,7 @@ export function MiniPlayer({ item, onClose, onExpand }: Props) {
         }>;
       }
     ).getScreenDetails;
-    let features =
-      "popup=yes,width=960,height=540,noopener=yes";
+    let features = "popup=yes,width=960,height=540,noopener=yes";
     if (screenApi) {
       try {
         const details = await screenApi();
@@ -222,7 +253,7 @@ export function MiniPlayer({ item, onClose, onExpand }: Props) {
     <div
       ref={ref}
       role="dialog"
-      aria-label="Trình phát thu nhỏ"
+      aria-label={t("Trình phát thu nhỏ")}
       onContextMenu={(e) => {
         e.preventDefault();
         onClose();
@@ -241,18 +272,26 @@ export function MiniPlayer({ item, onClose, onExpand }: Props) {
     >
       <div className="flex h-9 cursor-grab items-center justify-between gap-2 bg-zinc-900 px-3 text-xs text-white active:cursor-grabbing">
         <span className="truncate">{item.title}</span>
-        <button data-menu type="button" onClick={onClose} aria-label="Đóng trình phát thu nhỏ" className="shrink-0 rounded p-1 hover:bg-white/20"><X className="h-4 w-4" /></button>
+        <button
+          data-menu
+          type="button"
+          onClick={onClose}
+          aria-label={t("Đóng trình phát thu nhỏ")}
+          className="shrink-0 rounded p-1 hover:bg-white/20"
+        >
+          <X className="h-4 w-4" />
+        </button>
       </div>
       <div data-menu className="relative h-[calc(100%-2.25rem)] w-full">
         {blocked ? (
           <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-foreground/90 p-3 text-center text-background">
-            <p className="text-xs">Video chặn nhúng.</p>
+            <p className="text-xs">{t("Video chặn nhúng.")}</p>
             <button
               type="button"
               onClick={onExpand}
               className="rounded-md bg-white/10 px-2 py-1 text-xs hover:bg-white/20"
             >
-              Mở rộng
+              {t("Mở rộng")}{" "}
             </button>
           </div>
         ) : (
@@ -275,8 +314,10 @@ export function MiniPlayer({ item, onClose, onExpand }: Props) {
             void openPopOut();
           }}
           className="pointer-events-auto rounded-full bg-black/70 p-1.5 text-white shadow-lg backdrop-blur transition hover:bg-black/90"
-          aria-label="Mở trong cửa sổ riêng (kéo sang màn hình khác)"
-          title="Mở trong cửa sổ riêng — bạn có thể kéo sang màn hình khác (Chrome 100+ desktop)"
+          aria-label={t("Mở trong cửa sổ riêng (kéo sang màn hình khác)")}
+          title={t(
+            "Mở trong cửa sổ riêng — bạn có thể kéo sang màn hình khác (Chrome 100+ desktop)",
+          )}
         >
           <PictureInPicture2 className="h-3.5 w-3.5" />
         </button>
@@ -288,8 +329,8 @@ export function MiniPlayer({ item, onClose, onExpand }: Props) {
             onExpand();
           }}
           className="pointer-events-auto rounded-full bg-black/70 p-1.5 text-white shadow-lg backdrop-blur transition hover:bg-black/90"
-          aria-label="Phóng to trình phát"
-          title="Phóng to trình phát"
+          aria-label={t("Phóng to trình phát")}
+          title={t("Phóng to trình phát")}
         >
           <Expand className="h-3.5 w-3.5" />
         </button>
@@ -299,7 +340,7 @@ export function MiniPlayer({ item, onClose, onExpand }: Props) {
       <button
         type="button"
         data-resize-handle
-        aria-label="Kéo để thay đổi kích thước"
+        aria-label={t("Kéo để thay đổi kích thước")}
         onPointerDown={startResize}
         className="absolute bottom-0 right-0 h-5 w-5 cursor-nwse-resize bg-[linear-gradient(135deg,transparent_50%,rgba(255,255,255,0.55)_50%)]"
       />

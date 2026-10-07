@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -22,18 +23,14 @@ function initialOf(name: string | null) {
   return (name ?? "?").trim().slice(0, 1).toUpperCase() || "?";
 }
 
-function timeOf(iso: string) {
+function timeOf(iso: string, locale: string) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
 }
 
-export function RoomChat({
-  messages,
-  canChat,
-  currentUserId,
-  onSend,
-}: Props) {
+export function RoomChat({ messages, canChat, currentUserId, onSend }: Props) {
+  const t = useTranslations();
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState<OutboxMessage[]>([]);
   const draftRef = useRef("");
@@ -41,11 +38,20 @@ export function RoomChat({
   sendRef.current = onSend;
   const outboxRef = useRef<ReturnType<typeof createRoomOutbox> | null>(null);
   useEffect(() => {
-    const outbox = createRoomOutbox((body) => sendRef.current(body), setPending);
+    const outbox = createRoomOutbox(
+      (body) => sendRef.current(body),
+      setPending,
+    );
     outboxRef.current = outbox;
-    return () => { outbox.stop(); outboxRef.current = null; };
+    return () => {
+      outbox.stop();
+      outboxRef.current = null;
+    };
   }, []);
-  const updateDraft = (value: string) => { draftRef.current = value; setDraft(value); };
+  const updateDraft = (value: string) => {
+    draftRef.current = value;
+    setDraft(value);
+  };
   const listRef = useRef<HTMLDivElement | null>(null);
   const pinnedRef = useRef(true);
 
@@ -86,9 +92,13 @@ export function RoomChat({
       {/* Header */}
       <div className="border-b border-white/10 px-4 py-3.5 flex items-center justify-between">
         <div>
-          <h2 className="font-display text-sm font-bold text-foreground">Trò chuyện trực tiếp</h2>
+          <h2 className="font-display text-sm font-bold text-foreground">
+            {t("Trò chuyện trực tiếp")}
+          </h2>
           <p className="text-[11px] text-muted-foreground font-medium">
-            {messages.length > 0 ? `${messages.length} tin nhắn` : "Phòng đang sẵn sàng"}
+            {messages.length > 0
+              ? t("{p0} tin nhắn", { p0: messages.length })
+              : t("Phòng đang sẵn sàng")}
           </p>
         </div>
         <span className="relative flex h-2 w-2">
@@ -106,25 +116,33 @@ export function RoomChat({
         {messages.length === 0 && pending.length === 0 ? (
           <div className="pt-16 text-center space-y-1">
             <Smile className="mx-auto h-8 w-8 text-muted-foreground/40" />
-            <p className="text-xs font-semibold text-foreground">Chưa có ai nhắn tin</p>
+            <p className="text-xs font-semibold text-foreground">
+              {t("Chưa có ai nhắn tin")}
+            </p>
             <p className="text-[11px] text-muted-foreground">
-              Hãy gửi tin nhắn đầu tiên để khuấy động phòng nhé!
+              {t("Hãy gửi tin nhắn đầu tiên để khuấy động phòng nhé!")}{" "}
             </p>
           </div>
         ) : (
           messages.map((m) => {
             const mine = m.author.id === currentUserId;
             return (
-              <div key={m.id} className={cn("flex gap-2.5", mine && "flex-row-reverse")}>
+              <div
+                key={m.id}
+                className={cn("flex gap-2.5", mine && "flex-row-reverse")}
+              >
                 <Avatar className="h-7 w-7 shrink-0 ring-1 ring-white/10">
                   <AvatarImage src={m.author.image ?? ""} alt="" />
                   <AvatarFallback className="text-[10px] font-bold bg-gradient-to-br from-purple-500 to-rose-500 text-white">
                     {initialOf(m.author.name)}
                   </AvatarFallback>
                 </Avatar>
-                <div className={cn("min-w-0 max-w-[80%]", mine && "text-right")}>
+                <div
+                  className={cn("min-w-0 max-w-[80%]", mine && "text-right")}
+                >
                   <p className="text-[10px] text-muted-foreground font-medium">
-                    {mine ? "Bạn" : m.author.name ?? "Người dùng"} · {timeOf(m.createdAt)}
+                    {mine ? t("Bạn") : (m.author.name ?? t("Người dùng"))} ·{" "}
+                    {timeOf(m.createdAt, t.locale)}
                   </p>
                   <p
                     className={cn(
@@ -142,18 +160,42 @@ export function RoomChat({
           })
         )}
         {pending.map((message) => (
-          <div key={`outbox-${message.id}`} className="ml-auto max-w-[80%] text-right">
-            <p className="inline-block whitespace-pre-wrap break-words rounded-2xl bg-purple-600/40 px-3.5 py-2 text-sm">{message.body}</p>
-            <p className="mt-1 flex items-center justify-end gap-1 text-xs text-muted-foreground" role="status">
-              {message.status === "failed" ? "Chưa xác nhận gửi thành công" : <><Loader2 className="h-3 w-3 animate-spin" />{message.status === "sending" ? "Đang gửi…" : "Chờ gửi…"}</>}
+          <div
+            key={`outbox-${message.id}`}
+            className="ml-auto max-w-[80%] text-right"
+          >
+            <p className="inline-block whitespace-pre-wrap break-words rounded-2xl bg-purple-600/40 px-3.5 py-2 text-sm">
+              {message.body}
             </p>
-            {message.status === "failed" && <button type="button" disabled={Boolean(draft)}
-              className="mt-1 text-xs text-primary underline disabled:opacity-40"
-              onClick={() => {
-                if (draftRef.current) return;
-                const body = outboxRef.current?.restore(message.id);
-                if (body) updateDraft(body);
-              }}>Đưa lại vào ô soạn</button>}
+            <p
+              className="mt-1 flex items-center justify-end gap-1 text-xs text-muted-foreground"
+              role="status"
+            >
+              {message.status === "failed" ? (
+                t("Chưa xác nhận gửi thành công")
+              ) : (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  {message.status === "sending"
+                    ? t("Đang gửi…")
+                    : t("Chờ gửi…")}
+                </>
+              )}
+            </p>
+            {message.status === "failed" && (
+              <button
+                type="button"
+                disabled={Boolean(draft)}
+                className="mt-1 text-xs text-primary underline disabled:opacity-40"
+                onClick={() => {
+                  if (draftRef.current) return;
+                  const body = outboxRef.current?.restore(message.id);
+                  if (body) updateDraft(body);
+                }}
+              >
+                {t("Đưa lại vào ô soạn")}
+              </button>
+            )}
           </div>
         ))}
       </div>
@@ -170,27 +212,33 @@ export function RoomChat({
                   type="button"
                   onClick={() => void handleEmojiClick(emoji)}
                   className="rounded-lg p-1.5 transition hover:bg-white/10 hover:scale-125 duration-150"
-                  title={`Gửi ${emoji}`}
+                  title={t("Gửi {p0}", { p0: emoji })}
                 >
                   {emoji}
                 </button>
               ))}
             </div>
 
-            {pending.length >= 20 && <p role="status" className="text-xs text-muted-foreground">Hàng đợi đã đầy. Hãy chờ gửi xong hoặc xử lý tin chưa gửi.</p>}
+            {pending.length >= 20 && (
+              <p role="status" className="text-xs text-muted-foreground">
+                {t(
+                  "Hàng đợi đã đầy. Hãy chờ gửi xong hoặc xử lý tin chưa gửi.",
+                )}
+              </p>
+            )}
             <form onSubmit={submit} className="flex items-center gap-2">
               <Input
                 value={draft}
                 onChange={(e) => updateDraft(e.target.value)}
-                aria-label="Tin nhắn"
-                placeholder="Nhập tin nhắn..."
+                aria-label={t("Tin nhắn")}
+                placeholder={t("Nhập tin nhắn...")}
                 maxLength={MAX_MESSAGE_LENGTH}
                 className="h-10 rounded-xl border-white/10 bg-white/5 text-xs sm:text-sm focus:border-purple-500/50"
               />
               <Button
                 type="submit"
                 size="icon"
-                aria-label="Gửi tin nhắn"
+                aria-label={t("Gửi tin nhắn")}
                 disabled={pending.length >= 20 || !draft.trim()}
                 className="rounded-xl bg-purple-600 hover:bg-purple-500 text-white shadow-[0_0_12px_rgba(139,92,246,0.4)] shrink-0"
               >
@@ -200,10 +248,13 @@ export function RoomChat({
           </>
         ) : (
           <p className="text-center text-xs text-muted-foreground py-1">
-            <Link href="/login" className="font-bold text-rose-400 hover:underline">
-              Đăng nhập
+            <Link
+              href="/login"
+              className="font-bold text-rose-400 hover:underline"
+            >
+              {t("Đăng nhập")}{" "}
             </Link>{" "}
-            để tham gia trò chuyện. Bạn vẫn xem video bình thường.
+            {t("để tham gia trò chuyện. Bạn vẫn xem video bình thường.")}{" "}
           </p>
         )}
       </div>

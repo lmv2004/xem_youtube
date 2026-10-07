@@ -1,14 +1,16 @@
+import { getTranslator } from "@/lib/locale-server";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export default function WatchLoading() {
+export default async function WatchLoading() {
+  const t = await getTranslator();
   return (
     <main
       className="container py-8"
       aria-busy="true"
-      aria-label="Đang mở video"
+      aria-label={t("Đang mở video")}
     >
       <p role="status" className="mb-5 text-sm text-muted-foreground">
-        Đang chuẩn bị video…
+        {t("Đang chuẩn bị video…")}{" "}
       </p>
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="space-y-4">

@@ -1,7 +1,11 @@
+import { getTranslator } from "@/lib/locale-server";
 import { Suspense } from "react";
 import { RegisterForm } from "@/components/auth/register-form";
 
-export const metadata = { title: "Đăng ký | XemPhim" };
+export async function generateMetadata() {
+  const t = await getTranslator();
+  return { title: t("Đăng ký") };
+}
 
 export default function RegisterPage() {
   return (

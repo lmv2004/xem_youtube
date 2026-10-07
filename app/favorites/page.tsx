@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/locale-server";
 import { Suspense } from "react";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
@@ -8,12 +9,18 @@ import { GradientMesh } from "@/components/site/gradient-mesh";
 import { FavoritesLibrary } from "@/components/favorites-library";
 import type { VideoItem } from "@/lib/types";
 
-export const metadata = {
-  title: "Yêu thích | XemPhim",
-  description: "Quản lý danh sách video yêu thích và bộ sưu tập của bạn trên XemPhim.",
-};
+export async function generateMetadata() {
+  const t = await getTranslator();
+  return {
+    title: t("Yêu thích"),
+    description: t(
+      "Quản lý danh sách video yêu thích và bộ sưu tập của bạn trên XemPhim.",
+    ),
+  };
+}
 
 export default async function FavoritesPage() {
+  const t = await getTranslator();
   const session = await auth();
   if (!session?.user?.id) redirect("/login?callbackUrl=/favorites");
 
@@ -73,8 +80,17 @@ export default async function FavoritesPage() {
       <GradientMesh />
       <SiteHeader />
       <main className="container flex-1 py-8">
-        <Suspense fallback={<div className="text-center py-10 text-muted-foreground">Đang tải thư viện...</div>}>
-          <FavoritesLibrary collections={collections} savedVideos={savedVideos} />
+        <Suspense
+          fallback={
+            <div className="text-center py-10 text-muted-foreground">
+              {t("Đang tải thư viện...")}
+            </div>
+          }
+        >
+          <FavoritesLibrary
+            collections={collections}
+            savedVideos={savedVideos}
+          />
         </Suspense>
       </main>
       <SiteFooter />

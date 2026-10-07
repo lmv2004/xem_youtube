@@ -1,13 +1,9 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  CornerDownLeft,
-  Search,
-  Clock,
-  type LucideIcon,
-} from "lucide-react";
+import { CornerDownLeft, Search, Clock, type LucideIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +28,7 @@ type Item =
  * Keyboard: ↑/↓ chọn, Enter chạy, Esc đóng. Lọc theo chuỗi đang gõ.
  */
 export function CommandPalette() {
+  const t = useTranslations();
   const router = useRouter();
   const recent = useRecentSearches();
   const [open, setOpen] = useState(false);
@@ -96,16 +93,19 @@ export function CommandPalette() {
     [recent, router],
   );
 
-  const all = useMemo(() => [...navItems, ...searchItems], [navItems, searchItems]);
+  const all = useMemo(
+    () => [...navItems, ...searchItems],
+    [navItems, searchItems],
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return all;
     return all.filter((it) => {
-      const label = it.kind === "nav" ? it.item.label : it.term;
+      const label = it.kind === "nav" ? t(it.item.label) : it.term;
       return label.toLowerCase().includes(q);
     });
-  }, [all, query]);
+  }, [all, query, t]);
 
   useEffect(() => {
     setActive(0);
@@ -124,7 +124,9 @@ export function CommandPalette() {
       setActive((v) => (filtered.length ? (v + 1) % filtered.length : 0));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setActive((v) => (filtered.length ? (v - 1 + filtered.length) % filtered.length : 0));
+      setActive((v) =>
+        filtered.length ? (v - 1 + filtered.length) % filtered.length : 0,
+      );
     } else if (e.key === "Enter") {
       e.preventDefault();
       filtered[active]?.run();
@@ -134,9 +136,9 @@ export function CommandPalette() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="top-[18%] translate-y-0 gap-0 p-0 sm:max-w-xl rounded-3xl border-white/10 bg-card/95 shadow-2xl backdrop-blur-2xl overflow-hidden">
-        <DialogTitle className="sr-only">Điều hướng nhanh</DialogTitle>
+        <DialogTitle className="sr-only">{t("Điều hướng nhanh")}</DialogTitle>
         <DialogDescription className="sr-only">
-          Tìm trang hoặc tìm kiếm video nhanh.
+          {t("Tìm trang hoặc tìm kiếm video nhanh.")}{" "}
         </DialogDescription>
 
         <div className="flex items-center gap-3 border-b border-white/10 px-4">
@@ -147,7 +149,7 @@ export function CommandPalette() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={onListKey}
-            placeholder="Tìm trang, phòng xem chung hoặc tìm kiếm video..."
+            placeholder={t("Tìm trang, phòng xem chung hoặc tìm kiếm video...")}
             className="h-14 flex-1 bg-transparent text-sm sm:text-base outline-none placeholder:text-muted-foreground"
             maxLength={100}
           />
@@ -158,14 +160,16 @@ export function CommandPalette() {
 
         {filtered.length === 0 ? (
           <p className="px-4 py-10 text-center text-sm text-muted-foreground">
-            Không có kết quả cho &quot;{query}&quot;.
+            {t("Không có kết quả cho &quot;")}
+            {query}&quot;.
           </p>
         ) : (
           <ul ref={listRef} className="max-h-80 overflow-y-auto p-2 space-y-1">
             {filtered.map((it, i) => {
               const Icon: LucideIcon = it.kind === "nav" ? it.item.icon : Clock;
               const label = it.kind === "nav" ? it.item.label : it.term;
-              const sub = it.kind === "nav" ? it.item.href : "Tìm kiếm video";
+              const sub =
+                it.kind === "nav" ? it.item.href : t("Tìm kiếm video");
               return (
                 <li key={it.id}>
                   <button
@@ -182,11 +186,17 @@ export function CommandPalette() {
                     <Icon
                       className={cn(
                         "h-[18px] w-[18px] shrink-0",
-                        i === active ? "text-rose-500" : "text-muted-foreground",
+                        i === active
+                          ? "text-rose-500"
+                          : "text-muted-foreground",
                       )}
                     />
-                    <span className="flex-1 truncate">{label}</span>
-                    <span className="truncate text-xs text-muted-foreground">{sub}</span>
+                    <span className="flex-1 truncate">
+                      {it.kind === "nav" ? t(label) : label}
+                    </span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      {sub}
+                    </span>
                     {i === active ? (
                       <CornerDownLeft className="h-3.5 w-3.5 shrink-0 text-rose-400" />
                     ) : null}

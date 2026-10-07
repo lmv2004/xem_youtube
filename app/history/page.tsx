@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/locale-server";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { History as HistoryIcon } from "lucide-react";
@@ -7,12 +8,18 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { GradientMesh } from "@/components/site/gradient-mesh";
 import { HistoryList } from "@/components/history-list";
 
-export const metadata = {
-  title: "Lịch sử xem | XemPhim",
-  description: "Xem lại danh sách và thời gian các video đã xem trên XemPhim.",
-};
+export async function generateMetadata() {
+  const t = await getTranslator();
+  return {
+    title: t("Lịch sử xem"),
+    description: t(
+      "Xem lại danh sách và thời gian các video đã xem trên XemPhim.",
+    ),
+  };
+}
 
 export default async function HistoryPage() {
+  const t = await getTranslator();
   const session = await auth();
   if (!session?.user?.id) redirect("/login?callbackUrl=/history");
 
@@ -49,10 +56,10 @@ export default async function HistoryPage() {
             <span className="rounded-2xl bg-primary/15 p-2.5 ring-1 ring-primary/30 text-primary">
               <HistoryIcon className="h-6 w-6" />
             </span>
-            Lịch sử xem
+            {t("Lịch sử xem")}{" "}
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Theo dõi các video bạn đã mở và thời gian xem gần đây.
+            {t("Theo dõi các video bạn đã mở và thời gian xem gần đây.")}{" "}
           </p>
         </div>
 

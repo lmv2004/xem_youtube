@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -9,13 +10,14 @@ import { cn } from "@/lib/utils";
  * Mobile bottom tab bar with modern glass styling and glowing active states.
  */
 export function MobileNav() {
+  const t = useTranslations();
   const pathname = usePathname();
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
     <nav
-      aria-label="Điều hướng chính di động"
+      aria-label={t("Điều hướng chính di động")}
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/85 backdrop-blur-2xl lg:hidden shadow-2xl"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
@@ -29,7 +31,9 @@ export function MobileNav() {
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex min-h-[58px] flex-col items-center justify-center gap-1 px-1 py-2 text-[11px] font-semibold transition-all",
-                  active ? "text-rose-500" : "text-muted-foreground hover:text-foreground",
+                  active
+                    ? "text-rose-500"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 <span
@@ -40,7 +44,9 @@ export function MobileNav() {
                 >
                   <Icon className="h-[18px] w-[18px]" />
                 </span>
-                <span className="truncate leading-none">{shortLabel ?? label}</span>
+                <span className="truncate leading-none">
+                  {t(shortLabel ?? label)}
+                </span>
               </Link>
             </li>
           );

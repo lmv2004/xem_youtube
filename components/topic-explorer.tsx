@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 
 import { useCallback, useState } from "react";
 import type { SearchStatus, VideoSearchResponse } from "@/lib/types";
@@ -10,18 +11,33 @@ type Props = {
   suggestions: ReadonlyArray<string>;
 };
 
-function toStatus(topic: string, data: VideoSearchResponse | null, isLoading: boolean): SearchStatus {
+function toStatus(
+  topic: string,
+  data: VideoSearchResponse | null,
+  isLoading: boolean,
+): SearchStatus {
   if (isLoading) return { kind: "loading", topic };
   if (!data) return { kind: "idle" };
   if (data.error?.code === "missing-key") return { kind: "missing-key" };
   if (data.error) {
-    return { kind: "error", topic, code: data.error.code, message: data.error.message };
+    return {
+      kind: "error",
+      topic,
+      code: data.error.code,
+      message: data.error.message,
+    };
   }
   if (data.items.length === 0) return { kind: "empty", topic };
-  return { kind: "ready", topic, items: data.items, featuredId: data.featuredId };
+  return {
+    kind: "ready",
+    topic,
+    items: data.items,
+    featuredId: data.featuredId,
+  };
 }
 
 export function TopicExplorer({ suggestions }: Props) {
+  const t = useTranslations();
   const [topic, setTopic] = useState("");
   const [activeTopic, setActiveTopic] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -34,7 +50,9 @@ export function TopicExplorer({ suggestions }: Props) {
       setIsLoading(true);
       setActiveTopic(trimmed);
       try {
-        const res = await fetch(`/api/videos?topic=${encodeURIComponent(trimmed)}`);
+        const res = await fetch(
+          `/api/videos?topic=${encodeURIComponent(trimmed)}`,
+        );
         const json = (await res.json()) as VideoSearchResponse;
         setData(json);
       } catch {
@@ -42,18 +60,23 @@ export function TopicExplorer({ suggestions }: Props) {
           topic: trimmed,
           items: [],
           featuredId: null,
-          error: { code: "network", message: "Không thể gọi máy chủ. Kiểm tra mạng và thử lại." },
+          error: {
+            code: "network",
+            message: t("Không thể gọi máy chủ. Kiểm tra mạng và thử lại."),
+          },
         });
       } finally {
         setIsLoading(false);
       }
     },
-    [],
+    [t],
   );
 
   const status = toStatus(activeTopic, data, isLoading);
   const ready = status.kind === "ready" ? status : null;
-  const rest = ready ? ready.items.filter((v) => v.id !== ready.featuredId) : [];
+  const rest = ready
+    ? ready.items.filter((v) => v.id !== ready.featuredId)
+    : [];
 
   return (
     <section className="flex flex-col gap-8">
@@ -65,7 +88,7 @@ export function TopicExplorer({ suggestions }: Props) {
         }}
       >
         <label className="sr-only" htmlFor="topic-input">
-          Chủ đề
+          {t("Chủ đề")}{" "}
         </label>
         <input
           id="topic-input"
@@ -73,7 +96,7 @@ export function TopicExplorer({ suggestions }: Props) {
           inputMode="search"
           autoComplete="off"
           spellCheck={false}
-          placeholder="Ví dụ: nhạc acoustic, phim ngắn, học lập trình..."
+          placeholder={t("Ví dụ: nhạc acoustic, phim ngắn, học lập trình...")}
           className="w-full flex-1 rounded-lg border border-border bg-card/80 px-4 py-3 text-base shadow-sm placeholder:text-muted-foreground focus:bg-card"
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
@@ -85,10 +108,12 @@ export function TopicExplorer({ suggestions }: Props) {
           className="rounded-lg bg-foreground px-5 py-3 text-sm font-semibold text-foreground transition hover:bg-primary disabled:opacity-50"
           disabled={isLoading || topic.trim().length < 2}
         >
-          {isLoading ? "Đang tìm..." : "Tìm video"}
+          {isLoading ? t("Đang tìm...") : t("Tìm video")}
         </button>
         <p id="topic-help" className="sr-only">
-          Nhập chủ đề rồi nhấn Tìm video. Có thể chọn gợi ý bên dưới.
+          {t(
+            "Nhập chủ đề rồi nhấn Tìm video. Có thể chọn gợi ý bên dưới.",
+          )}{" "}
         </p>
       </form>
 
@@ -118,14 +143,23 @@ export function TopicExplorer({ suggestions }: Props) {
 
       {ready && rest.length > 0 ? (
         <div className="space-y-4">
-          <h2 className="font-display text-xl sm:text-2xl">Đề xuất liên quan</h2>
+          <h2 className="font-display text-xl sm:text-2xl">
+            {t("Đề xuất liên quan")}
+          </h2>
           <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {rest.map((v) => (
               <li key={v.id}>
-                <VideoCard item={v} onPlay={(id) => {
-                  // Promote to featured by re-submitting a topic variant; here we just open the watch URL.
-                  window.open(`https://www.youtube.com/watch?v=${id}`, "_blank", "noopener,noreferrer");
-                }} />
+                <VideoCard
+                  item={v}
+                  onPlay={(id) => {
+                    // Promote to featured by re-submitting a topic variant; here we just open the watch URL.
+                    window.open(
+                      `https://www.youtube.com/watch?v=${id}`,
+                      "_blank",
+                      "noopener,noreferrer",
+                    );
+                  }}
+                />
               </li>
             ))}
           </ul>

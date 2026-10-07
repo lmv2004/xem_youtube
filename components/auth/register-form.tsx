@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -6,10 +7,18 @@ import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
 export function RegisterForm() {
+  const t = useTranslations();
   const router = useRouter();
   const search = useSearchParams();
   const callbackUrl = search.get("callbackUrl") ?? "/";
@@ -30,14 +39,20 @@ export function RegisterForm() {
     });
     if (!res.ok) {
       const data = (await res.json().catch(() => ({}))) as { message?: string };
-      setError(data.message ?? "Đăng ký thất bại.");
+      setError(data.message ?? t("Đăng ký thất bại."));
       setPending(false);
       return;
     }
-    const login = await signIn("credentials", { email, password, redirect: false });
+    const login = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
     setPending(false);
     if (!login || login.error) {
-      setError("Đăng ký thành công nhưng đăng nhập tự động thất bại. Hãy thử lại.");
+      setError(
+        t("Đăng ký thành công nhưng đăng nhập tự động thất bại. Hãy thử lại."),
+      );
       return;
     }
     router.push(callbackUrl);
@@ -54,14 +69,21 @@ export function RegisterForm() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>Tạo tài khoản</CardTitle>
-        <CardDescription>Miễn phí, không cần thẻ tín dụng.</CardDescription>
+        <CardTitle>{t("Tạo tài khoản")}</CardTitle>
+        <CardDescription>
+          {t("Miễn phí, không cần thẻ tín dụng.")}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Tên hiển thị</Label>
-            <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} />
+            <Label htmlFor="name">{t("Tên hiển thị")}</Label>
+            <Input
+              id="name"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -75,7 +97,9 @@ export function RegisterForm() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Mật khẩu (tối thiểu 6 ký tự)</Label>
+            <Label htmlFor="password">
+              {t("Mật khẩu (tối thiểu 6 ký tự)")}
+            </Label>
             <Input
               id="password"
               type="password"
@@ -86,14 +110,16 @@ export function RegisterForm() {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          {error ? (
+            <p className="text-sm text-destructive">{t(error ?? "")}</p>
+          ) : null}
           <Button type="submit" className="w-full" disabled={pending}>
-            {pending ? "Đang tạo tài khoản..." : "Đăng ký"}
+            {pending ? t("Đang tạo tài khoản...") : t("Đăng ký")}
           </Button>
         </form>
         <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
           <Separator className="flex-1" />
-          <span>hoặc</span>
+          <span>{t("hoặc")}</span>
           <Separator className="flex-1" />
         </div>
         <Button
@@ -103,13 +129,13 @@ export function RegisterForm() {
           onClick={() => void onGoogle()}
           disabled={pending}
         >
-          Đăng ký với Google
+          {t("Đăng ký với Google")}{" "}
         </Button>
       </CardContent>
       <CardFooter className="justify-center text-sm text-muted-foreground">
-        Đã có tài khoản?{" "}
+        {t("Đã có tài khoản?")}{" "}
         <Link href="/login" className="ml-1 text-primary hover:underline">
-          Đăng nhập
+          {t("Đăng nhập")}{" "}
         </Link>
       </CardFooter>
     </Card>

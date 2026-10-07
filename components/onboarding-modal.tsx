@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 
 import { useEffect, useState } from "react";
 import { Check, Sparkles, X } from "lucide-react";
@@ -38,6 +39,7 @@ type Props = {
 };
 
 export function OnboardingModal({ isOpen, onOpenChange, onComplete }: Props) {
+  const t = useTranslations();
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
 
@@ -117,36 +119,40 @@ export function OnboardingModal({ isOpen, onOpenChange, onComplete }: Props) {
             <Sparkles className="h-6 w-6" />
           </div>
           <DialogTitle className="text-center font-display text-2xl font-bold">
-            Chào mừng bạn đến với XemPhim
+            {t("Chào mừng bạn đến với XemPhim")}{" "}
           </DialogTitle>
           <DialogDescription className="text-center text-sm text-muted-foreground">
-            Bạn thường xem gì trên YouTube? Chọn 3-5 chủ đề để chúng tôi cá nhân hoá nội dung ngay
-            trên trang chủ của bạn.
+            {t(
+              "Bạn thường xem gì trên YouTube? Chọn 3-5 chủ đề để chúng tôi cá nhân hoá nội dung ngay trên trang chủ của bạn.",
+            )}{" "}
           </DialogDescription>
         </DialogHeader>
 
         <div className="py-4">
           <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
-            <span>Chọn chủ đề yêu thích ({selected.length}/5):</span>
+            <span>
+              {t("Chọn chủ đề yêu thích (")}
+              {selected.length}/5):
+            </span>
             {selected.length > 0 && (
               <button
                 type="button"
                 onClick={() => setSelected([])}
                 className="hover:text-foreground"
               >
-                Xóa chọn
+                {t("Xóa chọn")}{" "}
               </button>
             )}
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {TOPIC_PRESETS.map((t) => {
-              const active = selected.includes(t.id);
+            {TOPIC_PRESETS.map((preset) => {
+              const active = selected.includes(preset.id);
               return (
                 <button
-                  key={t.id}
+                  key={preset.id}
                   type="button"
-                  onClick={() => toggleTopic(t.id)}
+                  onClick={() => toggleTopic(preset.id)}
                   className={cn(
                     "flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium transition-all duration-150",
                     active
@@ -154,8 +160,10 @@ export function OnboardingModal({ isOpen, onOpenChange, onComplete }: Props) {
                       : "border border-border/70 bg-card/60 text-foreground/80 hover:border-primary/50 hover:bg-card hover:text-foreground",
                   )}
                 >
-                  {active ? <Check className="h-3.5 w-3.5 stroke-[2.5]" /> : null}
-                  <span>{t.label}</span>
+                  {active ? (
+                    <Check className="h-3.5 w-3.5 stroke-[2.5]" />
+                  ) : null}
+                  <span>{t(preset.label)}</span>
                 </button>
               );
             })}
@@ -164,7 +172,7 @@ export function OnboardingModal({ isOpen, onOpenChange, onComplete }: Props) {
 
         <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-between gap-2 pt-2">
           <Button type="button" variant="ghost" size="sm" onClick={handleSkip}>
-            Để sau
+            {t("Để sau")}{" "}
           </Button>
           <Button
             type="button"
@@ -172,7 +180,8 @@ export function OnboardingModal({ isOpen, onOpenChange, onComplete }: Props) {
             onClick={handleSave}
             className="glow-primary"
           >
-            Bắt đầu khám phá {selected.length > 0 ? `(${selected.length})` : ""}
+            {t("Bắt đầu khám phá")}{" "}
+            {selected.length > 0 ? `(${selected.length})` : ""}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 import { LogIn, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,17 +30,22 @@ export function JoinGate({
   onJoin,
   joining,
 }: Props) {
+  const t = useTranslations();
   return (
     <Glass intensity="strong" className="mx-auto max-w-xl overflow-hidden">
       {video.thumbnail ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={video.thumbnail} alt="" className="aspect-video w-full object-cover" />
+        <img
+          src={video.thumbnail}
+          alt=""
+          className="aspect-video w-full object-cover"
+        />
       ) : null}
 
       <div className="space-y-4 p-5">
         <div className="space-y-1">
           <p className="text-xs text-muted-foreground">
-            Phòng <span className="font-mono">{code}</span> · {title}
+            {t("Phòng")} <span className="font-mono">{code}</span> · {title}
           </p>
           <h1 className="text-lg font-semibold leading-snug">{video.title}</h1>
           <p className="text-sm text-muted-foreground">{video.channel}</p>
@@ -53,26 +59,27 @@ export function JoinGate({
           className="space-y-2"
         >
           <label htmlFor="room-name" className="text-sm font-medium">
-            Tên hiển thị trong phòng
+            {t("Tên hiển thị trong phòng")}{" "}
           </label>
           <Input
             id="room-name"
             value={name}
             onChange={(e) => onNameChange(e.target.value)}
             maxLength={MAX_NAME_LENGTH}
-            placeholder="Tên của bạn"
+            placeholder={t("Tên của bạn")}
             className="h-11"
           />
           <Button type="submit" size="lg" className="w-full" disabled={joining}>
             <LogIn className="mr-1 h-4 w-4" />
-            {joining ? "Đang vào..." : "Tham gia phòng"}
+            {joining ? t("Đang vào...") : t("Tham gia phòng")}
           </Button>
         </form>
 
         <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
           <Users className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          Ai trong phòng cũng phát, tạm dừng, tua và đổi video được. Muốn chat thì cần
-          đăng nhập.
+          {t(
+            "Ai trong phòng cũng phát, tạm dừng, tua và đổi video được. Muốn chat thì cần đăng nhập.",
+          )}{" "}
         </p>
       </div>
     </Glass>

@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
@@ -7,6 +8,7 @@ import { useRecentSearches } from "@/hooks/use-recent-searches";
 import { cn } from "@/lib/utils";
 
 export function HeaderSearch() {
+  const t = useTranslations();
   const router = useRouter();
   const recent = useRecentSearches();
   const [query, setQuery] = useState("");
@@ -21,7 +23,7 @@ export function HeaderSearch() {
       <button
         ref={trigger}
         type="button"
-        aria-label="Mở tìm kiếm"
+        aria-label={t("Mở tìm kiếm")}
         aria-expanded={expanded}
         aria-controls="header-search"
         onClick={() => setExpanded(!expanded)}
@@ -61,15 +63,15 @@ export function HeaderSearch() {
           type="search"
           minLength={2}
           maxLength={500}
-          aria-label="Tìm video hoặc dán liên kết YouTube"
+          aria-label={t("Tìm video hoặc dán liên kết YouTube")}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Tìm video hoặc dán link YouTube"
+          placeholder={t("Tìm video hoặc dán link YouTube")}
           className="h-9 min-w-0 flex-1 bg-transparent px-3 text-sm outline-none"
         />
         <button
           type="submit"
-          aria-label="Tìm kiếm"
+          aria-label={t("Tìm kiếm")}
           className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted"
         >
           <Search className="h-4 w-4" />
@@ -77,7 +79,7 @@ export function HeaderSearch() {
         {expanded && (
           <button
             type="button"
-            aria-label="Đóng tìm kiếm"
+            aria-label={t("Đóng tìm kiếm")}
             onClick={() => {
               setExpanded(false);
               trigger.current?.focus();

@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/locale-server";
 import Link from "next/link";
 import { auth } from "@/auth";
 import { redirect, notFound } from "next/navigation";
@@ -10,13 +11,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CollectionManager } from "@/components/collection-manager";
 
-export const metadata = { title: "Chi tiết bộ sưu tập | XemPhim" };
+export async function generateMetadata() {
+  const t = await getTranslator();
+  return { title: t("Chi tiết bộ sưu tập") };
+}
 
 export default async function CollectionDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const t = await getTranslator();
   const session = await auth();
   if (!session?.user?.id) redirect("/login?callbackUrl=/favorites");
   const { id } = await params;
@@ -31,13 +36,20 @@ export default async function CollectionDetailPage({
       <GradientMesh />
       <SiteHeader />
       <main className="container flex-1 space-y-6 py-8">
-        <Glass intensity="strong" className="flex flex-col gap-3 p-5 sm:flex-row sm:items-end sm:justify-between glow-soft animate-in-up">
+        <Glass
+          intensity="strong"
+          className="flex flex-col gap-3 p-5 sm:flex-row sm:items-end sm:justify-between glow-soft animate-in-up"
+        >
           <div>
-            <h1 className="font-display text-3xl font-semibold tracking-tight">{collection.name}</h1>
-            <p className="text-sm text-muted-foreground">{collection.items.length} video đã lưu.</p>
+            <h1 className="font-display text-3xl font-semibold tracking-tight">
+              {collection.name}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {collection.items.length} {t("video đã lưu.")}
+            </p>
           </div>
           <Button asChild variant="outline">
-            <Link href="/favorites">← Quay lại</Link>
+            <Link href="/favorites">{t("← Quay lại")}</Link>
           </Button>
         </Glass>
 
@@ -62,10 +74,11 @@ export default async function CollectionDetailPage({
         {collection.items.length === 0 ? (
           <Card className="glass">
             <CardHeader>
-              <CardTitle>Chưa có video nào</CardTitle>
+              <CardTitle>{t("Chưa có video nào")}</CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground">
-              Quay lại trang chủ, chọn một video và bấm <strong>Lưu</strong> để thêm vào danh sách.
+              {t("Quay lại trang chủ, chọn một video và bấm")}{" "}
+              <strong>{t("Lưu")}</strong> {t("để thêm vào danh sách.")}{" "}
             </CardContent>
           </Card>
         ) : null}

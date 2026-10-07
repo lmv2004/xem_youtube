@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -35,6 +36,7 @@ type PastedVideo = {
 };
 
 export default function QuickWatchPage() {
+  const t = useTranslations();
   const router = useRouter();
   const [value, setValue] = useState("");
   const [detectedId, setDetectedId] = useState<string | null>(null);
@@ -69,18 +71,24 @@ export default function QuickWatchPage() {
         setValue(text);
         const id = extractYouTubeId(text.trim());
         if (id) {
-          toast({ title: "Đã nhận diện link YouTube", description: `Mã video: ${id}` });
+          toast({
+            title: t("Đã nhận diện link YouTube"),
+            description: t("Mã video: {p0}", { p0: id }),
+          });
         }
       }
     };
     window.addEventListener("paste", handlePaste);
     return () => window.removeEventListener("paste", handlePaste);
-  }, []);
+  }, [t]);
 
   const saveRecent = (id: string, url: string) => {
     try {
       const filtered = recentPasted.filter((p) => p.id !== id);
-      const next: PastedVideo[] = [{ id, url, timestamp: Date.now() }, ...filtered].slice(0, 8);
+      const next: PastedVideo[] = [
+        { id, url, timestamp: Date.now() },
+        ...filtered,
+      ].slice(0, 8);
       setRecentPasted(next);
       localStorage.setItem(STORAGE_RECENT_PASTED, JSON.stringify(next));
     } catch {
@@ -92,7 +100,7 @@ export default function QuickWatchPage() {
     try {
       localStorage.removeItem(STORAGE_RECENT_PASTED);
       setRecentPasted([]);
-      toast({ title: "Đã xóa lịch sử dán link" });
+      toast({ title: t("Đã xóa lịch sử dán link") });
     } catch {
       /* ignore */
     }
@@ -109,8 +117,10 @@ export default function QuickWatchPage() {
     if (!id) {
       toast({
         variant: "destructive",
-        title: "Link không hợp lệ",
-        description: "Vui lòng dán link YouTube hợp lệ hoặc nhập mã video 11 ký tự.",
+        title: t("Link không hợp lệ"),
+        description: t(
+          "Vui lòng dán link YouTube hợp lệ hoặc nhập mã video 11 ký tự.",
+        ),
       });
       return;
     }
@@ -121,11 +131,14 @@ export default function QuickWatchPage() {
     setIsPasting(true);
     try {
       if (typeof navigator === "undefined" || !navigator.clipboard?.readText) {
-        throw new Error("Trình duyệt không hỗ trợ đọc clipboard tự động.");
+        throw new Error(t("Trình duyệt không hỗ trợ đọc clipboard tự động."));
       }
       const text = await navigator.clipboard.readText();
       if (!text.trim()) {
-        toast({ title: "Clipboard trống", description: "Hãy sao chép link YouTube trước." });
+        toast({
+          title: t("Clipboard trống"),
+          description: t("Hãy sao chép link YouTube trước."),
+        });
         return;
       }
       setValue(text.trim());
@@ -137,18 +150,23 @@ export default function QuickWatchPage() {
           origin: { y: 0.6 },
           colors: ["#FF2A54", "#8B5CF6", "#06B6D4"],
         });
-        toast({ title: "Đã dán và nhận diện thành công!", description: `Mã: ${id}` });
+        toast({
+          title: t("Đã dán và nhận diện thành công!"),
+          description: t("Mã: {p0}", { p0: id }),
+        });
       } else {
         toast({
-          title: "Đã dán nội dung",
-          description: "Vui lòng kiểm tra lại link YouTube vừa dán.",
+          title: t("Đã dán nội dung"),
+          description: t("Vui lòng kiểm tra lại link YouTube vừa dán."),
         });
       }
     } catch {
       toast({
         variant: "destructive",
-        title: "Không thể truy cập clipboard",
-        description: "Trình duyệt yêu cầu cấp quyền hoặc hãy nhấn Ctrl + V để dán trực tiếp.",
+        title: t("Không thể truy cập clipboard"),
+        description: t(
+          "Trình duyệt yêu cầu cấp quyền hoặc hãy nhấn Ctrl + V để dán trực tiếp.",
+        ),
       });
     } finally {
       setIsPasting(false);
@@ -164,13 +182,15 @@ export default function QuickWatchPage() {
         <div className="text-center space-y-3 animate-in-up">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-500/10 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-rose-400">
             <Sparkles className="h-3.5 w-3.5 text-rose-400 animate-pulse" />
-            XEM NHANH SIÊU TỐC
+            {t("XEM NHANH SIÊU TỐC")}{" "}
           </span>
           <h1 className="font-display text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground">
-            Dán link YouTube để xem ngay
+            {t("Dán link YouTube để xem ngay")}{" "}
           </h1>
           <p className="mx-auto max-w-lg text-xs sm:text-sm text-muted-foreground leading-relaxed">
-            Hỗ trợ tất cả định dạng: video tiêu chuẩn, Shorts, youtu.be hoặc chỉ mã video (11 ký tự).
+            {t(
+              "Hỗ trợ tất cả định dạng: video tiêu chuẩn, Shorts, youtu.be hoặc chỉ mã video (11 ký tự).",
+            )}{" "}
           </p>
         </div>
 
@@ -186,7 +206,7 @@ export default function QuickWatchPage() {
                 inputMode="url"
                 autoComplete="off"
                 autoFocus
-                placeholder="Dán link YouTube tại đây (Ctrl + V)..."
+                placeholder={t("Dán link YouTube tại đây (Ctrl + V)...")}
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 className="h-14 rounded-2xl border-white/10 bg-white/5 pl-11 pr-32 text-sm sm:text-base text-foreground placeholder:text-muted-foreground focus:border-rose-500/50 focus:ring-4 focus:ring-rose-500/15"
@@ -197,7 +217,7 @@ export default function QuickWatchPage() {
                     type="button"
                     onClick={() => setValue("")}
                     className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-foreground"
-                    title="Xóa ô nhập"
+                    title={t("Xóa ô nhập")}
                   >
                     <RotateCcw className="h-4 w-4" />
                   </button>
@@ -211,7 +231,7 @@ export default function QuickWatchPage() {
                   className="hidden sm:inline-flex h-9 gap-1.5 rounded-xl border-white/10 bg-white/5 px-3 text-xs hover:border-white/25 hover:bg-white/10"
                 >
                   <Clipboard className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span>Dán link</span>
+                  <span>{t("Dán link")}</span>
                 </Button>
               </div>
             </div>
@@ -220,7 +240,10 @@ export default function QuickWatchPage() {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Film className="h-3.5 w-3.5 text-rose-500" />
-                <span>Nhấn <strong>Enter</strong> hoặc nút <strong>Xem ngay</strong></span>
+                <span>
+                  {t("Nhấn")} <strong>Enter</strong> {t("hoặc nút")}{" "}
+                  <strong>{t("Phát ngay")} </strong>
+                </span>
               </div>
               <Button
                 type="submit"
@@ -228,7 +251,7 @@ export default function QuickWatchPage() {
                 disabled={!detectedId}
                 className="w-full sm:w-auto h-12 px-7 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 text-white font-bold shadow-[0_0_25px_rgba(255,42,84,0.4)] hover:brightness-110 gap-2"
               >
-                <span>Xem ngay</span>
+                <span>{t("Phát ngay")} </span>
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
@@ -242,7 +265,7 @@ export default function QuickWatchPage() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={`https://img.youtube.com/vi/${detectedId}/mqdefault.jpg`}
-                    alt="Xem trước video"
+                    alt={t("Xem trước video")}
                     className="h-full w-full object-cover"
                   />
                   <div className="absolute inset-0 flex items-center justify-center bg-black/25">
@@ -254,13 +277,17 @@ export default function QuickWatchPage() {
 
                 <div className="min-w-0 flex-1 space-y-1.5 text-center sm:text-left">
                   <div className="inline-flex items-center gap-1.5 rounded-md bg-rose-500/20 px-2 py-0.5 text-[11px] font-bold text-rose-400">
-                    <span>Mã ID: {detectedId}</span>
+                    <span>
+                      {t("Mã ID:")} {detectedId}
+                    </span>
                   </div>
                   <p className="font-display font-bold text-sm sm:text-base text-foreground">
-                    Video đã sẵn sàng phát
+                    {t("Video đã sẵn sàng phát")}{" "}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Nhấp vào nút bên dưới để mở trình phát video chuẩn rạp chiếu phim.
+                    {t(
+                      "Nhấp vào nút bên dưới để mở trình phát video chuẩn rạp chiếu phim.",
+                    )}{" "}
                   </p>
 
                   <div className="pt-2 flex flex-wrap gap-2 justify-center sm:justify-start">
@@ -270,7 +297,7 @@ export default function QuickWatchPage() {
                       className="gap-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-semibold"
                     >
                       <Play className="h-3.5 w-3.5 fill-current" />
-                      Phát ngay
+                      {t("Phát ngay")}{" "}
                     </Button>
                     <Button
                       size="sm"
@@ -279,7 +306,7 @@ export default function QuickWatchPage() {
                       className="gap-1.5 rounded-xl border-white/10"
                     >
                       <Users className="h-3.5 w-3.5" />
-                      Tạo phòng xem chung
+                      {t("Tạo phòng xem chung")}{" "}
                     </Button>
                   </div>
                 </div>
@@ -295,7 +322,7 @@ export default function QuickWatchPage() {
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-rose-500" />
                 <h2 className="font-display text-sm font-bold uppercase tracking-wider text-muted-foreground">
-                  Video vừa dán gần đây
+                  {t("Video vừa dán gần đây")}{" "}
                 </h2>
               </div>
               <button
@@ -304,7 +331,7 @@ export default function QuickWatchPage() {
                 className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-rose-400 transition"
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                <span>Xóa lịch sử</span>
+                <span>{t("Xóa lịch sử")}</span>
               </button>
             </div>
 
@@ -329,10 +356,10 @@ export default function QuickWatchPage() {
                   </div>
                   <div className="p-3">
                     <p className="truncate text-xs font-semibold text-foreground group-hover:text-rose-400">
-                      Mã: {item.id}
+                      {t("Mã:")} {item.id}
                     </p>
                     <p className="text-[10px] text-muted-foreground mt-0.5">
-                      Nhấn để phát lại
+                      {t("Nhấn để phát lại")}{" "}
                     </p>
                   </div>
                 </button>

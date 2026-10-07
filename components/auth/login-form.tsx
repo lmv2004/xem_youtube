@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -6,10 +7,18 @@ import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
 export function LoginForm() {
+  const t = useTranslations();
   const router = useRouter();
   const search = useSearchParams();
   const callbackUrl = search.get("callbackUrl") ?? "/";
@@ -22,10 +31,14 @@ export function LoginForm() {
     e.preventDefault();
     setPending(true);
     setError(null);
-    const res = await signIn("credentials", { email, password, redirect: false });
+    const res = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
     setPending(false);
     if (!res || res.error) {
-      setError("Email hoặc mật khẩu không đúng.");
+      setError(t("Email hoặc mật khẩu không đúng."));
       return;
     }
     router.push(callbackUrl);
@@ -35,8 +48,10 @@ export function LoginForm() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>Đăng nhập</CardTitle>
-        <CardDescription>Đăng nhập để lưu video yêu thích và xem lịch sử.</CardDescription>
+        <CardTitle>{t("Đăng nhập")}</CardTitle>
+        <CardDescription>
+          {t("Đăng nhập để lưu video yêu thích và xem lịch sử.")}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="space-y-4">
@@ -52,7 +67,7 @@ export function LoginForm() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Mật khẩu</Label>
+            <Label htmlFor="password">{t("Mật khẩu")}</Label>
             <Input
               id="password"
               type="password"
@@ -62,14 +77,16 @@ export function LoginForm() {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          {error ? (
+            <p className="text-sm text-destructive">{t(error ?? "")}</p>
+          ) : null}
           <Button type="submit" className="w-full" disabled={pending}>
-            {pending ? "Đang đăng nhập..." : "Đăng nhập"}
+            {pending ? t("Đang đăng nhập...") : t("Đăng nhập")}
           </Button>
         </form>
         <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
           <Separator className="flex-1" />
-          <span>hoặc</span>
+          <span>{t("hoặc")}</span>
           <Separator className="flex-1" />
         </div>
         <Button
@@ -78,13 +95,13 @@ export function LoginForm() {
           className="w-full"
           onClick={() => signIn("google", { callbackUrl })}
         >
-          Tiếp tục với Google
+          {t("Tiếp tục với Google")}{" "}
         </Button>
       </CardContent>
       <CardFooter className="justify-center text-sm text-muted-foreground">
-        Chưa có tài khoản?{" "}
+        {t("Chưa có tài khoản?")}{" "}
         <Link href="/register" className="ml-1 text-primary hover:underline">
-          Đăng ký
+          {t("Đăng ký")}{" "}
         </Link>
       </CardFooter>
     </Card>

@@ -9,9 +9,13 @@ const VI: Array<[Intl.RelativeTimeFormatUnit, number]> = [
   ["second", 1],
 ];
 
-const rtf = new Intl.RelativeTimeFormat("vi", { numeric: "auto" });
+import type { Locale } from "./locale";
 
-export function formatDistanceToNow(iso: string | Date): string {
+export function formatDistanceToNow(
+  iso: string | Date,
+  locale: Locale = "vi",
+): string {
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
   const date = typeof iso === "string" ? new Date(iso) : iso;
   const diffSeconds = Math.round((date.getTime() - Date.now()) / 1000);
   const abs = Math.abs(diffSeconds);

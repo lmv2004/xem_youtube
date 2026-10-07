@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 import { useEffect, useState } from "react";
 import { ArrowUp } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -8,6 +9,7 @@ import { cn } from "@/lib/utils";
  * Sits above the mobile bottom bar, and drops to the normal corner on lg+.
  */
 export function BackToTop() {
+  const t = useTranslations();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -21,12 +23,14 @@ export function BackToTop() {
     <button
       type="button"
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-      aria-label="Lên đầu trang"
+      aria-label={t("Lên đầu trang")}
       className={cn(
         "fixed right-4 z-40 grid h-11 w-11 place-items-center rounded-full border border-border",
         "bg-background/80 text-foreground shadow-lg backdrop-blur transition-all duration-200",
         "hover:bg-foreground/10 bottom-24 lg:bottom-6",
-        visible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0",
+        visible
+          ? "translate-y-0 opacity-100"
+          : "pointer-events-none translate-y-3 opacity-0",
       )}
     >
       <ArrowUp className="h-5 w-5" />
