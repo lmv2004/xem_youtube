@@ -1,4 +1,4 @@
-import test from "node:test";
+import test, { after } from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { WebSocketServer, WebSocket } from "ws";
@@ -8,6 +8,12 @@ import { serveRoomSocket } from "../lib/room-socket";
 import { notifyRoom } from "../lib/room-commands";
 import type { RoomEvent } from "../lib/room-protocol";
 import { generateRoomCode } from "../lib/rooms";
+
+// Socket teardown can still use the shared client after an individual test ends.
+// Keep it connected for the whole suite so cleanup cannot race the next fixture.
+after(async () => {
+  await prisma.$disconnect();
+});
 
 // Opt-in: creates/deletes only uniquely named fixtures, never existing accounts/rooms.
 test(
@@ -448,7 +454,6 @@ test(
         ),
       );
       for (const id of users) await prisma.user.deleteMany({ where: { id } });
-      await prisma.$disconnect();
     }
   },
 );
@@ -553,7 +558,6 @@ test(
       await new Promise<void>((resolve) => gateway.close(() => resolve()));
       await new Promise<void>((resolve) => server.close(() => resolve()));
       await prisma.user.delete({ where: { id: user.id } });
-      await prisma.$disconnect();
     }
   },
 );
