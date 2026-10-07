@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 
 import { ListVideo, Play, Trash2, X } from "lucide-react";
 import type { VideoItem } from "@/lib/types";
@@ -16,7 +17,14 @@ type Props = {
 };
 
 /** Queue panel for the watch-later list with modern frosted glass. */
-export function WatchLaterPanel({ items, currentId, onPlay, onRemove, onClear }: Props) {
+export function WatchLaterPanel({
+  items,
+  currentId,
+  onPlay,
+  onRemove,
+  onClear,
+}: Props) {
+  const t = useTranslations();
   if (items.length === 0) return null;
 
   return (
@@ -24,8 +32,11 @@ export function WatchLaterPanel({ items, currentId, onPlay, onRemove, onClear }:
       <div className="flex items-center justify-between gap-3">
         <h2 className="inline-flex items-center gap-2 font-display text-sm sm:text-base font-bold text-foreground">
           <ListVideo className="h-4 w-4 text-rose-500" />
-          Hàng đợi xem sau
-          <Badge variant="secondary" className="h-5 px-1.5 text-[11px] rounded-full bg-white/10 border-white/10 font-bold">
+          {t("Hàng đợi xem sau")}{" "}
+          <Badge
+            variant="secondary"
+            className="h-5 px-1.5 text-[11px] rounded-full bg-white/10 border-white/10 font-bold"
+          >
             {items.length}
           </Badge>
         </h2>
@@ -36,7 +47,7 @@ export function WatchLaterPanel({ items, currentId, onPlay, onRemove, onClear }:
           onClick={onClear}
           className="text-xs text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10 rounded-xl"
         >
-          <Trash2 className="mr-1 h-3.5 w-3.5" /> Xoá hết
+          <Trash2 className="mr-1 h-3.5 w-3.5" /> {t("Xoá hết")}{" "}
         </Button>
       </div>
 
@@ -57,7 +68,7 @@ export function WatchLaterPanel({ items, currentId, onPlay, onRemove, onClear }:
                 type="button"
                 onClick={() => onPlay(item)}
                 className="relative aspect-video w-24 shrink-0 overflow-hidden rounded-lg bg-black/80 shadow"
-                aria-label={"Phát " + item.title}
+                aria-label={t("Phát ") + item.title}
               >
                 {item.thumbnail ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -82,10 +93,12 @@ export function WatchLaterPanel({ items, currentId, onPlay, onRemove, onClear }:
                 <p className="line-clamp-2 text-xs font-semibold leading-snug text-foreground">
                   {item.title}
                 </p>
-                <p className="truncate text-[11px] text-muted-foreground">{item.channel}</p>
+                <p className="truncate text-[11px] text-muted-foreground">
+                  {item.channel}
+                </p>
                 {playing ? (
                   <span className="text-[10px] font-bold text-rose-400 uppercase tracking-wider">
-                    Đang phát
+                    {t("Đang phát")}{" "}
                   </span>
                 ) : null}
               </div>
@@ -95,7 +108,7 @@ export function WatchLaterPanel({ items, currentId, onPlay, onRemove, onClear }:
                 size="icon"
                 variant="ghost"
                 onClick={() => onRemove(item.id)}
-                aria-label="Xoá khỏi hàng đợi"
+                aria-label={t("Xoá khỏi hàng đợi")}
                 className="h-7 w-7 shrink-0 text-muted-foreground opacity-0 transition group-hover:opacity-100 focus-visible:opacity-100 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg"
               >
                 <X className="h-3.5 w-3.5" />

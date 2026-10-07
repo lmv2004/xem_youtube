@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 import { YouTubeFrame } from "@/components/youtube-frame";
 import { useState } from "react";
 import { ExternalLink, Play } from "lucide-react";
@@ -7,7 +8,10 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type Props = {
-  item: Pick<VideoItem, "id" | "title" | "thumbnail" | "embedUrl" | "watchUrl" | "embeddable">;
+  item: Pick<
+    VideoItem,
+    "id" | "title" | "thumbnail" | "embedUrl" | "watchUrl" | "embeddable"
+  >;
   className?: string;
   /** Auto-play when the iframe loads. Default false — we always show a play overlay first. */
   autoPlay?: boolean;
@@ -17,20 +21,35 @@ type Props = {
 };
 
 export function VideoEmbed(props: Props) {
-  return <VideoEmbedContent key={`${props.item.id}:${props.autoPlay}`} {...props} />;
+  return (
+    <VideoEmbedContent key={`${props.item.id}:${props.autoPlay}`} {...props} />
+  );
 }
 
-function VideoEmbedContent({ item, className, autoPlay = false, loop = false }: Props) {
+function VideoEmbedContent({
+  item,
+  className,
+  autoPlay = false,
+  loop = false,
+}: Props) {
+  const t = useTranslations();
   const [playing, setPlaying] = useState(autoPlay);
 
   return (
-    <div className={cn("relative aspect-video w-full overflow-hidden bg-black", className)}>
+    <div
+      className={cn(
+        "relative aspect-video w-full overflow-hidden bg-black",
+        className,
+      )}
+    >
       {item.embeddable === false ? (
         <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-foreground/90 p-4 text-center text-background">
-          <p className="text-sm font-medium">Video chặn nhúng trên trang này.</p>
+          <p className="text-sm font-medium">
+            {t("Video chặn nhúng trên trang này.")}
+          </p>
           <Button asChild size="sm" variant="secondary">
             <a href={item.watchUrl} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="mr-1" /> Mở trên YouTube
+              <ExternalLink className="mr-1" /> {t("Mở trên YouTube")}{" "}
             </a>
           </Button>
         </div>
@@ -41,7 +60,7 @@ function VideoEmbedContent({ item, className, autoPlay = false, loop = false }: 
           type="button"
           onClick={() => setPlaying(true)}
           className="group relative block h-full w-full"
-          aria-label={`Phát ${item.title}`}
+          aria-label={t("Phát {p0}", { p0: item.title })}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img

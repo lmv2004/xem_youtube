@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 import { useEffect, useState } from "react";
 import { Check, Monitor, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ const OPTIONS: { value: Theme; label: string; icon: typeof Sun }[] = [
 ];
 
 export function ThemeToggle() {
+  const t = useTranslations();
   const { theme, resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -33,7 +35,7 @@ export function ThemeToggle() {
         <Button
           size="icon"
           variant="ghost"
-          aria-label="Đổi giao diện sáng / tối"
+          aria-label={t("Đổi giao diện sáng / tối")}
           className="relative"
         >
           {mounted && resolvedTheme === "light" ? (
@@ -44,7 +46,7 @@ export function ThemeToggle() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44 glass-strong">
-        <DropdownMenuLabel>Giao diện</DropdownMenuLabel>
+        <DropdownMenuLabel>{t("Giao diện")}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {OPTIONS.map(({ value, label, icon: Icon }) => (
           <DropdownMenuItem
@@ -53,7 +55,7 @@ export function ThemeToggle() {
             className="gap-2"
           >
             <Icon className="h-4 w-4" />
-            <span className="flex-1">{label}</span>
+            <span className="flex-1">{t(label)}</span>
             <Check
               className={cn(
                 "h-4 w-4 text-primary",

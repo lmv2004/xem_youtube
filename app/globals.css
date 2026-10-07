@@ -261,3 +261,9 @@
   html { scroll-padding-top: 5rem; }
 }
 .discovery-intro { background: linear-gradient(115deg, hsl(var(--card)), hsl(var(--primary) / 0.055)); }
+
+/* Telugu glyphs need their own font; keep Latin branding and numeric fallbacks. */
+html[lang="te"] body,
+html[lang="te"] .font-display {
+  font-family: var(--font-telugu), var(--font-sans), sans-serif;
+}

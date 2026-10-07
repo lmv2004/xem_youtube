@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, Lock, Play, ListPlus, Search, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,10 +22,17 @@ type Props = {
  * endpoint: with no query it returns the trending list, which doubles as the
  * suggestion feed.
  */
-export function RoomSearch({ onPick, onEnqueue, activeVideoId, disabled = false, locked = false }: Props) {
+export function RoomSearch({
+  onPick,
+  onEnqueue,
+  activeVideoId,
+  disabled = false,
+  locked = false,
+}: Props) {
+  const t = useTranslations();
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<VideoItem[]>([]);
-  const [heading, setHeading] = useState("Đề xuất cho phòng");
+  const [heading, setHeading] = useState(t("Đề xuất cho phòng"));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pickingId, setPickingId] = useState<string | null>(null);
@@ -32,31 +40,34 @@ export function RoomSearch({ onPick, onEnqueue, activeVideoId, disabled = false,
   // Guards against a slow earlier request overwriting a newer one.
   const seqRef = useRef(0);
 
-  const run = useCallback(async (topic: string) => {
-    const seq = seqRef.current + 1;
-    seqRef.current = seq;
-    setLoading(true);
-    setError(null);
+  const run = useCallback(
+    async (topic: string) => {
+      const seq = seqRef.current + 1;
+      seqRef.current = seq;
+      setLoading(true);
+      setError(null);
 
-    try {
-      const trimmed = topic.trim();
-      const qs =
-        trimmed.length >= 2
-          ? "?topic=" + encodeURIComponent(trimmed)
-          : "?mode=trending";
-      const res = await fetch("/api/videos" + qs, { cache: "no-store" });
-      const json = (await res.json()) as VideoSearchResponse;
-      if (seq !== seqRef.current) return;
+      try {
+        const trimmed = topic.trim();
+        const qs =
+          trimmed.length >= 2
+            ? "?topic=" + encodeURIComponent(trimmed)
+            : "?mode=trending";
+        const res = await fetch("/api/videos" + qs, { cache: "no-store" });
+        const json = (await res.json()) as VideoSearchResponse;
+        if (seq !== seqRef.current) return;
 
-      setItems(json.items ?? []);
-      setHeading(json.topic || "Kết quả");
-      setError(json.error?.message ?? null);
-    } catch {
-      if (seq === seqRef.current) setError("Không gọi được máy chủ.");
-    } finally {
-      if (seq === seqRef.current) setLoading(false);
-    }
-  }, []);
+        setItems(json.items ?? []);
+        setHeading(json.topic || t("Kết quả"));
+        setError(json.error?.message ?? null);
+      } catch {
+        if (seq === seqRef.current) setError(t("Không gọi được máy chủ."));
+      } finally {
+        if (seq === seqRef.current) setLoading(false);
+      }
+    },
+    [t],
+  );
 
   useEffect(() => {
     void run("");
@@ -83,10 +94,15 @@ export function RoomSearch({ onPick, onEnqueue, activeVideoId, disabled = false,
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Tìm video để phát trong phòng..."
+          placeholder={t("Tìm video để phát trong phòng...")}
           className="h-9"
         />
-        <Button type="submit" size="icon" className="h-9 w-9" disabled={loading}>
+        <Button
+          type="submit"
+          size="icon"
+          className="h-9 w-9"
+          disabled={loading}
+        >
           {loading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
@@ -98,8 +114,9 @@ export function RoomSearch({ onPick, onEnqueue, activeVideoId, disabled = false,
       {locked ? (
         <p className="flex items-start gap-1.5 border-b border-border bg-amber-500/10 px-3 py-2 text-xs text-muted-foreground">
           <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          Chủ phòng đang khoá điều khiển. Bạn vẫn xem được đề xuất nhưng chưa đổi
-          được video.
+          {t(
+            "Chủ phòng đang khoá điều khiển. Bạn vẫn xem được đề xuất nhưng chưa đổi được video.",
+          )}{" "}
         </p>
       ) : null}
 
@@ -110,10 +127,12 @@ export function RoomSearch({ onPick, onEnqueue, activeVideoId, disabled = false,
 
       <div className="flex-1 space-y-2 overflow-y-auto p-3">
         {error ? (
-          <p className="pt-6 text-center text-sm text-muted-foreground">{error}</p>
+          <p className="pt-6 text-center text-sm text-muted-foreground">
+            {t(error ?? "")}
+          </p>
         ) : items.length === 0 && !loading ? (
           <p className="pt-6 text-center text-sm text-muted-foreground">
-            Không có kết quả nào.
+            {t("Không có kết quả nào.")}{" "}
           </p>
         ) : (
           items.map((item) => {
@@ -123,7 +142,9 @@ export function RoomSearch({ onPick, onEnqueue, activeVideoId, disabled = false,
                 key={item.id}
                 className={cn(
                   "flex gap-2 rounded-xl border border-transparent p-1.5 transition",
-                  isActive ? "border-primary/40 bg-primary/5" : "hover:bg-foreground/5",
+                  isActive
+                    ? "border-primary/40 bg-primary/5"
+                    : "hover:bg-foreground/5",
                 )}
               >
                 {item.thumbnail ? (
@@ -148,13 +169,20 @@ export function RoomSearch({ onPick, onEnqueue, activeVideoId, disabled = false,
                   </p>
 
                   <div className="mt-auto flex flex-wrap gap-1 pt-1">
-                    <Button type="button" size="sm" variant="secondary" className="h-7 text-xs"
-                      disabled={disabled || pickingId !== null} onClick={() => void pick(item, true)}>
-                      <ListPlus className="mr-1 h-3 w-3" /> Thêm vào hàng đợi
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      className="h-7 text-xs"
+                      disabled={disabled || pickingId !== null}
+                      onClick={() => void pick(item, true)}
+                    >
+                      <ListPlus className="mr-1 h-3 w-3" />{" "}
+                      {t("Thêm vào hàng đợi")}{" "}
                     </Button>
                     {isActive ? (
                       <span className="text-[11px] font-medium text-primary">
-                        Đang phát trong phòng
+                        {t("Đang phát trong phòng")}{" "}
                       </span>
                     ) : (
                       <Button
@@ -172,7 +200,7 @@ export function RoomSearch({ onPick, onEnqueue, activeVideoId, disabled = false,
                         ) : (
                           <Play className="mr-1 h-3 w-3" />
                         )}
-                        Phát ngay
+                        {t("Phát ngay")}{" "}
                       </Button>
                     )}
                   </div>

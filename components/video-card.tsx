@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 
 import { useState, type MouseEvent } from "react";
 import Link from "next/link";
@@ -46,6 +47,7 @@ export function VideoCard({
   isInWatchLater,
   active = false,
 }: Props) {
+  const t = useTranslations();
   const [collectionOpen, setCollectionOpen] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
   const { toast } = useToast();
@@ -53,7 +55,9 @@ export function VideoCard({
   const queue = useWatchLater();
   const queued = isInWatchLater ? isInWatchLater(item.id) : queue.has(item.id);
   const duration = formatDuration(item.durationSeconds);
-  const date = item.publishedAt ? formatDistanceToNow(item.publishedAt) : "";
+  const date = item.publishedAt
+    ? formatDistanceToNow(item.publishedAt, t.locale)
+    : "";
   const href = `/watch/${item.id}`;
   const play = (event: MouseEvent<HTMLAnchorElement>) => {
     if (
@@ -70,7 +74,7 @@ export function VideoCard({
   const save = () => {
     (onToggleWatchLater ?? queue.toggle)(item);
     toast({
-      title: queued ? "Đã xóa khỏi Xem sau" : "Đã thêm vào Xem sau",
+      title: queued ? t("Đã xóa khỏi Xem sau") : t("Đã thêm vào Xem sau"),
       description: item.title,
     });
   };
@@ -82,10 +86,10 @@ export function VideoCard({
         return;
       }
       await navigator.clipboard.writeText(url);
-      toast({ title: "Đã sao chép liên kết" });
+      toast({ title: t("Đã sao chép liên kết") });
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") return;
-      toast({ title: "Chưa thể chia sẻ liên kết", variant: "destructive" });
+      toast({ title: t("Chưa thể chia sẻ liên kết"), variant: "destructive" });
     }
   };
   return (
@@ -101,7 +105,7 @@ export function VideoCard({
         <Link
           href={href}
           onClick={play}
-          aria-label={`Xem ${item.title}`}
+          aria-label={t("Xem {title}", { title: item.title })}
           className={cn(
             "relative block aspect-video overflow-hidden rounded-xl bg-muted",
             view === "list" ? "w-32 shrink-0 self-start sm:w-60" : "w-full",
@@ -132,7 +136,7 @@ export function VideoCard({
           )}
           {active && (
             <span className="absolute left-2 top-2 rounded bg-primary px-2 py-1 text-xs text-primary-foreground">
-              Đang chọn
+              {t("Đang chọn")}{" "}
             </span>
           )}
         </Link>
@@ -152,7 +156,7 @@ export function VideoCard({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  aria-label={`Tùy chọn cho ${item.title}`}
+                  aria-label={t("Tùy chọn cho {p0}", { p0: item.title })}
                   className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted"
                 >
                   <MoreHorizontal className="h-5 w-5" />
@@ -161,22 +165,22 @@ export function VideoCard({
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem onClick={save}>
                   <Clock className="mr-2 h-4 w-4" />
-                  {queued ? "Xóa khỏi Xem sau" : "Lưu vào Xem sau"}
+                  {queued ? t("Xóa khỏi Xem sau") : t("Lưu vào Xem sau")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setCollectionOpen(true)}>
                   <BookmarkPlus className="mr-2 h-4 w-4" />
-                  Thêm vào bộ sưu tập
+                  {t("Thêm vào bộ sưu tập")}{" "}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   disabled={isCreating}
                   onClick={() => void createRoom(item)}
                 >
                   <Users className="mr-2 h-4 w-4" />
-                  Xem cùng bạn bè
+                  {t("Xem cùng bạn bè")}{" "}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => void share()}>
                   <Share2 className="mr-2 h-4 w-4" />
-                  Chia sẻ video
+                  {t("Chia sẻ video")}{" "}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
@@ -186,7 +190,7 @@ export function VideoCard({
                     rel="noopener noreferrer"
                   >
                     <ExternalLink className="mr-2 h-4 w-4" />
-                    Mở trên YouTube
+                    {t("Mở trên YouTube")}{" "}
                   </a>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -196,7 +200,9 @@ export function VideoCard({
             {item.channel}
           </p>
           <p className="mt-1 flex flex-wrap gap-x-1 text-xs leading-5 text-muted-foreground">
-            {item.viewCount > 0 && <span>{formatViews(item.viewCount)}</span>}
+            {item.viewCount > 0 && (
+              <span>{formatViews(item.viewCount, t.locale)}</span>
+            )}
             {item.viewCount > 0 && date && <span aria-hidden>·</span>}
             {date && <span>{date}</span>}
           </p>
@@ -214,7 +220,7 @@ export function VideoCard({
             ) : (
               <Clock className="h-3.5 w-3.5" />
             )}
-            {queued ? "Đã lưu" : "Xem sau"}
+            {queued ? t("Đã lưu") : t("Xem sau")}
           </button>
         </div>
       </article>

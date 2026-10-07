@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Plus } from "lucide-react";
@@ -40,6 +41,7 @@ function summarizeItem(item: VideoItem) {
 }
 
 export function AddToCollectionDialog({ open, onOpenChange, item }: Props) {
+  const t = useTranslations();
   const { data: session } = useSession();
   const [collections, setCollections] = useState<Collection[]>([]);
   const [newName, setNewName] = useState("");
@@ -53,7 +55,9 @@ export function AddToCollectionDialog({ open, onOpenChange, item }: Props) {
     (async () => {
       const res = await fetch("/api/collections", { cache: "no-store" });
       if (!res.ok) {
-        reportClientError("add-to-collection", "fetch collections failed", { status: res.status });
+        reportClientError("add-to-collection", "fetch collections failed", {
+          status: res.status,
+        });
         return;
       }
       const json = (await res.json()) as { items: Collection[] };
@@ -84,10 +88,17 @@ export function AddToCollectionDialog({ open, onOpenChange, item }: Props) {
         message: data.message,
         sent: summarizeItem(item),
       });
-      toast({ variant: "destructive", title: "Lỗi", description: data.message ?? "Không thể lưu." });
+      toast({
+        variant: "destructive",
+        title: t("Lỗi"),
+        description: t(data.message ?? t("Không thể lưu.")),
+      });
       return;
     }
-    toast({ title: "Đã lưu", description: "Video đã được thêm vào danh sách." });
+    toast({
+      title: t("Đã lưu"),
+      description: t("Video đã được thêm vào danh sách."),
+    });
     onOpenChange(false);
   }
 
@@ -111,7 +122,11 @@ export function AddToCollectionDialog({ open, onOpenChange, item }: Props) {
         status: res.status,
         message: data.message,
       });
-      toast({ variant: "destructive", title: "Lỗi", description: data.message ?? "Không thể tạo." });
+      toast({
+        variant: "destructive",
+        title: t("Lỗi"),
+        description: t(data.message ?? t("Không thể tạo.")),
+      });
       return;
     }
     const json = (await res.json()) as { item: Collection };
@@ -124,20 +139,22 @@ export function AddToCollectionDialog({ open, onOpenChange, item }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Lưu vào danh sách</DialogTitle>
+          <DialogTitle>{t("Lưu vào danh sách")}</DialogTitle>
           <DialogDescription>
-            Chọn một danh sách có sẵn hoặc tạo danh sách mới.
+            {t("Chọn một danh sách có sẵn hoặc tạo danh sách mới.")}{" "}
           </DialogDescription>
         </DialogHeader>
         {!session ? (
           <p className="text-sm text-muted-foreground">
-            Đăng nhập để lưu video vào danh sách cá nhân.
+            {t("Đăng nhập để lưu video vào danh sách cá nhân.")}{" "}
           </p>
         ) : (
           <>
             <div className="max-h-60 space-y-1 overflow-y-auto">
               {collections.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Bạn chưa có danh sách nào.</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("Bạn chưa có danh sách nào.")}
+                </p>
               ) : (
                 collections.map((c) => (
                   <Button
@@ -148,27 +165,30 @@ export function AddToCollectionDialog({ open, onOpenChange, item }: Props) {
                     disabled={pendingId === c.id}
                     onClick={() => void addTo(c.id)}
                   >
-                    {pendingId === c.id ? "Đang lưu..." : c.name}
+                    {pendingId === c.id ? t("Đang lưu...") : c.name}
                   </Button>
                 ))
               )}
             </div>
             <div className="flex items-center gap-2">
               <Input
-                placeholder="Tên danh sách mới"
+                placeholder={t("Tên danh sách mới")}
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 maxLength={80}
               />
-              <Button onClick={() => void createAndAdd()} disabled={loading || newName.trim().length < 1}>
-                <Plus className="mr-1" /> Tạo
+              <Button
+                onClick={() => void createAndAdd()}
+                disabled={loading || newName.trim().length < 1}
+              >
+                <Plus className="mr-1" /> {t("Tạo")}{" "}
               </Button>
             </div>
           </>
         )}
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Đóng
+            {t("Đóng")}{" "}
           </Button>
         </DialogFooter>
       </DialogContent>

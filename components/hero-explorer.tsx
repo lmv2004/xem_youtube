@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -39,6 +40,7 @@ import type { VideoItem, VideoSearchResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function HeroExplorer() {
+  const t = useTranslations();
   const router = useRouter();
   const params = useSearchParams();
   const topic = params.get("topic")?.trim() ?? "";
@@ -146,7 +148,7 @@ export function HeroExplorer() {
       } catch {
         if (!controller.signal.aborted)
           setError(
-            "Chưa tải được video. Kiểm tra kết nối và thử lại sau một chút.",
+            t("Chưa tải được video. Kiểm tra kết nối và thử lại sau một chút."),
           );
       } finally {
         if (!controller.signal.aborted) {
@@ -155,7 +157,7 @@ export function HeroExplorer() {
         }
       }
     },
-    [apiQuery],
+    [apiQuery, t],
   );
 
   useEffect(() => {
@@ -199,25 +201,26 @@ export function HeroExplorer() {
           <div>
             {!topic && (
               <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-                Khám phá mỗi ngày
+                {t("Khám phá mỗi ngày")}{" "}
               </p>
             )}
             <h1 className="font-display text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
               {topic ? (
-                "Tìm kiếm video"
+                t("Tìm kiếm video")
               ) : (
                 <>
-                  Một video hay.
-                  <br />
+                  {t("Một video hay.")} <br />
                   <span className="text-muted-foreground">
-                    Một khoảng nghỉ xứng đáng.
+                    {t("Một khoảng nghỉ xứng đáng.")}{" "}
                   </span>
                 </>
               )}
             </h1>
             {!topic && (
               <p className="mt-3 max-w-lg text-sm leading-relaxed text-muted-foreground">
-                Tìm điều bạn thích, lưu để xem sau hoặc rủ bạn bè cùng xem.
+                {t(
+                  "Tìm điều bạn thích, lưu để xem sau hoặc rủ bạn bè cùng xem.",
+                )}{" "}
               </p>
             )}
           </div>
@@ -225,7 +228,7 @@ export function HeroExplorer() {
             href="/rooms"
             className="hidden shrink-0 items-center gap-1.5 rounded-full border border-border bg-background px-4 py-2.5 text-sm font-medium hover:bg-muted xl:inline-flex"
           >
-            Xem cùng bạn bè <ArrowUpRight className="h-4 w-4" />
+            {t("Xem cùng bạn bè")} <ArrowUpRight className="h-4 w-4" />
           </Link>
         </div>
         <form
@@ -243,14 +246,14 @@ export function HeroExplorer() {
             maxLength={500}
             value={input}
             onChange={(event) => setInput(event.target.value)}
-            aria-label="Tìm video hoặc dán liên kết YouTube"
-            placeholder="Từ khóa hoặc link YouTube"
+            aria-label={t("Tìm video hoặc dán liên kết YouTube")}
+            placeholder={t("Từ khóa hoặc link YouTube")}
             className="h-10 min-w-0 flex-1 bg-transparent px-2 text-sm outline-none"
           />
           {input && (
             <button
               type="button"
-              aria-label="Xóa từ khóa"
+              aria-label={t("Xóa từ khóa")}
               onClick={() => {
                 setInput("");
                 inputRef.current?.focus();
@@ -262,13 +265,13 @@ export function HeroExplorer() {
           )}
           <Button type="submit" className="h-10 rounded-xl px-3 sm:px-5">
             <Search className="sm:hidden" />
-            <span className="hidden sm:inline">Tìm kiếm</span>
-            <span className="sr-only sm:hidden">Tìm kiếm</span>
+            <span className="hidden sm:inline">{t("Tìm kiếm")}</span>
+            <span className="sr-only sm:hidden">{t("Tìm kiếm")}</span>
           </Button>
         </form>
         {!topic && recent.items.length > 0 && (
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <span>Gần đây</span>
+            <span>{t("Gần đây")}</span>
             {recent.items.slice(0, 3).map((term) => (
               <button
                 key={term}
@@ -299,15 +302,15 @@ export function HeroExplorer() {
               className="break-words font-display text-xl font-semibold sm:text-2xl"
             >
               {topic
-                ? `Kết quả cho “${topic}”`
+                ? t("Kết quả cho “{p0}”", { p0: topic })
                 : interests.length
-                  ? "Dành cho bạn"
-                  : "Đang thịnh hành"}
+                  ? t("Dành cho bạn")
+                  : t("Đang thịnh hành")}
             </h2>
             <p role="status" className="mt-1 text-sm text-muted-foreground">
               {loading
-                ? "Đang tìm những video phù hợp…"
-                : `${items.length} video${nextPage ? " · còn nhiều hơn để khám phá" : ""}`}
+                ? t("Đang tìm những video phù hợp…")
+                : `${t("Video: {count}", { count: items.length })}${nextPage ? t(" · còn nhiều hơn để khám phá") : ""}`}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -323,12 +326,12 @@ export function HeroExplorer() {
                 onClick={() => setPreferencesOpen(true)}
                 className="rounded-xl"
               >
-                <SlidersHorizontal /> Sở thích
+                <SlidersHorizontal /> {t("Sở thích")}{" "}
               </Button>
             )}
             <div
               role="group"
-              aria-label="Kiểu hiển thị"
+              aria-label={t("Kiểu hiển thị")}
               className="flex rounded-xl border border-border bg-card p-1"
             >
               {(["grid", "list"] as const).map((mode) => (
@@ -337,8 +340,8 @@ export function HeroExplorer() {
                   type="button"
                   aria-label={
                     mode === "grid"
-                      ? "Hiển thị dạng lưới"
-                      : "Hiển thị dạng danh sách"
+                      ? t("Hiển thị dạng lưới")
+                      : t("Hiển thị dạng danh sách")
                   }
                   aria-pressed={view === mode}
                   onClick={() => changeView(mode)}
@@ -365,7 +368,7 @@ export function HeroExplorer() {
             onClick={() => navigate("", DEFAULT_FILTERS)}
             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary"
           >
-            <X className="h-4 w-4" /> Xóa tìm kiếm
+            <X className="h-4 w-4" /> {t("Xóa tìm kiếm")}{" "}
           </button>
         )}
         {!isDefaultFilters(filters) && (
@@ -374,7 +377,7 @@ export function HeroExplorer() {
             size="sm"
             onClick={() => navigate(topic, DEFAULT_FILTERS)}
           >
-            Đặt lại bộ lọc
+            {t("Đặt lại bộ lọc")}{" "}
           </Button>
         )}
         {loading ? (
@@ -386,7 +389,7 @@ export function HeroExplorer() {
                 role="alert"
                 className="rounded-2xl border border-border bg-card p-6 text-center"
               >
-                <p className="font-medium">{error}</p>
+                <p className="font-medium">{t(error ?? "")}</p>
                 <Button
                   variant="outline"
                   className="mt-4"
@@ -396,23 +399,25 @@ export function HeroExplorer() {
                       : setRetry((value) => value + 1)
                   }
                 >
-                  Thử lại
+                  {t("Thử lại")}{" "}
                 </Button>
               </div>
             )}
             {!error && !items.length && (
               <div className="rounded-2xl border border-dashed border-border py-16 text-center">
                 <Compass className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-                <h3 className="font-semibold">Chưa tìm thấy video phù hợp</h3>
+                <h3 className="font-semibold">
+                  {t("Chưa tìm thấy video phù hợp")}
+                </h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Thử từ khóa khác hoặc bỏ bớt bộ lọc.
+                  {t("Thử từ khóa khác hoặc bỏ bớt bộ lọc.")}{" "}
                 </p>
                 <Button
                   variant="secondary"
                   className="mt-5"
                   onClick={() => navigate("", DEFAULT_FILTERS)}
                 >
-                  Khám phá video thịnh hành
+                  {t("Khám phá video thịnh hành")}{" "}
                 </Button>
               </div>
             )}
@@ -431,7 +436,7 @@ export function HeroExplorer() {
                   onClick={() => void load(nextPage)}
                 >
                   {loadingMore && <Loader2 className="animate-spin" />}
-                  {loadingMore ? "Đang tải…" : "Xem thêm video"}
+                  {loadingMore ? t("Đang tải…") : t("Xem thêm video")}
                 </Button>
               </div>
             )}

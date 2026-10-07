@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 import { Crown, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -23,6 +24,7 @@ export function RoomMembers({
   members: RoomMemberDto[];
   myClientId: string | null;
 }) {
+  const t = useTranslations();
   const shown = members.slice(0, VISIBLE);
   const overflow = members.length - shown.length;
 
@@ -30,7 +32,7 @@ export function RoomMembers({
     <div className="flex items-center gap-2">
       <span className="flex items-center gap-1 text-xs text-muted-foreground">
         <Users className="h-3.5 w-3.5" />
-        {members.length} đang xem
+        {members.length} {t("đang xem")}{" "}
       </span>
 
       <TooltipProvider delayDuration={200}>
@@ -58,8 +60,12 @@ export function RoomMembers({
                 </TooltipTrigger>
                 <TooltipContent>
                   {m.name}
-                  {m.clientId === myClientId ? " (bạn)" : ""}
-                  {m.isHost ? " · chủ phòng" : m.isGuest ? " · khách" : ""}
+                  {m.clientId === myClientId ? t(" (bạn)") : ""}
+                  {m.isHost
+                    ? t(" · chủ phòng")
+                    : m.isGuest
+                      ? t(" · khách")
+                      : ""}
                 </TooltipContent>
               </Tooltip>
             </li>

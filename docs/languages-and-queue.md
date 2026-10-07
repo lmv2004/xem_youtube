@@ -1,0 +1,9 @@
+# Languages and room queue order
+
+The site supports Vietnamese (`vi`), English (`en`) and Telugu (`te`). On each page request, the saved `xemphim_locale` cookie takes priority, followed by supported `Accept-Language` preferences sorted by quality. `x-vercel-ip-country` is used only when none match: Vietnam falls back to Vietnamese and other countries to English. India does not imply Telugu. Local development works without the country header. No IP lookup service, GPS permission, API key or database migration is needed.
+
+The header selector is available to guests and signed-in users, saves the choice for one year on that browser and updates server content with a router refresh. The locale provider keeps client component state, including room membership and chat drafts. YouTube titles, channel names, user names and messages are user/content data and stay in their original language. The bundled dictionaries let the UI switch without translation network requests; HTML language, metadata, dates, relative times and Telugu font follow the selection.
+
+Translations live in `lib/translations.json`; Vietnamese source strings are the message keys. Use `useTranslations()` in client components and `getTranslator()` on the server. Pass variables as named parameters rather than translating user-generated strings. `lib/locale.test.ts` checks negotiation and complete English/Telugu placeholders.
+
+Room queue arrows move an entry one position up or down. Commands contain the stable queue entry ID and direction, never an old client snapshot. The server applies them to the current queue within the existing row lock, checks membership and host-control permissions, and broadcasts the updated queue through the room event bus. Removed IDs and moves beyond the first/last position are no-ops. Reordering leaves the current video, playback anchor and generation unchanged; automatic playback uses the new order. No schema changes are needed.

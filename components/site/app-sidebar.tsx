@@ -1,11 +1,17 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ACCOUNT_NAV, LIBRARY_NAV, PRIMARY_NAV, type NavItem } from "./nav-items";
+import {
+  ACCOUNT_NAV,
+  LIBRARY_NAV,
+  PRIMARY_NAV,
+  type NavItem,
+} from "./nav-items";
 import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "xemphim:sidebar:collapsed";
@@ -45,12 +51,13 @@ function NavLink({
   active: boolean;
   collapsed: boolean;
 }) {
+  const t = useTranslations();
   const { href, label, icon: Icon } = item;
   return (
     <Link
       href={href}
-      title={collapsed ? label : undefined}
-      aria-label={label}
+      title={collapsed ? t(label) : undefined}
+      aria-label={t(label)}
       aria-current={active ? "page" : undefined}
       className={cn(
         "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200",
@@ -66,7 +73,7 @@ function NavLink({
           active ? "text-rose-500" : "group-hover:text-foreground",
         )}
       />
-      {collapsed ? null : <span className="truncate">{label}</span>}
+      {collapsed ? null : <span className="truncate">{t(label)}</span>}
       {active && !collapsed && (
         <span className="ml-auto h-1.5 w-1.5 rounded-full bg-rose-500 " />
       )}
@@ -74,7 +81,13 @@ function NavLink({
   );
 }
 
-function SectionLabel({ children, hidden }: { children: React.ReactNode; hidden: boolean }) {
+function SectionLabel({
+  children,
+  hidden,
+}: {
+  children: React.ReactNode;
+  hidden: boolean;
+}) {
   if (hidden) return <div className="my-2 h-px bg-border" />;
   return (
     <p className="px-3 pb-1 pt-4 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -87,6 +100,7 @@ function SectionLabel({ children, hidden }: { children: React.ReactNode; hidden:
  * Desktop navigation rail (lg+ only).
  */
 export function AppSidebar() {
+  const t = useTranslations();
   const { collapsed, toggle } = useCollapsed();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -115,13 +129,20 @@ export function AppSidebar() {
       )}
     >
       <div className="rounded-2xl p-2">
-        <div className={cn("flex pb-1", collapsed ? "justify-center" : "justify-end")}>
+        <div
+          className={cn(
+            "flex pb-1",
+            collapsed ? "justify-center" : "justify-end",
+          )}
+        >
           <Button
             type="button"
             size="icon"
             variant="ghost"
             onClick={toggle}
-            aria-label={collapsed ? "Mở rộng thanh bên" : "Thu gọn thanh bên"}
+            aria-label={
+              collapsed ? t("Mở rộng thanh bên") : t("Thu gọn thanh bên")
+            }
             className="h-8 w-8 text-muted-foreground hover:bg-border hover:text-foreground rounded-lg"
           >
             {collapsed ? (
@@ -142,7 +163,7 @@ export function AppSidebar() {
             />
           ))}
 
-          <SectionLabel hidden={collapsed}>Thư viện</SectionLabel>
+          <SectionLabel hidden={collapsed}>{t("Thư viện")}</SectionLabel>
           {LIBRARY_NAV.map((item) => (
             <NavLink
               key={item.href}
@@ -152,7 +173,7 @@ export function AppSidebar() {
             />
           ))}
 
-          <SectionLabel hidden={collapsed}>Khác</SectionLabel>
+          <SectionLabel hidden={collapsed}>{t("Khác")}</SectionLabel>
           {ACCOUNT_NAV.map((item) => (
             <NavLink
               key={item.href}

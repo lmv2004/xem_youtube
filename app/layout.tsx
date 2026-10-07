@@ -1,5 +1,8 @@
+import { getTranslator } from "@/lib/locale-server";
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Outfit } from "next/font/google";
+import { Plus_Jakarta_Sans, Outfit, Noto_Sans_Telugu } from "next/font/google";
+import { LocaleProvider } from "@/components/locale-provider";
+import { getLocale } from "@/lib/locale-server";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthSessionProvider } from "@/components/auth/session-provider";
@@ -17,51 +20,71 @@ const display = Outfit({
   variable: "--font-display",
   display: "swap",
 });
+const telugu = Noto_Sans_Telugu({
+  subsets: ["telugu", "latin"],
+  variable: "--font-telugu",
+  display: "swap",
+});
 
 // Runs before first paint so the stored theme is applied without a flash of
 // the wrong colour scheme. Kept as a plain string (not imported from the
 // client module) so this file stays a server component.
 const THEME_INIT_SCRIPT = `(function(){try{var s=localStorage.getItem("xemphim:theme");var t=(s==="light"||s==="dark"||s==="system")?s:"dark";var r=t==="system"?(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t;var e=document.documentElement;e.classList.toggle("dark",r==="dark");e.style.colorScheme=r;}catch(_){}})();`;
 
-export const metadata: Metadata = {
-  title: {
-    default: "XemPhim - Nền tảng xem và khám phá video hiện đại",
-    template: "%s | XemPhim",
-  },
-  description:
-    "Khám phá video YouTube xu hướng, xem chung realtime cùng bạn bè, tìm kiếm thông minh và quản lý thư viện video cá nhân hóa.",
-  applicationName: "XemPhim",
-  authors: [{ name: "XemPhim" }],
-  openGraph: {
-    title: "XemPhim - Nền tảng xem và khám phá video hiện đại",
-    description:
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslator();
+  return {
+    title: {
+      default: t("XemPhim - Nền tảng xem và khám phá video hiện đại"),
+      template: "%s | XemPhim",
+    },
+    description: t(
       "Khám phá video YouTube xu hướng, xem chung realtime cùng bạn bè, tìm kiếm thông minh và quản lý thư viện video cá nhân hóa.",
-    siteName: "XemPhim",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "XemPhim - Nền tảng xem và khám phá video hiện đại",
-    description:
-      "Khám phá video YouTube xu hướng, xem chung realtime cùng bạn bè, tìm kiếm thông minh và quản lý thư viện video cá nhân hóa.",
-  },
-  robots: { index: true, follow: true },
-};
+    ),
+    applicationName: "XemPhim",
+    authors: [{ name: "XemPhim" }],
+    openGraph: {
+      title: t("XemPhim - Nền tảng xem và khám phá video hiện đại"),
+      description: t(
+        "Khám phá video YouTube xu hướng, xem chung realtime cùng bạn bè, tìm kiếm thông minh và quản lý thư viện video cá nhân hóa.",
+      ),
+      siteName: "XemPhim",
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: t("XemPhim - Nền tảng xem và khám phá video hiện đại"),
+      description: t(
+        "Khám phá video YouTube xu hướng, xem chung realtime cùng bạn bè, tìm kiếm thông minh và quản lý thư viện video cá nhân hóa.",
+      ),
+    },
+    robots: { index: true, follow: true },
+  };
+}
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const locale = await getLocale();
   return (
-    <html lang="vi" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
-      <body className={`${sans.variable} ${display.variable} min-h-screen bg-background font-sans antialiased text-foreground selection:bg-rose-500/30 selection:text-white`}>
-        <ThemeProvider defaultTheme="dark">
-          <AuthSessionProvider>
-            <ClientLogInit />
-            {children}
-            <Toaster />
-          </AuthSessionProvider>
-        </ThemeProvider>
+      <body
+        className={`${sans.variable} ${display.variable} ${telugu.variable} min-h-screen bg-background font-sans antialiased text-foreground selection:bg-rose-500/30 selection:text-white`}
+      >
+        <LocaleProvider initialLocale={locale}>
+          <ThemeProvider defaultTheme="dark">
+            <AuthSessionProvider>
+              <ClientLogInit />
+              {children}
+              <Toaster />
+            </AuthSessionProvider>
+          </ThemeProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -39,11 +40,15 @@ type Props = {
 };
 
 export function FavoritesLibrary({ collections, savedVideos }: Props) {
+  const t = useTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialTab = searchParams.get("tab") === "collections" ? "collections" : "favorites";
+  const initialTab =
+    searchParams.get("tab") === "collections" ? "collections" : "favorites";
 
-  const [activeTab, setActiveTab] = useState<"favorites" | "collections">(initialTab);
+  const [activeTab, setActiveTab] = useState<"favorites" | "collections">(
+    initialTab,
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "title">("newest");
   const [view, setView] = useState<ViewMode>("grid");
@@ -55,7 +60,9 @@ export function FavoritesLibrary({ collections, savedVideos }: Props) {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
-        (v) => v.title.toLowerCase().includes(q) || v.channel.toLowerCase().includes(q),
+        (v) =>
+          v.title.toLowerCase().includes(q) ||
+          v.channel.toLowerCase().includes(q),
       );
     }
 
@@ -75,14 +82,16 @@ export function FavoritesLibrary({ collections, savedVideos }: Props) {
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-              Thư viện cá nhân
+              {t("Thư viện cá nhân")}{" "}
             </h1>
             <span className="rounded-full border border-purple-500/30 bg-purple-500/10 px-2.5 py-0.5 text-xs font-bold text-purple-400">
-              Bộ sưu tập
+              {t("Bộ sưu tập")}{" "}
             </span>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            Lưu trữ, phân loại theo danh sách chủ đề và thưởng thức video chất lượng cao mọi lúc.
+            {t(
+              "Lưu trữ, phân loại theo danh sách chủ đề và thưởng thức video chất lượng cao mọi lúc.",
+            )}{" "}
           </p>
         </div>
 
@@ -98,8 +107,16 @@ export function FavoritesLibrary({ collections, savedVideos }: Props) {
                 : "text-muted-foreground hover:text-foreground hover:bg-white/5",
             )}
           >
-            <Heart className={cn("h-3.5 w-3.5", activeTab === "favorites" && "fill-white")} />
-            <span>Video yêu thích ({savedVideos.length})</span>
+            <Heart
+              className={cn(
+                "h-3.5 w-3.5",
+                activeTab === "favorites" && "fill-white",
+              )}
+            />
+            <span>
+              {t("Video yêu thích (")}
+              {savedVideos.length})
+            </span>
           </button>
 
           <button
@@ -113,7 +130,10 @@ export function FavoritesLibrary({ collections, savedVideos }: Props) {
             )}
           >
             <Library className="h-3.5 w-3.5" />
-            <span>Bộ sưu tập ({collections.length})</span>
+            <span>
+              {t("Bộ sưu tập (")}
+              {collections.length})
+            </span>
           </button>
         </div>
       </div>
@@ -128,7 +148,7 @@ export function FavoritesLibrary({ collections, savedVideos }: Props) {
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Lọc video trong yêu thích..."
+                placeholder={t("Lọc video trong yêu thích...")}
                 className="h-10 rounded-xl border-white/10 bg-white/5 pl-9 text-xs sm:text-sm focus:border-rose-500/50"
               />
             </div>
@@ -136,12 +156,14 @@ export function FavoritesLibrary({ collections, savedVideos }: Props) {
             <div className="flex items-center gap-2 self-end sm:self-auto">
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as "newest" | "oldest" | "title")}
+                onChange={(e) =>
+                  setSortBy(e.target.value as "newest" | "oldest" | "title")
+                }
                 className="h-10 rounded-xl border border-white/10 bg-card/80 px-3 text-xs font-semibold text-foreground backdrop-blur-md focus:outline-none focus:border-rose-500/50"
               >
-                <option value="newest">Mới lưu nhất</option>
-                <option value="oldest">Lưu cũ nhất</option>
-                <option value="title">Tên video (A-Z)</option>
+                <option value="newest">{t("Mới lưu nhất")}</option>
+                <option value="oldest">{t("Lưu cũ nhất")}</option>
+                <option value="title">{t("Tên video (A-Z)")}</option>
               </select>
 
               <div className="flex items-center gap-0.5 rounded-xl border border-white/10 bg-card/80 p-0.5 backdrop-blur-md">
@@ -150,9 +172,11 @@ export function FavoritesLibrary({ collections, savedVideos }: Props) {
                   onClick={() => setView("grid")}
                   className={cn(
                     "grid h-8 w-8 place-items-center rounded-lg transition",
-                    view === "grid" ? "bg-white/10 text-foreground" : "text-muted-foreground hover:text-foreground",
+                    view === "grid"
+                      ? "bg-white/10 text-foreground"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
-                  title="Chế độ lưới"
+                  title={t("Chế độ lưới")}
                 >
                   <LayoutGrid className="h-4 w-4" />
                 </button>
@@ -161,9 +185,11 @@ export function FavoritesLibrary({ collections, savedVideos }: Props) {
                   onClick={() => setView("list")}
                   className={cn(
                     "grid h-8 w-8 place-items-center rounded-lg transition",
-                    view === "list" ? "bg-white/10 text-foreground" : "text-muted-foreground hover:text-foreground",
+                    view === "list"
+                      ? "bg-white/10 text-foreground"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
-                  title="Chế độ danh sách"
+                  title={t("Chế độ danh sách")}
                 >
                   <List className="h-4 w-4" />
                 </button>
@@ -180,18 +206,26 @@ export function FavoritesLibrary({ collections, savedVideos }: Props) {
               <div className="space-y-1">
                 <p className="font-display text-lg font-bold text-foreground">
                   {savedVideos.length === 0
-                    ? "Chưa có video yêu thích nào"
-                    : "Không tìm thấy video phù hợp"}
+                    ? t("Chưa có video yêu thích nào")
+                    : t("Không tìm thấy video phù hợp")}
                 </p>
                 <p className="text-xs sm:text-sm text-muted-foreground max-w-sm mx-auto">
                   {savedVideos.length === 0
-                    ? "Nhấn nút 'Thích' hoặc biểu tượng trái tim ở bất kỳ video nào để lưu vào thư viện xem lại sau."
-                    : "Hãy thử đổi từ khóa tìm kiếm trong danh sách đã lưu của bạn."}
+                    ? t(
+                        "Nhấn nút 'Thích' hoặc biểu tượng trái tim ở bất kỳ video nào để lưu vào thư viện xem lại sau.",
+                      )
+                    : t(
+                        "Hãy thử đổi từ khóa tìm kiếm trong danh sách đã lưu của bạn.",
+                      )}
                 </p>
               </div>
               {savedVideos.length === 0 && (
-                <Button asChild size="sm" className="rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 text-white font-semibold shadow-[0_0_20px_rgba(255,42,84,0.4)]">
-                  <Link href="/">Khám phá video ngay</Link>
+                <Button
+                  asChild
+                  size="sm"
+                  className="rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 text-white font-semibold shadow-[0_0_20px_rgba(255,42,84,0.4)]"
+                >
+                  <Link href="/">{t("Khám phá video ngay")}</Link>
                 </Button>
               )}
             </div>
@@ -209,14 +243,16 @@ export function FavoritesLibrary({ collections, savedVideos }: Props) {
       {activeTab === "collections" && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-lg font-bold text-foreground">Danh sách bộ sưu tập của bạn</h2>
+            <h2 className="font-display text-lg font-bold text-foreground">
+              {t("Danh sách bộ sưu tập của bạn")}
+            </h2>
             <Button
               size="sm"
               onClick={() => setNewCollectionOpen(!newCollectionOpen)}
               className="rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 font-semibold text-white shadow-[0_0_20px_rgba(139,92,246,0.4)] gap-1.5"
             >
               <Plus className="h-4 w-4" />
-              <span>Tạo bộ sưu tập</span>
+              <span>{t("Tạo bộ sưu tập")}</span>
             </Button>
           </div>
 
@@ -224,13 +260,15 @@ export function FavoritesLibrary({ collections, savedVideos }: Props) {
           {newCollectionOpen && (
             <div className="p-5 rounded-3xl border border-purple-500/30 bg-card/90 shadow-2xl backdrop-blur-2xl animate-in-up space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-display font-bold text-sm text-foreground">Tạo bộ sưu tập mới</h3>
+                <h3 className="font-display font-bold text-sm text-foreground">
+                  {t("Tạo bộ sưu tập mới")}
+                </h3>
                 <button
                   type="button"
                   onClick={() => setNewCollectionOpen(false)}
                   className="text-xs text-muted-foreground hover:text-foreground"
                 >
-                  Đóng
+                  {t("Đóng")}{" "}
                 </button>
               </div>
               <NewCollectionForm />
@@ -243,9 +281,13 @@ export function FavoritesLibrary({ collections, savedVideos }: Props) {
                 <Library className="h-7 w-7" />
               </div>
               <div className="space-y-1">
-                <p className="font-display text-lg font-bold text-foreground">Bạn chưa có bộ sưu tập nào</p>
+                <p className="font-display text-lg font-bold text-foreground">
+                  {t("Bạn chưa có bộ sưu tập nào")}
+                </p>
                 <p className="text-xs sm:text-sm text-muted-foreground max-w-sm mx-auto">
-                  Tạo các bộ sưu tập theo chủ đề (Học lập trình, Nhạc chill, Phim hay...) để sắp xếp video gọn gàng.
+                  {t(
+                    "Tạo các bộ sưu tập theo chủ đề (Học lập trình, Nhạc chill, Phim hay...) để sắp xếp video gọn gàng.",
+                  )}{" "}
                 </p>
               </div>
               <Button
@@ -253,7 +295,7 @@ export function FavoritesLibrary({ collections, savedVideos }: Props) {
                 onClick={() => setNewCollectionOpen(true)}
                 className="rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold shadow-[0_0_20px_rgba(139,92,246,0.4)]"
               >
-                Tạo bộ sưu tập đầu tiên
+                {t("Tạo bộ sưu tập đầu tiên")}{" "}
               </Button>
             </div>
           ) : (
@@ -306,13 +348,14 @@ export function FavoritesLibrary({ collections, savedVideos }: Props) {
                         {c.name}
                       </h3>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Cập nhật {new Date(c.updatedAt).toLocaleDateString("vi-VN")}
+                        {t("Cập nhật")}{" "}
+                        {new Date(c.updatedAt).toLocaleDateString(t.locale)}
                       </p>
                     </div>
 
                     <div className="mt-4 flex items-center justify-between pt-3 border-t border-white/10 text-xs text-muted-foreground">
                       <span className="font-semibold text-purple-400 group-hover:underline">
-                        Mở bộ sưu tập
+                        {t("Mở bộ sưu tập")}{" "}
                       </span>
                       <Play className="h-3.5 w-3.5 text-muted-foreground group-hover:text-purple-400 group-hover:translate-x-0.5 transition" />
                     </div>

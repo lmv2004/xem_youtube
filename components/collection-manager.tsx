@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
@@ -25,7 +26,12 @@ type Props = {
   items: VideoItem[];
 };
 
-export function CollectionManager({ collectionId, collectionName, items }: Props) {
+export function CollectionManager({
+  collectionId,
+  collectionName,
+  items,
+}: Props) {
+  const t = useTranslations();
   const router = useRouter();
   const [renameOpen, setRenameOpen] = useState(false);
   const [newName, setNewName] = useState(collectionName);
@@ -44,35 +50,52 @@ export function CollectionManager({ collectionId, collectionName, items }: Props
     });
     setRenamePending(false);
     if (!res.ok) {
-      toast({ variant: "destructive", title: "Lỗi", description: "Không thể đổi tên." });
+      toast({
+        variant: "destructive",
+        title: t("Lỗi"),
+        description: t("Không thể đổi tên."),
+      });
       return;
     }
-    toast({ title: "Đã cập nhật" });
+    toast({ title: t("Đã cập nhật") });
     setRenameOpen(false);
     router.refresh();
   }
 
   async function deleteCollection() {
     setDeletePending(true);
-    const res = await fetch(`/api/collections/${collectionId}`, { method: "DELETE" });
+    const res = await fetch(`/api/collections/${collectionId}`, {
+      method: "DELETE",
+    });
     setDeletePending(false);
     if (!res.ok) {
-      toast({ variant: "destructive", title: "Lỗi", description: "Không thể xoá." });
+      toast({
+        variant: "destructive",
+        title: t("Lỗi"),
+        description: t("Không thể xoá."),
+      });
       return;
     }
-    toast({ title: "Đã xoá" });
+    toast({ title: t("Đã xoá") });
     router.push("/favorites");
     router.refresh();
   }
 
   async function removeItem(videoId: string) {
     setRemoveId(videoId);
-    const res = await fetch(`/api/collections/${collectionId}/items/${videoId}`, {
-      method: "DELETE",
-    });
+    const res = await fetch(
+      `/api/collections/${collectionId}/items/${videoId}`,
+      {
+        method: "DELETE",
+      },
+    );
     setRemoveId(null);
     if (!res.ok) {
-      toast({ variant: "destructive", title: "Lỗi", description: "Không thể xoá video." });
+      toast({
+        variant: "destructive",
+        title: t("Lỗi"),
+        description: t("Không thể xoá video."),
+      });
       return;
     }
     router.refresh();
@@ -82,7 +105,7 @@ export function CollectionManager({ collectionId, collectionName, items }: Props
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" size="sm" onClick={() => setRenameOpen(true)}>
-          Đổi tên
+          {t("Đổi tên")}{" "}
         </Button>
         <Button
           variant="outline"
@@ -91,7 +114,7 @@ export function CollectionManager({ collectionId, collectionName, items }: Props
           onClick={deleteCollection}
           disabled={deletePending}
         >
-          <Trash2 className="mr-1" /> Xoá danh sách
+          <Trash2 className="mr-1" /> {t("Xoá danh sách")}{" "}
         </Button>
       </div>
 
@@ -112,9 +135,15 @@ export function CollectionManager({ collectionId, collectionName, items }: Props
                   ) : null}
                 </div>
                 <div className="space-y-1 p-3">
-                  <h3 className="line-clamp-2 text-sm font-semibold">{item.title}</h3>
-                  <p className="truncate text-xs text-muted-foreground">{item.channel}</p>
-                  <p className="text-xs text-muted-foreground">{formatViews(item.viewCount)}</p>
+                  <h3 className="line-clamp-2 text-sm font-semibold">
+                    {item.title}
+                  </h3>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {item.channel}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatViews(item.viewCount, t.locale)}
+                  </p>
                   <div className="pt-1">
                     <Button
                       variant="ghost"
@@ -124,7 +153,9 @@ export function CollectionManager({ collectionId, collectionName, items }: Props
                       disabled={removeId === item.id}
                     >
                       <Trash2 className="mr-1" />
-                      {removeId === item.id ? "Đang xoá..." : "Bỏ khỏi danh sách"}
+                      {removeId === item.id
+                        ? t("Đang xoá...")
+                        : t("Bỏ khỏi danh sách")}
                     </Button>
                   </div>
                 </div>
@@ -137,11 +168,11 @@ export function CollectionManager({ collectionId, collectionName, items }: Props
       <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Đổi tên danh sách</DialogTitle>
+            <DialogTitle>{t("Đổi tên danh sách")}</DialogTitle>
           </DialogHeader>
           <form onSubmit={rename} className="space-y-3">
             <div className="space-y-1.5">
-              <Label htmlFor="rename">Tên mới</Label>
+              <Label htmlFor="rename">{t("Tên mới")}</Label>
               <Input
                 id="rename"
                 value={newName}
@@ -150,11 +181,18 @@ export function CollectionManager({ collectionId, collectionName, items }: Props
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setRenameOpen(false)}>
-                Huỷ
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setRenameOpen(false)}
+              >
+                {t("Huỷ")}{" "}
               </Button>
-              <Button type="submit" disabled={renamePending || newName.trim().length < 1}>
-                Lưu
+              <Button
+                type="submit"
+                disabled={renamePending || newName.trim().length < 1}
+              >
+                {t("Lưu")}{" "}
               </Button>
             </DialogFooter>
           </form>

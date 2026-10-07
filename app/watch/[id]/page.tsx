@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/locale-server";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
@@ -8,19 +9,24 @@ import { WatchView } from "@/components/watch-view";
 
 export const dynamic = "force-dynamic";
 
-type Params = { params: Promise<{ id: string }>; searchParams: Promise<{ loop?: string }> };
+type Params = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ loop?: string }>;
+};
 
 export async function generateMetadata({ params }: Params) {
+  const t = await getTranslator();
   const { id } = await params;
   try {
     const v = await getVideoById(id);
-    if (!v) return { title: "Không tìm thấy video - XemPhim" };
+    if (!v) return { title: t("Không tìm thấy video - XemPhim") };
     return {
       title: `${v.title} - ${v.channel} | XemPhim`,
-      description: v.description?.slice(0, 160) || "Xem video trên XemPhim",
+      description: v.description?.slice(0, 160) || t("Xem video trên XemPhim"),
       openGraph: {
         title: `${v.title} | XemPhim`,
-        description: v.description?.slice(0, 160) || "Xem video trên XemPhim",
+        description:
+          v.description?.slice(0, 160) || t("Xem video trên XemPhim"),
         images: v.thumbnail ? [{ url: v.thumbnail }] : [],
       },
     };
@@ -30,6 +36,7 @@ export async function generateMetadata({ params }: Params) {
 }
 
 export default async function WatchPage({ params, searchParams }: Params) {
+  const t = await getTranslator();
   const { id } = await params;
   const { loop } = await searchParams;
   if (!/^[A-Za-z0-9_-]{11}$/.test(id)) notFound();
@@ -69,13 +76,26 @@ export default async function WatchPage({ params, searchParams }: Params) {
     <div className="flex min-h-screen flex-col pb-20 lg:pb-0">
       <GradientMesh />
       <SiteHeader />
-      <main id="main-content" tabIndex={-1} className="container flex-1 py-6 sm:py-8">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="container flex-1 py-6 sm:py-8"
+      >
         {metadataUnavailable && (
-          <p role="status" className="mx-auto mb-4 max-w-6xl rounded-xl border border-border bg-muted/60 px-4 py-3 text-sm text-muted-foreground">
-            Chưa tải được thông tin video. Bạn vẫn có thể thử phát bên dưới hoặc mở trên YouTube.
+          <p
+            role="status"
+            className="mx-auto mb-4 max-w-6xl rounded-xl border border-border bg-muted/60 px-4 py-3 text-sm text-muted-foreground"
+          >
+            {t(
+              "Chưa tải được thông tin video. Bạn vẫn có thể thử phát bên dưới hoặc mở trên YouTube.",
+            )}{" "}
           </p>
         )}
-        <WatchView video={video} relatedVideos={relatedVideos} loop={wantLoop} />
+        <WatchView
+          video={video}
+          relatedVideos={relatedVideos}
+          loop={wantLoop}
+        />
       </main>
       <SiteFooter />
       <MobileNav />

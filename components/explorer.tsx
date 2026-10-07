@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Search, X } from "lucide-react";
 import type { SearchStatus, VideoItem, VideoSearchResponse } from "@/lib/types";
@@ -28,9 +29,12 @@ function readPersisted(): Persisted {
     return { interests: [], topic: "", mode: "trending" };
   }
   try {
-    const interests = JSON.parse(localStorage.getItem(STORAGE_INTERESTS) ?? "[]") as string[];
+    const interests = JSON.parse(
+      localStorage.getItem(STORAGE_INTERESTS) ?? "[]",
+    ) as string[];
     const topic = localStorage.getItem(STORAGE_LAST_TOPIC) ?? "";
-    const mode = (localStorage.getItem(STORAGE_LAST_MODE) as Mode | null) ?? "trending";
+    const mode =
+      (localStorage.getItem(STORAGE_LAST_MODE) as Mode | null) ?? "trending";
     return {
       interests: Array.isArray(interests) ? interests : [],
       topic,
@@ -62,13 +66,24 @@ function toStatus(
   if (!data) return { kind: "idle" };
   if (data.error?.code === "missing-key") return { kind: "missing-key" };
   if (data.error) {
-    return { kind: "error", topic, code: data.error.code, message: data.error.message };
+    return {
+      kind: "error",
+      topic,
+      code: data.error.code,
+      message: data.error.message,
+    };
   }
   if (data.items.length === 0) return { kind: "empty", topic };
-  return { kind: "ready", topic, items: data.items, featuredId: data.featuredId };
+  return {
+    kind: "ready",
+    topic,
+    items: data.items,
+    featuredId: data.featuredId,
+  };
 }
 
 export function Explorer() {
+  const t = useTranslations();
   const [interests, setInterests] = useState<string[]>([]);
   const [topic, setTopic] = useState("");
   const [mode, setMode] = useState<Mode>("trending");
@@ -105,7 +120,8 @@ export function Explorer() {
           params.set("mode", "trending");
         } else {
           if (t) params.set("topic", t);
-          if (opts.interests.length > 0) params.set("interests", opts.interests.join(","));
+          if (opts.interests.length > 0)
+            params.set("interests", opts.interests.join(","));
         }
         const url = `/api/videos?${params.toString()}`;
         const res = await fetch(url, { cache: "no-store" });
@@ -118,26 +134,37 @@ export function Explorer() {
           topic: opts.topic,
           items: [],
           featuredId: null,
-          error: { code: "network", message: "Không thể gọi máy chủ." },
+          error: { code: "network", message: t("Không thể gọi máy chủ.") },
         });
       } finally {
         if (seq === requestSeq.current) setIsLoading(false);
       }
     },
-    [],
+    [t],
   );
 
   // Auto-run after hydration and whenever the user changes interests.
   useEffect(() => {
     if (!hydrated) return;
-    void runSearch({ topic, interests, mode: interests.length > 0 || topic.trim().length >= 2 ? "search" : "trending" });
+    void runSearch({
+      topic,
+      interests,
+      mode:
+        interests.length > 0 || topic.trim().length >= 2
+          ? "search"
+          : "trending",
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interests, hydrated]);
 
   const status = toStatus(data?.topic ?? "", data, isLoading);
   const ready = status.kind === "ready" ? status : null;
-  const rest: VideoItem[] = ready ? ready.items.filter((v) => v.id !== ready.featuredId) : [];
-  const featured = ready ? ready.items.find((v) => v.id === ready.featuredId) : null;
+  const rest: VideoItem[] = ready
+    ? ready.items.filter((v) => v.id !== ready.featuredId)
+    : [];
+  const featured = ready
+    ? ready.items.find((v) => v.id === ready.featuredId)
+    : null;
 
   function resetToTrending() {
     setTopic("");
@@ -161,25 +188,37 @@ export function Explorer() {
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Tìm theo từ khoá tuỳ ý (không bắt buộc)..."
+                placeholder={t("Tìm theo từ khoá tuỳ ý (không bắt buộc)...")}
                 className="pl-9"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 maxLength={100}
               />
             </div>
-            <Button type="submit" disabled={isLoading || (topic.trim().length < 2 && interests.length === 0)}>
-              {isLoading ? "Đang tìm..." : "Tìm video"}
+            <Button
+              type="submit"
+              disabled={
+                isLoading || (topic.trim().length < 2 && interests.length === 0)
+              }
+            >
+              {isLoading ? t("Đang tìm...") : t("Tìm video")}
             </Button>
           </form>
 
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={mode === "trending" ? "default" : "secondary"}>
-              {mode === "trending" ? "Đề xuất chính" : data?.topic ?? "Đã tìm"}
+              {mode === "trending"
+                ? t("Đề xuất chính")
+                : (data?.topic ?? t("Đã tìm"))}
             </Badge>
             {mode === "search" ? (
-              <Button type="button" variant="ghost" size="sm" onClick={resetToTrending}>
-                <X className="mr-1" /> Quay lại đề xuất chính
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={resetToTrending}
+              >
+                <X className="mr-1" /> {t("Quay lại đề xuất chính")}{" "}
               </Button>
             ) : null}
           </div>
@@ -188,20 +227,28 @@ export function Explorer() {
         </CardContent>
       </Card>
 
-      <StatusMessage status={status} onRetry={() => void runSearch({ topic, interests, mode })} />
+      <StatusMessage
+        status={status}
+        onRetry={() => void runSearch({ topic, interests, mode })}
+      />
 
       {featured ? <FeaturedPlayer item={featured} /> : null}
       {rest.length > 0 ? (
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">
-            {mode === "trending" ? "Đang thịnh hành" : "Đề xuất liên quan"}
+            {mode === "trending"
+              ? t("Đang thịnh hành")
+              : t("Đề xuất liên quan")}
           </h2>
           <VideoGrid
             items={rest}
             onPlay={(item) =>
               setData({
                 ...(data as VideoSearchResponse),
-                items: [item, ...(ready?.items.filter((i) => i.id !== item.id) ?? [])],
+                items: [
+                  item,
+                  ...(ready?.items.filter((i) => i.id !== item.id) ?? []),
+                ],
                 featuredId: item.id,
                 topic: data?.topic ?? "",
               })
@@ -213,15 +260,30 @@ export function Explorer() {
   );
 }
 
-function StatusMessage({ status, onRetry }: { status: SearchStatus; onRetry: () => void }) {
+function StatusMessage({
+  status,
+  onRetry,
+}: {
+  status: SearchStatus;
+  onRetry: () => void;
+}) {
+  const t = useTranslations();
   if (status.kind === "idle") return null;
   if (status.kind === "loading") {
     return (
       <div className="space-y-3" aria-live="polite">
-        <p className="text-sm text-muted-foreground">Đang tải đề xuất...</p>
-        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-hidden>
+        <p className="text-sm text-muted-foreground">
+          {t("Đang tải đề xuất...")}
+        </p>
+        <ul
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          aria-hidden
+        >
           {Array.from({ length: 6 }).map((_, i) => (
-            <li key={i} className="overflow-hidden rounded-lg border border-border bg-card">
+            <li
+              key={i}
+              className="overflow-hidden rounded-lg border border-border bg-card"
+            >
               <Skeleton className="aspect-video w-full" />
               <div className="space-y-2 p-3">
                 <Skeleton className="h-3 w-3/4" />
@@ -236,26 +298,32 @@ function StatusMessage({ status, onRetry }: { status: SearchStatus; onRetry: () 
   if (status.kind === "empty") {
     return (
       <div className="rounded-md border border-border bg-muted/40 p-4 text-sm">
-        Không tìm thấy video cho chủ đề <strong>{status.topic}</strong>. Thử chủ đề khác nhé.
+        {t("Không tìm thấy video cho chủ đề")} <strong>{status.topic}</strong>
+        {t(". Thử chủ đề khác nhé.")}{" "}
       </div>
     );
   }
   if (status.kind === "missing-key") {
     return (
       <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm">
-        Máy chủ chưa được cấu hình <code className="rounded bg-muted px-1">YOUTUBE_API_KEY</code>.
-        Thêm biến này vào <code className="rounded bg-muted px-1">.env.local</code> rồi khởi động
-        lại <code className="rounded bg-muted px-1">npm run dev</code>.
+        {t("Máy chủ chưa được cấu hình")}{" "}
+        <code className="rounded bg-muted px-1">YOUTUBE_API_KEY</code>
+        {t(". Thêm biến này vào")}{" "}
+        <code className="rounded bg-muted px-1">.env.local</code>{" "}
+        {t("rồi khởi động lại")}{" "}
+        <code className="rounded bg-muted px-1">npm run dev</code>.
       </div>
     );
   }
   if (status.kind === "error") {
     return (
       <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm">
-        <p className="font-medium text-destructive">Không thể tải video.</p>
-        <p className="mt-1 text-muted-foreground">{status.message}</p>
+        <p className="font-medium text-destructive">
+          {t("Không thể tải video.")}
+        </p>
+        <p className="mt-1 text-muted-foreground">{t(status.message ?? "")}</p>
         <Button size="sm" variant="outline" className="mt-2" onClick={onRetry}>
-          Thử lại
+          {t("Thử lại")}{" "}
         </Button>
       </div>
     );

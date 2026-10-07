@@ -1,0 +1,2414 @@
+{
+  "Đã bật tự động phát": {
+    "en": "Autoplay enabled",
+    "te": "స్వయంచాలక ప్లే ప్రారంభించబడింది"
+  },
+  "Đã tắt tự động phát": {
+    "en": "Autoplay disabled",
+    "te": "స్వయంచాలక ప్లే నిలిపివేయబడింది"
+  },
+  "Đã bật mặc định chế độ rạp chiếu": {
+    "en": "Theater mode enabled by default",
+    "te": "డిఫాల్ట్‌గా థియేటర్ మోడ్ ప్రారంభించబడింది"
+  },
+  "Đã tắt chế độ rạp chiếu mặc định": {
+    "en": "Default theater mode disabled",
+    "te": "డిఫాల్ట్ థియేటర్ మోడ్ నిలిపివేయబడింది"
+  },
+  "Đã xóa toàn bộ lịch sử xem": {
+    "en": "Watch history cleared",
+    "te": "వీక్షణ చరిత్ర తొలగించబడింది"
+  },
+  "Không thể xóa lịch sử": {
+    "en": "Could not clear history",
+    "te": "చరిత్రను తొలగించలేకపోయాం"
+  },
+  "{p0} phút": {
+    "en": "{p0} minutes",
+    "te": "{p0} నిమిషాలు"
+  },
+  "{p0} giờ {p1} phút": {
+    "en": "{p0} hours {p1} minutes",
+    "te": "{p0} గంటలు {p1} నిమిషాలు"
+  },
+  "{p0} giờ": {
+    "en": "{p0} hours",
+    "te": "{p0} గంటలు"
+  },
+  "Thành viên XemPhim": {
+    "en": "XemPhim member",
+    "te": "XemPhim సభ్యుడు"
+  },
+  "Hồ sơ & Thống kê": {
+    "en": "Profile & statistics",
+    "te": "ప్రొఫైల్ & గణాంకాలు"
+  },
+  "Sở thích đề xuất (": {
+    "en": "Recommendation interests (",
+    "te": "సిఫార్సుల అభిరుచులు ("
+  },
+  "Giao diện & Phát lại": {
+    "en": "Appearance & playback",
+    "te": "రూపం & ప్లేబ్యాక్"
+  },
+  "Quyền riêng tư & Dữ liệu": {
+    "en": "Privacy & data",
+    "te": "గోప్యత & డేటా"
+  },
+  "Tổng video đã xem": {
+    "en": "Total videos watched",
+    "te": "చూసిన మొత్తం వీడియోలు"
+  },
+  "Video được ghi nhận trong lịch sử": {
+    "en": "Videos recorded in your history",
+    "te": "మీ చరిత్రలో నమోదైన వీడియోలు"
+  },
+  "Thời lượng thưởng thức": {
+    "en": "Watch time",
+    "te": "వీక్షణ సమయం"
+  },
+  "Tổng thời gian xem trên nền tảng": {
+    "en": "Total time spent watching",
+    "te": "చూడటానికి వెచ్చించిన మొత్తం సమయం"
+  },
+  "Video xem gần nhất": {
+    "en": "Most recently watched",
+    "te": "ఇటీవల చూసిన వీడియో"
+  },
+  "Chưa có lượt xem gần đây": {
+    "en": "No recent views",
+    "te": "ఇటీవలి వీక్షణలు లేవు"
+  },
+  "Kênh bạn xem nhiều nhất": {
+    "en": "Your most watched channels",
+    "te": "మీరు ఎక్కువగా చూసిన ఛానెల్‌లు"
+  },
+  "Chủ đề sở thích cá nhân": {
+    "en": "Your interests",
+    "te": "మీ అభిరుచులు"
+  },
+  "Chọn 3–5 chủ đề yêu thích của bạn. Trang chủ sẽ ưu tiên hiển thị các video thuộc những chủ đề này.": {
+    "en": "Choose 3–5 favorite topics to personalize your home page.",
+    "te": "మీ హోమ్ పేజీ కోసం 3–5 ఇష్టమైన అంశాలను ఎంచుకోండి."
+  },
+  "Giao diện màu sắc": {
+    "en": "Color theme",
+    "te": "రంగుల థీమ్"
+  },
+  "Tối (Cosmic Dark)": {
+    "en": "Dark (Cosmic Dark)",
+    "te": "డార్క్ (Cosmic Dark)"
+  },
+  "Sáng (Light Mode)": {
+    "en": "Light (Light Mode)",
+    "te": "లైట్ (Light Mode)"
+  },
+  "Hệ thống (Auto)": {
+    "en": "System (Auto)",
+    "te": "సిస్టమ్ (ఆటో)"
+  },
+  "Tự động phát video kế tiếp": {
+    "en": "Autoplay the next video",
+    "te": "తదుపరి వీడియోను స్వయంచాలకంగా ప్లే చేయండి"
+  },
+  "Tự chuyển sang video liên quan khi xem xong": {
+    "en": "Switch to a related video when playback ends",
+    "te": "ప్లేబ్యాక్ ముగిసినప్పుడు సంబంధిత వీడియోకు మారండి"
+  },
+  "Mặc định chế độ rạp chiếu phim": {
+    "en": "Use theater mode by default",
+    "te": "డిఫాల్ట్‌గా థియేటర్ మోడ్ వాడండి"
+  },
+  "Mở rộng khung phát chiếm toàn màn hình trang xem": {
+    "en": "Expand the player across the watch page",
+    "te": "వీక్షణ పేజీలో ప్లేయర్‌ను విస్తరించండి"
+  },
+  "Quản lý quyền riêng tư & Dữ liệu": {
+    "en": "Manage privacy & data",
+    "te": "గోప్యత & డేటాను నిర్వహించండి"
+  },
+  "Bạn có toàn quyền kiểm soát lịch sử xem và dữ liệu cá nhân của mình.": {
+    "en": "You control your watch history and personal data.",
+    "te": "మీ వీక్షణ చరిత్ర, వ్యక్తిగత డేటా మీ నియంత్రణలో ఉంటాయి."
+  },
+  "Xóa toàn bộ lịch sử xem": {
+    "en": "Clear all watch history",
+    "te": "వీక్షణ చరిత్ర మొత్తాన్ని తొలగించండి"
+  },
+  "Thao tác này sẽ xóa vĩnh viễn danh sách tất cả các video bạn đã xem khỏi tài khoản. Hành động này không thể hoàn tác.": {
+    "en": "This permanently removes all watched videos from your account. This cannot be undone.",
+    "te": "ఇది మీ ఖాతా నుండి చూసిన వీడియోలన్నింటినీ శాశ్వతంగా తొలగిస్తుంది. దీన్ని రద్దు చేయలేరు."
+  },
+  "Đang xóa...": {
+    "en": "Deleting…",
+    "te": "తొలగిస్తున్నాం…"
+  },
+  "Xác nhận xóa toàn bộ lịch sử": {
+    "en": "Confirm clearing all history",
+    "te": "చరిత్ర మొత్తాన్ని తొలగించడాన్ని నిర్ధారించండి"
+  },
+  "Lỗi": {
+    "en": "Error",
+    "te": "లోపం"
+  },
+  "Không thể lưu.": {
+    "en": "Could not save.",
+    "te": "సేవ్ చేయలేకపోయాం."
+  },
+  "Đã lưu": {
+    "en": "Saved",
+    "te": "సేవ్ చేయబడింది"
+  },
+  "Video đã được thêm vào danh sách.": {
+    "en": "Video added to the collection.",
+    "te": "వీడియో సేకరణకు జోడించబడింది."
+  },
+  "Không thể tạo.": {
+    "en": "Could not create.",
+    "te": "సృష్టించలేకపోయాం."
+  },
+  "Lưu vào danh sách": {
+    "en": "Save to a collection",
+    "te": "సేకరణలో సేవ్ చేయండి"
+  },
+  "Chọn một danh sách có sẵn hoặc tạo danh sách mới.": {
+    "en": "Choose an existing collection or create a new one.",
+    "te": "ఉన్న సేకరణను ఎంచుకోండి లేదా కొత్తది సృష్టించండి."
+  },
+  "Đăng nhập để lưu video vào danh sách cá nhân.": {
+    "en": "Sign in to save videos to your collections.",
+    "te": "వీడియోలను మీ సేకరణల్లో సేవ్ చేయడానికి సైన్ ఇన్ చేయండి."
+  },
+  "Bạn chưa có danh sách nào.": {
+    "en": "You have no collections yet.",
+    "te": "మీకు ఇంకా సేకరణలు లేవు."
+  },
+  "Đang lưu...": {
+    "en": "Saving…",
+    "te": "సేవ్ చేస్తున్నాం…"
+  },
+  "Tên danh sách mới": {
+    "en": "New collection name",
+    "te": "కొత్త సేకరణ పేరు"
+  },
+  "Tạo": {
+    "en": "Create",
+    "te": "సృష్టించండి"
+  },
+  "Đóng": {
+    "en": "Close",
+    "te": "మూసివేయండి"
+  },
+  "Email hoặc mật khẩu không đúng.": {
+    "en": "Incorrect email or password.",
+    "te": "ఇమెయిల్ లేదా పాస్‌వర్డ్ తప్పు."
+  },
+  "Đăng nhập": {
+    "en": "Sign in",
+    "te": "సైన్ ఇన్"
+  },
+  "Đăng nhập để lưu video yêu thích và xem lịch sử.": {
+    "en": "Sign in to save favorites and view your history.",
+    "te": "ఇష్టమైన వీడియోలను సేవ్ చేసి చరిత్ర చూడటానికి సైన్ ఇన్ చేయండి."
+  },
+  "Mật khẩu": {
+    "en": "Password",
+    "te": "పాస్‌వర్డ్"
+  },
+  "Đang đăng nhập...": {
+    "en": "Signing in…",
+    "te": "సైన్ ఇన్ చేస్తున్నాం…"
+  },
+  "hoặc": {
+    "en": "or",
+    "te": "లేదా"
+  },
+  "Tiếp tục với Google": {
+    "en": "Continue with Google",
+    "te": "Googleతో కొనసాగించండి"
+  },
+  "Chưa có tài khoản?": {
+    "en": "Don't have an account?",
+    "te": "ఖాతా లేదా?"
+  },
+  "Đăng ký": {
+    "en": "Sign up",
+    "te": "సైన్ అప్"
+  },
+  "Đăng ký thất bại.": {
+    "en": "Sign up failed.",
+    "te": "సైన్ అప్ విఫలమైంది."
+  },
+  "Đăng ký thành công nhưng đăng nhập tự động thất bại. Hãy thử lại.": {
+    "en": "Account created, but automatic sign-in failed. Please try again.",
+    "te": "ఖాతా సృష్టించబడింది, కానీ స్వయంచాలక సైన్ ఇన్ విఫలమైంది. మళ్లీ ప్రయత్నించండి."
+  },
+  "Tạo tài khoản": {
+    "en": "Create an account",
+    "te": "ఖాతాను సృష్టించండి"
+  },
+  "Miễn phí, không cần thẻ tín dụng.": {
+    "en": "Free. No credit card required.",
+    "te": "ఉచితం. క్రెడిట్ కార్డ్ అవసరం లేదు."
+  },
+  "Tên hiển thị": {
+    "en": "Display name",
+    "te": "ప్రదర్శన పేరు"
+  },
+  "Mật khẩu (tối thiểu 6 ký tự)": {
+    "en": "Password (at least 6 characters)",
+    "te": "పాస్‌వర్డ్ (కనీసం 6 అక్షరాలు)"
+  },
+  "Đang tạo tài khoản...": {
+    "en": "Creating account…",
+    "te": "ఖాతాను సృష్టిస్తున్నాం…"
+  },
+  "Đăng ký với Google": {
+    "en": "Sign up with Google",
+    "te": "Googleతో సైన్ అప్ చేయండి"
+  },
+  "Đã có tài khoản?": {
+    "en": "Already have an account?",
+    "te": "ఇప్పటికే ఖాతా ఉందా?"
+  },
+  "Đăng xuất": {
+    "en": "Sign out",
+    "te": "సైన్ అవుట్"
+  },
+  "Lên đầu trang": {
+    "en": "Back to top",
+    "te": "పైకి వెళ్లండి"
+  },
+  "Không thể đổi tên.": {
+    "en": "Could not rename.",
+    "te": "పేరు మార్చలేకపోయాం."
+  },
+  "Đã cập nhật": {
+    "en": "Updated",
+    "te": "నవీకరించబడింది"
+  },
+  "Không thể xoá.": {
+    "en": "Could not delete.",
+    "te": "తొలగించలేకపోయాం."
+  },
+  "Đã xoá": {
+    "en": "Deleted",
+    "te": "తొలగించబడింది"
+  },
+  "Không thể xoá video.": {
+    "en": "Could not remove video.",
+    "te": "వీడియోను తొలగించలేకపోయాం."
+  },
+  "Đổi tên": {
+    "en": "Rename",
+    "te": "పేరు మార్చండి"
+  },
+  "Xoá danh sách": {
+    "en": "Delete collection",
+    "te": "సేకరణను తొలగించండి"
+  },
+  "Đang xoá...": {
+    "en": "Deleting…",
+    "te": "తొలగిస్తున్నాం…"
+  },
+  "Bỏ khỏi danh sách": {
+    "en": "Remove from collection",
+    "te": "సేకరణ నుండి తొలగించండి"
+  },
+  "Đổi tên danh sách": {
+    "en": "Rename collection",
+    "te": "సేకరణ పేరు మార్చండి"
+  },
+  "Tên mới": {
+    "en": "New name",
+    "te": "కొత్త పేరు"
+  },
+  "Huỷ": {
+    "en": "Cancel",
+    "te": "రద్దు"
+  },
+  "Lưu": {
+    "en": "Save",
+    "te": "సేవ్"
+  },
+  "Điều hướng nhanh": {
+    "en": "Quick navigation",
+    "te": "త్వరిత నావిగేషన్"
+  },
+  "Tìm trang hoặc tìm kiếm video nhanh.": {
+    "en": "Find a page or search for videos.",
+    "te": "పేజీని కనుగొనండి లేదా వీడియోల కోసం వెతకండి."
+  },
+  "Tìm trang, phòng xem chung hoặc tìm kiếm video...": {
+    "en": "Search pages, watch rooms or videos…",
+    "te": "పేజీలు, వీక్షణ గదులు లేదా వీడియోల కోసం వెతకండి…"
+  },
+  "Không có kết quả cho &quot;": {
+    "en": "No results for \"",
+    "te": "దీనికి ఫలితాలు లేవు: \""
+  },
+  "Tìm kiếm video": {
+    "en": "Search videos",
+    "te": "వీడియోలను వెతకండి"
+  },
+  "Không thể gọi máy chủ.": {
+    "en": "Could not reach the server.",
+    "te": "సర్వర్‌ను చేరుకోలేకపోయాం."
+  },
+  "Tìm theo từ khoá tuỳ ý (không bắt buộc)...": {
+    "en": "Search any keyword (optional)…",
+    "te": "ఏదైనా పదంతో వెతకండి (ఐచ్ఛికం)…"
+  },
+  "Đang tìm...": {
+    "en": "Searching…",
+    "te": "వెతుకుతున్నాం…"
+  },
+  "Tìm video": {
+    "en": "Find videos",
+    "te": "వీడియోలను కనుగొనండి"
+  },
+  "Đề xuất chính": {
+    "en": "Top recommendations",
+    "te": "ముఖ్య సిఫార్సులు"
+  },
+  "Đã tìm": {
+    "en": "Search results",
+    "te": "శోధన ఫలితాలు"
+  },
+  "Quay lại đề xuất chính": {
+    "en": "Back to recommendations",
+    "te": "సిఫార్సులకు తిరిగి వెళ్లండి"
+  },
+  "Đang thịnh hành": {
+    "en": "Trending",
+    "te": "ట్రెండింగ్"
+  },
+  "Đề xuất liên quan": {
+    "en": "Related recommendations",
+    "te": "సంబంధిత సిఫార్సులు"
+  },
+  "Đang tải đề xuất...": {
+    "en": "Loading recommendations…",
+    "te": "సిఫార్సులను లోడ్ చేస్తున్నాం…"
+  },
+  "Không tìm thấy video cho chủ đề": {
+    "en": "No videos found for topic",
+    "te": "ఈ అంశానికి వీడియోలు లేవు:"
+  },
+  ". Thử chủ đề khác nhé.": {
+    "en": ". Try another topic.",
+    "te": ". మరో అంశాన్ని ప్రయత్నించండి."
+  },
+  "Máy chủ chưa được cấu hình": {
+    "en": "Server is not configured",
+    "te": "సర్వర్ కాన్ఫిగర్ చేయబడలేదు"
+  },
+  ". Thêm biến này vào": {
+    "en": ". Add this variable to",
+    "te": ". ఈ వేరియబుల్‌ను దీనికి జోడించండి:"
+  },
+  "rồi khởi động lại": {
+    "en": "then restart",
+    "te": "తర్వాత మళ్లీ ప్రారంభించండి"
+  },
+  "Không thể tải video.": {
+    "en": "Could not load videos.",
+    "te": "వీడియోలను లోడ్ చేయలేకపోయాం."
+  },
+  "Thử lại": {
+    "en": "Try again",
+    "te": "మళ్లీ ప్రయత్నించండి"
+  },
+  "Thư viện cá nhân": {
+    "en": "Personal library",
+    "te": "వ్యక్తిగత లైబ్రరీ"
+  },
+  "Bộ sưu tập": {
+    "en": "Collections",
+    "te": "సేకరణలు"
+  },
+  "Lưu trữ, phân loại theo danh sách chủ đề và thưởng thức video chất lượng cao mọi lúc.": {
+    "en": "Save and organize videos into collections to enjoy anytime.",
+    "te": "ఎప్పుడైనా చూడటానికి వీడియోలను సేకరణల్లో సేవ్ చేసి క్రమబద్ధీకరించండి."
+  },
+  "Video yêu thích (": {
+    "en": "Favorite videos (",
+    "te": "ఇష్టమైన వీడియోలు ("
+  },
+  "Bộ sưu tập (": {
+    "en": "Collections (",
+    "te": "సేకరణలు ("
+  },
+  "Lọc video trong yêu thích...": {
+    "en": "Filter favorite videos…",
+    "te": "ఇష్టమైన వీడియోలను ఫిల్టర్ చేయండి…"
+  },
+  "Mới lưu nhất": {
+    "en": "Recently saved",
+    "te": "ఇటీవల సేవ్ చేసినవి"
+  },
+  "Lưu cũ nhất": {
+    "en": "Oldest saved",
+    "te": "ముందుగా సేవ్ చేసినవి"
+  },
+  "Tên video (A-Z)": {
+    "en": "Video title (A–Z)",
+    "te": "వీడియో శీర్షిక (A–Z)"
+  },
+  "Chế độ lưới": {
+    "en": "Grid view",
+    "te": "గ్రిడ్ వీక్షణ"
+  },
+  "Chế độ danh sách": {
+    "en": "List view",
+    "te": "జాబితా వీక్షణ"
+  },
+  "Chưa có video yêu thích nào": {
+    "en": "No favorite videos yet",
+    "te": "ఇష్టమైన వీడియోలు ఇంకా లేవు"
+  },
+  "Không tìm thấy video phù hợp": {
+    "en": "No matching videos",
+    "te": "సరిపోలే వీడియోలు లేవు"
+  },
+  "Nhấn nút 'Thích' hoặc biểu tượng trái tim ở bất kỳ video nào để lưu vào thư viện xem lại sau.": {
+    "en": "Tap Like or the heart on any video to save it to your library.",
+    "te": "ఏదైనా వీడియోను లైబ్రరీలో సేవ్ చేయడానికి లైక్ లేదా గుండె గుర్తును నొక్కండి."
+  },
+  "Hãy thử đổi từ khóa tìm kiếm trong danh sách đã lưu của bạn.": {
+    "en": "Try another search in your saved videos.",
+    "te": "మీరు సేవ్ చేసిన వీడియోల్లో మరో పదంతో వెతకండి."
+  },
+  "Khám phá video ngay": {
+    "en": "Explore videos now",
+    "te": "ఇప్పుడే వీడియోలను అన్వేషించండి"
+  },
+  "Danh sách bộ sưu tập của bạn": {
+    "en": "Your collections",
+    "te": "మీ సేకరణలు"
+  },
+  "Tạo bộ sưu tập": {
+    "en": "Create collection",
+    "te": "సేకరణను సృష్టించండి"
+  },
+  "Tạo bộ sưu tập mới": {
+    "en": "Create a new collection",
+    "te": "కొత్త సేకరణను సృష్టించండి"
+  },
+  "Bạn chưa có bộ sưu tập nào": {
+    "en": "No collections yet",
+    "te": "సేకరణలు ఇంకా లేవు"
+  },
+  "Tạo các bộ sưu tập theo chủ đề (Học lập trình, Nhạc chill, Phim hay...) để sắp xếp video gọn gàng.": {
+    "en": "Organize your videos into collections such as coding, music or movies.",
+    "te": "కోడింగ్, సంగీతం లేదా సినిమాల వంటి సేకరణల్లో వీడియోలను క్రమబద్ధీకరించండి."
+  },
+  "Tạo bộ sưu tập đầu tiên": {
+    "en": "Create your first collection",
+    "te": "మీ మొదటి సేకరణను సృష్టించండి"
+  },
+  "Cập nhật": {
+    "en": "Updated",
+    "te": "నవీకరించబడింది"
+  },
+  "Mở bộ sưu tập": {
+    "en": "Open collection",
+    "te": "సేకరణను తెరవండి"
+  },
+  "Phát video {p0}": {
+    "en": "Play video {p0}",
+    "te": "{p0} వీడియోను ప్లే చేయండి"
+  },
+  "TIÊU ĐIỂM THỊNH HÀNH": {
+    "en": "TRENDING SPOTLIGHT",
+    "te": "ట్రెండింగ్ ప్రత్యేకం"
+  },
+  "Đóng trình phát (Esc)": {
+    "en": "Close player (Esc)",
+    "te": "ప్లేయర్‌ను మూసివేయండి (Esc)"
+  },
+  "Đang phát video nổi bật từ kênh": {
+    "en": "Playing a featured video from",
+    "te": "ప్రత్యేక వీడియో ప్లే అవుతోంది — ఛానెల్:"
+  },
+  "Dừng xem": {
+    "en": "Stop watching",
+    "te": "వీక్షణ ఆపండి"
+  },
+  "Phát ngay": {
+    "en": "Play now",
+    "te": "ఇప్పుడే ప్లే చేయండి"
+  },
+  "Trang rạp phim": {
+    "en": "Theater page",
+    "te": "థియేటర్ పేజీ"
+  },
+  "Xem cùng nhau": {
+    "en": "Watch together",
+    "te": "కలిసి చూడండి"
+  },
+  "Đang lặp lại video": {
+    "en": "Video loop is on",
+    "te": "వీడియో లూప్ ప్రారంభించబడింది"
+  },
+  "Bật lặp lại video": {
+    "en": "Enable video loop",
+    "te": "వీడియో లూప్ ప్రారంభించండి"
+  },
+  "Đang lặp": {
+    "en": "Looping",
+    "te": "లూప్‌లో ఉంది"
+  },
+  "Lặp lại": {
+    "en": "Loop",
+    "te": "లూప్"
+  },
+  "Phóng to": {
+    "en": "Expand",
+    "te": "విస్తరించండి"
+  },
+  "Thu nhỏ": {
+    "en": "Minimize",
+    "te": "చిన్నదిగా చేయండి"
+  },
+  "Thêm vào BST": {
+    "en": "Add to collection",
+    "te": "సేకరణకు జోడించండి"
+  },
+  "Thu gọn": {
+    "en": "Collapse",
+    "te": "కుదించండి"
+  },
+  "Xem thêm chi tiết": {
+    "en": "Show more details",
+    "te": "మరిన్ని వివరాలు చూపండి"
+  },
+  "Video chặn nhúng trên trình phát nhúng.": {
+    "en": "Video cannot be embedded.",
+    "te": "వీడియోను ఎంబెడ్ చేయలేరు."
+  },
+  "Chủ sở hữu kênh đã giới hạn phát video này bên ngoài YouTube. Bạn có thể mở trực tiếp video này trên YouTube.": {
+    "en": "The channel owner restricts playback outside YouTube. Open this video on YouTube.",
+    "te": "ఛానెల్ యజమాని YouTube వెలుపల ప్లేబ్యాక్‌ను పరిమితం చేశారు. ఈ వీడియోను YouTubeలో తెరవండి."
+  },
+  "Mở xem trên YouTube": {
+    "en": "Watch on YouTube",
+    "te": "YouTubeలో చూడండి"
+  },
+  "Tất cả": {
+    "en": "All",
+    "te": "అన్నీ"
+  },
+  "Chọn chủ đề ngẫu nhiên": {
+    "en": "Choose a random topic",
+    "te": "యాదృచ్ఛిక అంశాన్ని ఎంచుకోండి"
+  },
+  "Khám phá ngẫu nhiên": {
+    "en": "Random discovery",
+    "te": "యాదృచ్ఛిక అన్వేషణ"
+  },
+  "Chưa tải được video. Kiểm tra kết nối và thử lại sau một chút.": {
+    "en": "Could not load videos. Check your connection and try again shortly.",
+    "te": "వీడియోలను లోడ్ చేయలేకపోయాం. కనెక్షన్‌ను తనిఖీ చేసి మళ్లీ ప్రయత్నించండి."
+  },
+  "Khám phá mỗi ngày": {
+    "en": "Discover every day",
+    "te": "ప్రతిరోజూ అన్వేషించండి"
+  },
+  "Một video hay.": {
+    "en": "A great video.",
+    "te": "ఒక మంచి వీడియో."
+  },
+  "Một khoảng nghỉ xứng đáng.": {
+    "en": "A break you deserve.",
+    "te": "మీ కోసం ఒక చక్కని విరామం."
+  },
+  "Tìm điều bạn thích, lưu để xem sau hoặc rủ bạn bè cùng xem.": {
+    "en": "Find what you love, save it for later or watch with friends.",
+    "te": "మీకు నచ్చినవి కనుగొనండి, తర్వాత కోసం సేవ్ చేయండి లేదా స్నేహితులతో చూడండి."
+  },
+  "Xem cùng bạn bè": {
+    "en": "Watch with friends",
+    "te": "స్నేహితులతో చూడండి"
+  },
+  "Tìm video hoặc dán liên kết YouTube": {
+    "en": "Search videos or paste a YouTube link",
+    "te": "వీడియోలను వెతకండి లేదా YouTube లింక్ పేస్ట్ చేయండి"
+  },
+  "Từ khóa hoặc link YouTube": {
+    "en": "Keyword or YouTube link",
+    "te": "కీవర్డ్ లేదా YouTube లింక్"
+  },
+  "Xóa từ khóa": {
+    "en": "Clear search text",
+    "te": "శోధన పదాన్ని తొలగించండి"
+  },
+  "Tìm kiếm": {
+    "en": "Search",
+    "te": "వెతకండి"
+  },
+  "Gần đây": {
+    "en": "Recent",
+    "te": "ఇటీవలి"
+  },
+  "Kết quả cho “{p0}”": {
+    "en": "Results for “{p0}”",
+    "te": "“{p0}” కోసం ఫలితాలు"
+  },
+  "Dành cho bạn": {
+    "en": "For you",
+    "te": "మీ కోసం"
+  },
+  "Đang tìm những video phù hợp…": {
+    "en": "Finding videos for you…",
+    "te": "మీ కోసం వీడియోలను వెతుకుతున్నాం…"
+  },
+  " · còn nhiều hơn để khám phá": {
+    "en": " · more to explore",
+    "te": " · అన్వేషించడానికి మరిన్ని ఉన్నాయి"
+  },
+  "Sở thích": {
+    "en": "Interests",
+    "te": "అభిరుచులు"
+  },
+  "Kiểu hiển thị": {
+    "en": "View mode",
+    "te": "వీక్షణ మోడ్"
+  },
+  "Hiển thị dạng lưới": {
+    "en": "Show grid view",
+    "te": "గ్రిడ్ వీక్షణ చూపండి"
+  },
+  "Hiển thị dạng danh sách": {
+    "en": "Show list view",
+    "te": "జాబితా వీక్షణ చూపండి"
+  },
+  "Xóa tìm kiếm": {
+    "en": "Clear search",
+    "te": "శోధనను తొలగించండి"
+  },
+  "Đặt lại bộ lọc": {
+    "en": "Reset filters",
+    "te": "ఫిల్టర్లను రీసెట్ చేయండి"
+  },
+  "Chưa tìm thấy video phù hợp": {
+    "en": "No matching videos found",
+    "te": "సరిపోలే వీడియోలు కనుగొనబడలేదు"
+  },
+  "Thử từ khóa khác hoặc bỏ bớt bộ lọc.": {
+    "en": "Try another keyword or remove some filters.",
+    "te": "మరో పదాన్ని ప్రయత్నించండి లేదా కొన్ని ఫిల్టర్లను తొలగించండి."
+  },
+  "Khám phá video thịnh hành": {
+    "en": "Explore trending videos",
+    "te": "ట్రెండింగ్ వీడియోలను అన్వేషించండి"
+  },
+  "Đang tải…": {
+    "en": "Loading…",
+    "te": "లోడ్ చేస్తున్నాం…"
+  },
+  "Xem thêm video": {
+    "en": "Show more videos",
+    "te": "మరిన్ని వీడియోలు చూపండి"
+  },
+  "Hôm nay": {
+    "en": "Today",
+    "te": "ఈ రోజు"
+  },
+  "Hôm qua": {
+    "en": "Yesterday",
+    "te": "నిన్న"
+  },
+  "Tuần này": {
+    "en": "This week",
+    "te": "ఈ వారం"
+  },
+  "Cũ hơn": {
+    "en": "Earlier",
+    "te": "గతంలో"
+  },
+  "Đã xóa video khỏi lịch sử": {
+    "en": "Video removed from history",
+    "te": "వీడియో చరిత్ర నుండి తొలగించబడింది"
+  },
+  "Lịch sử xem video": {
+    "en": "Watch history",
+    "te": "వీక్షణ చరిత్ర"
+  },
+  "Xem lại các nội dung bạn đã từng thưởng thức, được phân loại theo mốc thời gian.": {
+    "en": "Revisit your videos, grouped by date.",
+    "te": "తేదీల వారీగా మీ వీడియోలను మళ్లీ చూడండి."
+  },
+  "Xóa toàn bộ": {
+    "en": "Clear all",
+    "te": "అన్నీ తొలగించండి"
+  },
+  "Tìm kiếm trong lịch sử xem...": {
+    "en": "Search your watch history…",
+    "te": "మీ వీక్షణ చరిత్రలో వెతకండి…"
+  },
+  "Lịch sử xem đang trống": {
+    "en": "Your watch history is empty",
+    "te": "మీ వీక్షణ చరిత్ర ఖాళీగా ఉంది"
+  },
+  "Khi bạn phát các video trên XemPhim khi đã đăng nhập, chúng sẽ tự động được ghi nhớ tại đây.": {
+    "en": "Videos you play while signed in are automatically saved here.",
+    "te": "సైన్ ఇన్ చేసి ప్లే చేసిన వీడియోలు ఇక్కడ స్వయంచాలకంగా సేవ్ అవుతాయి."
+  },
+  "Hãy thử tìm với từ khóa khác.": {
+    "en": "Try another keyword.",
+    "te": "మరో పదంతో ప్రయత్నించండి."
+  },
+  "Đã xem": {
+    "en": "Watched",
+    "te": "చూసినది"
+  },
+  "Xem lại": {
+    "en": "Watch again",
+    "te": "మళ్లీ చూడండి"
+  },
+  "Xóa khỏi lịch sử": {
+    "en": "Remove from history",
+    "te": "చరిత్ర నుండి తొలగించండి"
+  },
+  "Xác nhận xóa toàn bộ lịch sử?": {
+    "en": "Clear all watch history?",
+    "te": "వీక్షణ చరిత్ర మొత్తాన్ని తొలగించాలా?"
+  },
+  "Thao tác này sẽ xóa tất cả các video đã lưu trong lịch sử xem của bạn. Hành động này không thể hoàn tác.": {
+    "en": "This deletes every video from your watch history and cannot be undone.",
+    "te": "ఇది వీక్షణ చరిత్రలోని అన్ని వీడియోలను తొలగిస్తుంది. దీన్ని రద్దు చేయలేరు."
+  },
+  "Hủy": {
+    "en": "Cancel",
+    "te": "రద్దు"
+  },
+  "Xóa vĩnh viễn": {
+    "en": "Delete permanently",
+    "te": "శాశ్వతంగా తొలగించండి"
+  },
+  "Nhạc Việt": {
+    "en": "Vietnamese music",
+    "te": "వియత్నామీస్ సంగీతం"
+  },
+  "Phim ngắn": {
+    "en": "Short films",
+    "te": "లఘు చిత్రాలు"
+  },
+  "Học lập trình": {
+    "en": "Learn coding",
+    "te": "కోడింగ్ నేర్చుకోండి"
+  },
+  "Ẩm thực": {
+    "en": "Food",
+    "te": "ఆహారం"
+  },
+  "Du lịch": {
+    "en": "Travel",
+    "te": "ప్రయాణం"
+  },
+  "Tin tức": {
+    "en": "News",
+    "te": "వార్తలు"
+  },
+  "Thể thao": {
+    "en": "Sports",
+    "te": "క్రీడలు"
+  },
+  "Công nghệ": {
+    "en": "Technology",
+    "te": "సాంకేతికత"
+  },
+  "Sức khoẻ": {
+    "en": "Health",
+    "te": "ఆరోగ్యం"
+  },
+  "Chọn tối đa": {
+    "en": "Choose up to",
+    "te": "గరిష్ఠంగా ఎంచుకోండి:"
+  },
+  "sở thích để cá nhân hoá đề xuất. Sở thích được lưu cục bộ.": {
+    "en": "interests to personalize recommendations. Saved on this device.",
+    "te": "సిఫార్సుల కోసం అభిరుచులు. ఈ పరికరంలో సేవ్ అవుతాయి."
+  },
+  "Trình phát thu nhỏ": {
+    "en": "Mini player",
+    "te": "మినీ ప్లేయర్"
+  },
+  "Đóng trình phát thu nhỏ": {
+    "en": "Close mini player",
+    "te": "మినీ ప్లేయర్‌ను మూసివేయండి"
+  },
+  "Video chặn nhúng.": {
+    "en": "Video cannot be embedded.",
+    "te": "వీడియోను ఎంబెడ్ చేయలేరు."
+  },
+  "Mở rộng": {
+    "en": "Expand",
+    "te": "విస్తరించండి"
+  },
+  "Mở trong cửa sổ riêng (kéo sang màn hình khác)": {
+    "en": "Open in a separate window (move to another screen)",
+    "te": "వేరే విండోలో తెరవండి (మరో స్క్రీన్‌కు తరలించండి)"
+  },
+  "Mở trong cửa sổ riêng — bạn có thể kéo sang màn hình khác (Chrome 100+ desktop)": {
+    "en": "Open in a separate window to move it to another screen (Chrome 100+ desktop)",
+    "te": "మరో స్క్రీన్‌కు తరలించడానికి వేరే విండోలో తెరవండి (Chrome 100+ డెస్క్‌టాప్)"
+  },
+  "Phóng to trình phát": {
+    "en": "Expand player",
+    "te": "ప్లేయర్‌ను విస్తరించండి"
+  },
+  "Kéo để thay đổi kích thước": {
+    "en": "Drag to resize",
+    "te": "పరిమాణం మార్చడానికి లాగండి"
+  },
+  "Đã tạo": {
+    "en": "Created",
+    "te": "సృష్టించబడింది"
+  },
+  "Danh sách mới đã sẵn sàng.": {
+    "en": "Your new collection is ready.",
+    "te": "మీ కొత్త సేకరణ సిద్ధంగా ఉంది."
+  },
+  "Tên danh sách": {
+    "en": "Collection name",
+    "te": "సేకరణ పేరు"
+  },
+  "Ví dụ: Nhạc chill, Học React...": {
+    "en": "For example: Chill music, Learn React…",
+    "te": "ఉదాహరణ: సంగీతం, React నేర్చుకోండి…"
+  },
+  "Đang tạo...": {
+    "en": "Creating…",
+    "te": "సృష్టిస్తున్నాం…"
+  },
+  "Âm nhạc": {
+    "en": "Music",
+    "te": "సంగీతం"
+  },
+  "Lập trình & CNTT": {
+    "en": "Coding & IT",
+    "te": "కోడింగ్ & ఐటీ"
+  },
+  "Công nghệ & AI": {
+    "en": "Technology & AI",
+    "te": "సాంకేతికత & ఏఐ"
+  },
+  "Trò chơi / Gaming": {
+    "en": "Gaming",
+    "te": "గేమింగ్"
+  },
+  "Ẩm thực & Nấu ăn": {
+    "en": "Food & cooking",
+    "te": "ఆహారం & వంట"
+  },
+  "Du lịch & Trải nghiệm": {
+    "en": "Travel & experiences",
+    "te": "ప్రయాణం & అనుభవాలు"
+  },
+  "Tin tức & Sự kiện": {
+    "en": "News & events",
+    "te": "వార్తలు & సంఘటనలు"
+  },
+  "Khoa học & Khám phá": {
+    "en": "Science & discovery",
+    "te": "విజ్ఞానం & అన్వేషణ"
+  },
+  "Anime & Hoạt hình": {
+    "en": "Anime & animation",
+    "te": "అనిమే & యానిమేషన్"
+  },
+  "Chào mừng bạn đến với XemPhim": {
+    "en": "Welcome to XemPhim",
+    "te": "XemPhimకు స్వాగతం"
+  },
+  "Bạn thường xem gì trên YouTube? Chọn 3-5 chủ đề để chúng tôi cá nhân hoá nội dung ngay trên trang chủ của bạn.": {
+    "en": "What do you watch on YouTube? Choose 3–5 topics to personalize your home page.",
+    "te": "మీరు YouTubeలో ఏమి చూస్తారు? హోమ్ పేజీ కోసం 3–5 అంశాలను ఎంచుకోండి."
+  },
+  "Chọn chủ đề yêu thích (": {
+    "en": "Choose your favorite topics (",
+    "te": "మీకు ఇష్టమైన అంశాలను ఎంచుకోండి ("
+  },
+  "Xóa chọn": {
+    "en": "Clear selection",
+    "te": "ఎంపికను తొలగించండి"
+  },
+  "Để sau": {
+    "en": "Maybe later",
+    "te": "తర్వాత"
+  },
+  "Bắt đầu khám phá": {
+    "en": "Start exploring",
+    "te": "అన్వేషించడం ప్రారంభించండి"
+  },
+  "Không thể xóa phòng. Vui lòng thử lại.": {
+    "en": "Could not delete the room. Please try again.",
+    "te": "గదిని తొలగించలేకపోయాం. మళ్లీ ప్రయత్నించండి."
+  },
+  "Đã xóa phòng": {
+    "en": "Room deleted",
+    "te": "గది తొలగించబడింది"
+  },
+  "Liên kết cũ không còn sử dụng được.": {
+    "en": "The old link no longer works.",
+    "te": "పాత లింక్ ఇక పని చేయదు."
+  },
+  "Không kết nối được máy chủ.": {
+    "en": "Could not connect to the server.",
+    "te": "సర్వర్‌కు కనెక్ట్ కాలేకపోయాం."
+  },
+  "Xóa phòng {p0}": {
+    "en": "Delete room {p0}",
+    "te": "{p0} గదిని తొలగించండి"
+  },
+  "Xóa phòng": {
+    "en": "Delete room",
+    "te": "గదిని తొలగించండి"
+  },
+  "Xóa phòng này?": {
+    "en": "Delete this room?",
+    "te": "ఈ గదిని తొలగించాలా?"
+  },
+  "Phòng “": {
+    "en": "Room “",
+    "te": "గది “"
+  },
+  ") sẽ đóng với tất cả thành viên. Lịch sử trò chuyện sẽ bị xóa và không thể khôi phục.": {
+    "en": ") will close for everyone. Chat history will be permanently deleted.",
+    "te": ") అందరికీ మూసివేయబడుతుంది. చాట్ చరిత్ర శాశ్వతంగా తొలగించబడుతుంది."
+  },
+  "Giữ lại phòng": {
+    "en": "Keep room",
+    "te": "గదిని ఉంచండి"
+  },
+  "Đang xóa…": {
+    "en": "Deleting…",
+    "te": "తొలగిస్తున్నాం…"
+  },
+  "Phòng": {
+    "en": "Room",
+    "te": "గది"
+  },
+  "Tên hiển thị trong phòng": {
+    "en": "Your display name in this room",
+    "te": "ఈ గదిలో మీ ప్రదర్శన పేరు"
+  },
+  "Tên của bạn": {
+    "en": "Your name",
+    "te": "మీ పేరు"
+  },
+  "Đang vào...": {
+    "en": "Joining…",
+    "te": "చేరుతున్నాం…"
+  },
+  "Tham gia phòng": {
+    "en": "Join room",
+    "te": "గదిలో చేరండి"
+  },
+  "Ai trong phòng cũng phát, tạm dừng, tua và đổi video được. Muốn chat thì cần đăng nhập.": {
+    "en": "Anyone can play, pause, seek or change videos. Sign in to chat.",
+    "te": "ఎవరైనా ప్లే చేయవచ్చు, పాజ్ చేయవచ్చు, ముందుకు వెళ్లవచ్చు లేదా వీడియో మార్చవచ్చు. చాట్ కోసం సైన్ ఇన్ చేయండి."
+  },
+  "Trò chuyện trực tiếp": {
+    "en": "Live chat",
+    "te": "ప్రత్యక్ష చాట్"
+  },
+  "{p0} tin nhắn": {
+    "en": "{p0} messages",
+    "te": "{p0} సందేశాలు"
+  },
+  "Phòng đang sẵn sàng": {
+    "en": "Room is ready",
+    "te": "గది సిద్ధంగా ఉంది"
+  },
+  "Chưa có ai nhắn tin": {
+    "en": "No messages yet",
+    "te": "ఇంకా సందేశాలు లేవు"
+  },
+  "Hãy gửi tin nhắn đầu tiên để khuấy động phòng nhé!": {
+    "en": "Send the first message to start the conversation!",
+    "te": "సంభాషణ ప్రారంభించడానికి మొదటి సందేశాన్ని పంపండి!"
+  },
+  "Bạn": {
+    "en": "You",
+    "te": "మీరు"
+  },
+  "Người dùng": {
+    "en": "User",
+    "te": "వినియోగదారు"
+  },
+  "Chưa xác nhận gửi thành công": {
+    "en": "Delivery not confirmed",
+    "te": "పంపినట్లు నిర్ధారణ కాలేదు"
+  },
+  "Đang gửi…": {
+    "en": "Sending…",
+    "te": "పంపుతున్నాం…"
+  },
+  "Chờ gửi…": {
+    "en": "Waiting to send…",
+    "te": "పంపడానికి వేచి ఉంది…"
+  },
+  "Đưa lại vào ô soạn": {
+    "en": "Restore to composer",
+    "te": "రచన బాక్స్‌లో తిరిగి ఉంచండి"
+  },
+  "Gửi {p0}": {
+    "en": "Send {p0}",
+    "te": "{p0} పంపండి"
+  },
+  "Hàng đợi đã đầy. Hãy chờ gửi xong hoặc xử lý tin chưa gửi.": {
+    "en": "Your outbox is full. Wait for delivery or handle unsent messages.",
+    "te": "మీ అవుట్‌బాక్స్ నిండింది. సందేశాలు పంపే వరకు వేచి ఉండండి లేదా పంపని సందేశాలను నిర్వహించండి."
+  },
+  "Tin nhắn": {
+    "en": "Message",
+    "te": "సందేశం"
+  },
+  "Nhập tin nhắn...": {
+    "en": "Type a message…",
+    "te": "సందేశాన్ని టైప్ చేయండి…"
+  },
+  "Gửi tin nhắn": {
+    "en": "Send message",
+    "te": "సందేశం పంపండి"
+  },
+  "để tham gia trò chuyện. Bạn vẫn xem video bình thường.": {
+    "en": "to chat. You can still watch the video.",
+    "te": "చాట్ కోసం. మీరు వీడియో చూడవచ్చు."
+  },
+  "Không tải được phòng.": {
+    "en": "Could not load the room.",
+    "te": "గదిని లోడ్ చేయలేకపోయాం."
+  },
+  "Không gọi được máy chủ.": {
+    "en": "Could not reach the server.",
+    "te": "సర్వర్‌ను చేరుకోలేకపోయాం."
+  },
+  "Không cập nhật được hàng đợi": {
+    "en": "Could not update the queue",
+    "te": "క్యూను నవీకరించలేకపోయాం"
+  },
+  "Chưa cập nhật được phòng": {
+    "en": "Could not update the room",
+    "te": "గదిని నవీకరించలేకపోయాం"
+  },
+  "Chưa gửi được tin nhắn": {
+    "en": "Could not send the message",
+    "te": "సందేశాన్ని పంపలేకపోయాం"
+  },
+  "Đã đổi video cho cả phòng": {
+    "en": "Video changed for everyone",
+    "te": "అందరికీ వీడియో మార్చబడింది"
+  },
+  "Đã khoá: chỉ chủ phòng điều khiển": {
+    "en": "Locked: only the host can control playback",
+    "te": "లాక్ చేయబడింది: హోస్ట్ మాత్రమే ప్లేబ్యాక్ నియంత్రించగలరు"
+  },
+  "Đã mở điều khiển cho mọi người": {
+    "en": "Everyone can now control playback",
+    "te": "ఇప్పుడు అందరూ ప్లేబ్యాక్ నియంత్రించవచ్చు"
+  },
+  "Không gọi được máy chủ": {
+    "en": "Could not reach the server",
+    "te": "సర్వర్‌ను చేరుకోలేకపోయాం"
+  },
+  "Không sao chép được liên kết": {
+    "en": "Could not copy the link",
+    "te": "లింక్‌ను కాపీ చేయలేకపోయాం"
+  },
+  "Phòng đã đóng hoặc bị xóa bởi chủ phòng.": {
+    "en": "The room was closed or deleted by the host.",
+    "te": "హోస్ట్ గదిని మూసివేశారు లేదా తొలగించారు."
+  },
+  "Về danh sách phòng": {
+    "en": "Back to rooms",
+    "te": "గదులకు తిరిగి వెళ్లండి"
+  },
+  "Đang tải phòng...": {
+    "en": "Loading room…",
+    "te": "గదిని లోడ్ చేస్తున్నాం…"
+  },
+  "Mã": {
+    "en": "Code",
+    "te": "కోడ్"
+  },
+  "Đang khoá — bấm để mở cho mọi người": {
+    "en": "Locked — click to let everyone control",
+    "te": "లాక్ చేయబడింది — అందరికీ నియంత్రణ ఇవ్వడానికి నొక్కండి"
+  },
+  "Mọi người đều điều khiển được — bấm để khoá": {
+    "en": "Everyone can control — click to lock",
+    "te": "అందరూ నియంత్రించవచ్చు — లాక్ చేయడానికి నొక్కండి"
+  },
+  "Chỉ chủ phòng": {
+    "en": "Host only",
+    "te": "హోస్ట్ మాత్రమే"
+  },
+  "Mọi người": {
+    "en": "Everyone",
+    "te": "అందరూ"
+  },
+  "Chủ phòng đang khoá": {
+    "en": "Host locked controls",
+    "te": "హోస్ట్ నియంత్రణలను లాక్ చేశారు"
+  },
+  "Đã chép": {
+    "en": "Copied",
+    "te": "కాపీ చేయబడింది"
+  },
+  "Chia sẻ link": {
+    "en": "Share link",
+    "te": "లింక్ పంచుకోండి"
+  },
+  "Rời phòng": {
+    "en": "Leave room",
+    "te": "గది నుండి నిష్క్రమించండి"
+  },
+  "Đang kết nối lại với phòng. Tin nhắn và điều khiển sẽ tiếp tục khi có kết nối.": {
+    "en": "Reconnecting to the room. Chat and controls will resume when connected.",
+    "te": "గదికి మళ్లీ కనెక్ట్ అవుతున్నాం. కనెక్ట్ అయిన తర్వాత చాట్, నియంత్రణలు కొనసాగుతాయి."
+  },
+  "Bạn đang khoá phòng: chỉ bạn điều khiển được.": {
+    "en": "You locked the room: only you can control playback.",
+    "te": "మీరు గదిని లాక్ చేశారు: మీరు మాత్రమే ప్లేబ్యాక్ నియంత్రించగలరు."
+  },
+  "Ai trong phòng cũng phát, tạm dừng, tua và đổi video được.": {
+    "en": "Anyone in the room can play, pause, seek and change videos.",
+    "te": "గదిలో ఎవరైనా ప్లే, పాజ్, సీక్ చేయవచ్చు, వీడియోలను మార్చవచ్చు."
+  },
+  "Chủ phòng đang khoá điều khiển. Trình phát của bạn sẽ tự bám theo chủ phòng.": {
+    "en": "The host locked controls. Your player will follow the host.",
+    "te": "హోస్ట్ నియంత్రణలను లాక్ చేశారు. మీ ప్లేయర్ హోస్ట్‌ను అనుసరిస్తుంది."
+  },
+  "Trò chuyện": {
+    "en": "Chat",
+    "te": "చాట్"
+  },
+  "Chờ (": {
+    "en": "Queue (",
+    "te": "క్యూ ("
+  },
+  "Đã thêm vào hàng đợi": {
+    "en": "Added to queue",
+    "te": "క్యూలో జోడించబడింది"
+  },
+  "đang xem": {
+    "en": "watching",
+    "te": "చూస్తున్నారు"
+  },
+  " (bạn)": {
+    "en": " (you)",
+    "te": " (మీరు)"
+  },
+  " · chủ phòng": {
+    "en": " · host",
+    "te": " · హోస్ట్"
+  },
+  " · khách": {
+    "en": " · guest",
+    "te": " · అతిథి"
+  },
+  "Danh sách chờ": {
+    "en": "Video queue",
+    "te": "వీడియో క్యూ"
+  },
+  "Tiếp theo ·": {
+    "en": "Up next ·",
+    "te": "తదుపరి ·"
+  },
+  "Bài kế tiếp": {
+    "en": "Next video",
+    "te": "తదుపరి వీడియో"
+  },
+  "Tự phát lần lượt khi video hiện tại kết thúc.": {
+    "en": "Plays in order when the current video ends.",
+    "te": "ప్రస్తుత వీడియో ముగిశాక వరుసగా ప్లే అవుతాయి."
+  },
+  "Hàng đợi đang trống": {
+    "en": "The queue is empty",
+    "te": "క్యూ ఖాళీగా ఉంది"
+  },
+  "Tìm video và chọn “Thêm vào hàng đợi” để xem liên tục.": {
+    "en": "Find a video and select “Add to queue” to keep watching.",
+    "te": "చూస్తూ ఉండటానికి వీడియోను కనుగొని “క్యూలో జోడించండి” ఎంచుకోండి."
+  },
+  "Sắp phát": {
+    "en": "Playing next",
+    "te": "తర్వాత ప్లే అవుతుంది"
+  },
+  "Xóa {p0} khỏi hàng đợi": {
+    "en": "Remove {p0} from queue",
+    "te": "క్యూ నుండి {p0} తొలగించండి"
+  },
+  "Kết nối lại hoặc chờ chủ phòng mở quyền để sửa hàng đợi.": {
+    "en": "Reconnect or wait for the host to unlock the queue.",
+    "te": "మళ్లీ కనెక్ట్ అవ్వండి లేదా హోస్ట్ క్యూను అన్‌లాక్ చేసే వరకు వేచి ఉండండి."
+  },
+  "Đề xuất cho phòng": {
+    "en": "Room recommendations",
+    "te": "గది సిఫార్సులు"
+  },
+  "Kết quả": {
+    "en": "Results",
+    "te": "ఫలితాలు"
+  },
+  "Tìm video để phát trong phòng...": {
+    "en": "Find videos to play in the room…",
+    "te": "గదిలో ప్లే చేయడానికి వీడియోలను కనుగొనండి…"
+  },
+  "Chủ phòng đang khoá điều khiển. Bạn vẫn xem được đề xuất nhưng chưa đổi được video.": {
+    "en": "The host locked controls. You can browse recommendations but cannot change the video.",
+    "te": "హోస్ట్ నియంత్రణలను లాక్ చేశారు. సిఫార్సులు చూడవచ్చు కానీ వీడియోను మార్చలేరు."
+  },
+  "Không có kết quả nào.": {
+    "en": "No results.",
+    "te": "ఫలితాలు లేవు."
+  },
+  "Thêm vào hàng đợi": {
+    "en": "Add to queue",
+    "te": "క్యూలో జోడించండి"
+  },
+  "Đang phát trong phòng": {
+    "en": "Playing in room",
+    "te": "గదిలో ప్లే అవుతోంది"
+  },
+  "Link YouTube không hợp lệ": {
+    "en": "Invalid YouTube link",
+    "te": "చెల్లని YouTube లింక్"
+  },
+  "Vui lòng nhập link YouTube hoặc mã video 11 ký tự.": {
+    "en": "Enter a YouTube link or an 11-character video ID.",
+    "te": "YouTube లింక్ లేదా 11 అక్షరాల వీడియో ID నమోదు చేయండి."
+  },
+  "Phòng xem chung": {
+    "en": "Watch rooms",
+    "te": "వీక్షణ గదులు"
+  },
+  "Không thể tạo phòng": {
+    "en": "Could not create room",
+    "te": "గదిని సృష్టించలేకపోయాం"
+  },
+  "Tạo phòng thành công!": {
+    "en": "Room created!",
+    "te": "గది సృష్టించబడింది!"
+  },
+  "Mã phòng của bạn: {p0}": {
+    "en": "Your room code: {p0}",
+    "te": "మీ గది కోడ్: {p0}"
+  },
+  "Lỗi tạo phòng": {
+    "en": "Room creation failed",
+    "te": "గది సృష్టించడం విఫలమైంది"
+  },
+  "Đã có lỗi xảy ra": {
+    "en": "Something went wrong",
+    "te": "ఏదో లోపం జరిగింది"
+  },
+  "Xem chung Realtime cùng bạn bè": {
+    "en": "Watch together with friends",
+    "te": "స్నేహితులతో కలిసి చూడండి"
+  },
+  "Tạo phòng riêng hoặc chia sẻ mã phòng để cùng nhau xem video YouTube đồng bộ từng giây và trò chuyện trực tiếp.": {
+    "en": "Create a room or share a code to watch YouTube together with synchronized playback and live chat.",
+    "te": "సమకాలీకరించిన ప్లేబ్యాక్, ప్రత్యక్ష చాట్‌తో కలిసి YouTube చూడటానికి గదిని సృష్టించండి లేదా కోడ్ పంచుకోండి."
+  },
+  "Tạo phòng mới": {
+    "en": "Create a room",
+    "te": "గదిని సృష్టించండి"
+  },
+  "Tham gia bằng mã phòng": {
+    "en": "Join with a room code",
+    "te": "గది కోడ్‌తో చేరండి"
+  },
+  "Nhập mã phòng (": {
+    "en": "Enter room code (",
+    "te": "గది కోడ్ నమోదు చేయండి ("
+  },
+  "Vào phòng": {
+    "en": "Enter room",
+    "te": "గదిలోకి వెళ్లండి"
+  },
+  "Bất kỳ ai có mã phòng đều có thể tham gia xem trực tiếp. Đăng nhập để cùng thảo luận và gửi biểu cảm.": {
+    "en": "Anyone with the code can watch. Sign in to join the conversation.",
+    "te": "కోడ్ ఉన్న ఎవరైనా చూడవచ్చు. సంభాషణలో చేరడానికి సైన్ ఇన్ చేయండి."
+  },
+  "Đồng bộ phát video thông minh": {
+    "en": "Synchronized playback",
+    "te": "సమకాలీకరించిన ప్లేబ్యాక్"
+  },
+  "• Khi chủ phòng tạm dừng, tua hoặc đổi video, tất cả thành viên trong phòng đều được đồng bộ tự động.": {
+    "en": "• Playback changes are synchronized automatically for everyone.",
+    "te": "• ప్లేబ్యాక్ మార్పులు అందరికీ స్వయంచాలకంగా సమకాలీకరించబడతాయి."
+  },
+  "• Hỗ trợ trò chuyện văn bản và thả phản ứng emoji trực tiếp.": {
+    "en": "• Chat with everyone in the room.",
+    "te": "• గదిలో అందరితో చాట్ చేయండి."
+  },
+  "• Hoàn toàn miễn phí, không gián đoạn, chia sẻ liên kết dễ dàng.": {
+    "en": "• Free, uninterrupted and easy to share.",
+    "te": "• ఉచితం, అంతరాయం లేకుండా, సులభంగా పంచుకోవచ్చు."
+  },
+  "Phòng của bạn": {
+    "en": "Your rooms",
+    "te": "మీ గదులు"
+  },
+  "phòng": {
+    "en": "rooms",
+    "te": "గదులు"
+  },
+  "để tạo và quản lý phòng xem chung của riêng bạn.": {
+    "en": "to create and manage your watch rooms.",
+    "te": "మీ వీక్షణ గదులను సృష్టించి నిర్వహించడానికి."
+  },
+  "Đang tải danh sách phòng...": {
+    "en": "Loading rooms…",
+    "te": "గదులను లోడ్ చేస్తున్నాం…"
+  },
+  "Bạn chưa tạo phòng nào.": {
+    "en": "You have not created any rooms yet.",
+    "te": "మీరు ఇంకా గదులను సృష్టించలేదు."
+  },
+  "Nhấn nút": {
+    "en": "Click",
+    "te": "నొక్కండి"
+  },
+  "ở trên hoặc chọn nút": {
+    "en": "above, or choose",
+    "te": "పైన లేదా ఎంచుకోండి:"
+  },
+  "Xem cùng": {
+    "en": "Watch together",
+    "te": "కలిసి చూడండి"
+  },
+  "trên thẻ video bất kỳ.": {
+    "en": "on any video card.",
+    "te": "ఏదైనా వీడియో కార్డ్‌లో."
+  },
+  "tin nhắn": {
+    "en": "messages",
+    "te": "సందేశాలు"
+  },
+  "Tạo phòng xem chung": {
+    "en": "Create a watch room",
+    "te": "కలిసి చూసే గదిని సృష్టించండి"
+  },
+  "Nhập tên phòng và dán link YouTube để bắt đầu xem cùng bạn bè theo thời gian thực.": {
+    "en": "Enter a room name and paste a YouTube link to watch together in real time.",
+    "te": "నిజ సమయంలో కలిసి చూడటానికి గది పేరు, YouTube లింక్ నమోదు చేయండి."
+  },
+  "Tên phòng": {
+    "en": "Room name",
+    "te": "గది పేరు"
+  },
+  "VD: Xem phim cuối tuần, Chill cùng tôi...": {
+    "en": "For example: Weekend movies, Chill with me…",
+    "te": "ఉదాహరణ: వారాంతపు సినిమాలు, నాతో చూడండి…"
+  },
+  "Link YouTube hoặc ID video": {
+    "en": "YouTube link or video ID",
+    "te": "YouTube లింక్ లేదా వీడియో ID"
+  },
+  "Tạo phòng ngay": {
+    "en": "Create room now",
+    "te": "ఇప్పుడే గదిని సృష్టించండి"
+  },
+  "Mở rộng thanh bên": {
+    "en": "Expand sidebar",
+    "te": "సైడ్‌బార్‌ను విస్తరించండి"
+  },
+  "Thu gọn thanh bên": {
+    "en": "Collapse sidebar",
+    "te": "సైడ్‌బార్‌ను కుదించండి"
+  },
+  "Thư viện": {
+    "en": "Library",
+    "te": "లైబ్రరీ"
+  },
+  "Khác": {
+    "en": "More",
+    "te": "మరిన్ని"
+  },
+  "Mở tìm kiếm": {
+    "en": "Open search",
+    "te": "శోధన తెరవండి"
+  },
+  "Tìm video hoặc dán link YouTube": {
+    "en": "Search videos or paste a YouTube link",
+    "te": "వీడియోలను వెతకండి లేదా YouTube లింక్ పేస్ట్ చేయండి"
+  },
+  "Đóng tìm kiếm": {
+    "en": "Close search",
+    "te": "శోధన మూసివేయండి"
+  },
+  "Điều hướng chính di động": {
+    "en": "Mobile navigation",
+    "te": "మొబైల్ నావిగేషన్"
+  },
+  "Khám phá": {
+    "en": "Explore",
+    "te": "అన్వేషించండి"
+  },
+  "Yêu thích": {
+    "en": "Favorites",
+    "te": "ఇష్టమైనవి"
+  },
+  "Thích": {
+    "en": "Liked",
+    "te": "ఇష్టపడినవి"
+  },
+  "Lịch sử": {
+    "en": "History",
+    "te": "చరిత్ర"
+  },
+  "Tài khoản": {
+    "en": "Account",
+    "te": "ఖాతా"
+  },
+  "Cài đặt": {
+    "en": "Settings",
+    "te": "సెట్టింగ్‌లు"
+  },
+  "XemPhim · Khám phá và xem cùng nhau.": {
+    "en": "XemPhim · Discover and watch together.",
+    "te": "XemPhim · అన్వేషించండి, కలిసి చూడండి."
+  },
+  "Xem bằng liên kết": {
+    "en": "Watch from a link",
+    "te": "లింక్ ద్వారా చూడండి"
+  },
+  "Video được phát qua YouTube. Nội dung thuộc về các nhà sáng tạo tương ứng.": {
+    "en": "Videos play through YouTube. Content belongs to its creators.",
+    "te": "వీడియోలు YouTube ద్వారా ప్లే అవుతాయి. కంటెంట్ సంబంధిత సృష్టికర్తలకు చెందుతుంది."
+  },
+  "Về trang chủ XemPhim": {
+    "en": "Go to XemPhim home",
+    "te": "XemPhim హోమ్‌కు వెళ్లండి"
+  },
+  "Menu người dùng": {
+    "en": "User menu",
+    "te": "వినియోగదారు మెను"
+  },
+  "Hồ sơ cá nhân": {
+    "en": "Your profile",
+    "te": "మీ ప్రొఫైల్"
+  },
+  "Yêu thích & Bộ sưu tập": {
+    "en": "Favorites & collections",
+    "te": "ఇష్టమైనవి & సేకరణలు"
+  },
+  "Lịch sử xem": {
+    "en": "Watch history",
+    "te": "వీక్షణ చరిత్ర"
+  },
+  "Cài đặt & Sở thích": {
+    "en": "Settings & interests",
+    "te": "సెట్టింగ్‌లు & అభిరుచులు"
+  },
+  "Nhập hoặc chọn một chủ đề để bắt đầu.": {
+    "en": "Enter or choose a topic to get started.",
+    "te": "ప్రారంభించడానికి అంశాన్ని నమోదు చేయండి లేదా ఎంచుకోండి."
+  },
+  "Đang tìm video cho chủ đề": {
+    "en": "Finding videos for topic",
+    "te": "ఈ అంశం కోసం వీడియోలను వెతుకుతున్నాం:"
+  },
+  "Không tìm thấy video nào cho chủ đề": {
+    "en": "No videos found for topic",
+    "te": "ఈ అంశానికి వీడియోలు లేవు:"
+  },
+  ". Tạo file": {
+    "en": ". Create a file",
+    "te": ". ఫైల్‌ను సృష్టించండి:"
+  },
+  "với khoá YouTube Data API v3 rồi khởi động lại": {
+    "en": "with a YouTube Data API v3 key, then restart",
+    "te": "YouTube Data API v3 కీతో, తర్వాత మళ్లీ ప్రారంభించండి"
+  },
+  ". Xem hướng dẫn trong README.": {
+    "en": ". See the README for instructions.",
+    "te": ". సూచనల కోసం README చూడండి."
+  },
+  "useTheme phải được dùng bên trong <ThemeProvider>": {
+    "en": "useTheme requires ThemeProvider",
+    "te": "useTheme కోసం ThemeProvider అవసరం"
+  },
+  "Sáng": {
+    "en": "Light",
+    "te": "లైట్"
+  },
+  "Tối": {
+    "en": "Dark",
+    "te": "డార్క్"
+  },
+  "Theo hệ thống": {
+    "en": "System",
+    "te": "సిస్టమ్"
+  },
+  "Đổi giao diện sáng / tối": {
+    "en": "Change color theme",
+    "te": "రంగుల థీమ్ మార్చండి"
+  },
+  "Giao diện": {
+    "en": "Theme",
+    "te": "థీమ్"
+  },
+  "Không thể gọi máy chủ. Kiểm tra mạng và thử lại.": {
+    "en": "Could not reach the server. Check your connection and try again.",
+    "te": "సర్వర్‌ను చేరుకోలేకపోయాం. కనెక్షన్ తనిఖీ చేసి మళ్లీ ప్రయత్నించండి."
+  },
+  "Chủ đề": {
+    "en": "Topic",
+    "te": "అంశం"
+  },
+  "Ví dụ: nhạc acoustic, phim ngắn, học lập trình...": {
+    "en": "For example: acoustic music, short films, coding…",
+    "te": "ఉదాహరణ: సంగీతం, లఘు చిత్రాలు, కోడింగ్…"
+  },
+  "Nhập chủ đề rồi nhấn Tìm video. Có thể chọn gợi ý bên dưới.": {
+    "en": "Enter a topic and select Find videos, or choose a suggestion below.",
+    "te": "అంశాన్ని నమోదు చేసి వీడియోలను కనుగొనండి ఎంచుకోండి లేదా దిగువ సూచనను ఎంచుకోండి."
+  },
+  "Đã xóa khỏi Xem sau": {
+    "en": "Removed from Watch later",
+    "te": "తర్వాత చూడాలి నుండి తొలగించబడింది"
+  },
+  "Đã thêm vào Xem sau": {
+    "en": "Added to Watch later",
+    "te": "తర్వాత చూడాలి లో జోడించబడింది"
+  },
+  "Đã sao chép liên kết": {
+    "en": "Link copied",
+    "te": "లింక్ కాపీ చేయబడింది"
+  },
+  "Chưa thể chia sẻ liên kết": {
+    "en": "Could not share link",
+    "te": "లింక్‌ను పంచుకోలేకపోయాం"
+  },
+  "Đang chọn": {
+    "en": "Selected",
+    "te": "ఎంచుకోబడింది"
+  },
+  "Tùy chọn cho {p0}": {
+    "en": "Options for {p0}",
+    "te": "{p0} కోసం ఎంపికలు"
+  },
+  "Xóa khỏi Xem sau": {
+    "en": "Remove from Watch later",
+    "te": "తర్వాత చూడాలి నుండి తొలగించండి"
+  },
+  "Lưu vào Xem sau": {
+    "en": "Save to Watch later",
+    "te": "తర్వాత చూడాలి లో సేవ్ చేయండి"
+  },
+  "Thêm vào bộ sưu tập": {
+    "en": "Add to collection",
+    "te": "సేకరణకు జోడించండి"
+  },
+  "Chia sẻ video": {
+    "en": "Share video",
+    "te": "వీడియో పంచుకోండి"
+  },
+  "Mở trên YouTube": {
+    "en": "Open on YouTube",
+    "te": "YouTubeలో తెరవండి"
+  },
+  "Video chặn nhúng trên trang này.": {
+    "en": "Video cannot be embedded on this site.",
+    "te": "ఈ సైట్‌లో వీడియోను ఎంబెడ్ చేయలేరు."
+  },
+  "Phát {p0}": {
+    "en": "Play {p0}",
+    "te": "{p0} ప్లే చేయండి"
+  },
+  "Bộ lọc": {
+    "en": "Filters",
+    "te": "ఫిల్టర్లు"
+  },
+  "Sắp xếp": {
+    "en": "Sort by",
+    "te": "క్రమబద్ధీకరణ"
+  },
+  "Thời lượng": {
+    "en": "Duration",
+    "te": "నిడివి"
+  },
+  "Ngày đăng": {
+    "en": "Upload date",
+    "te": "అప్‌లోడ్ తేదీ"
+  },
+  "Đặt lại": {
+    "en": "Reset",
+    "te": "రీసెట్"
+  },
+  "Hàng đợi xem sau": {
+    "en": "Watch later queue",
+    "te": "తర్వాత చూడాలి క్యూ"
+  },
+  "Xoá hết": {
+    "en": "Clear all",
+    "te": "అన్నీ తొలగించండి"
+  },
+  "Phát ": {
+    "en": "Play ",
+    "te": "ప్లే చేయండి "
+  },
+  "Đang phát": {
+    "en": "Playing",
+    "te": "ప్లే అవుతోంది"
+  },
+  "Xoá khỏi hàng đợi": {
+    "en": "Remove from queue",
+    "te": "క్యూ నుండి తొలగించండి"
+  },
+  "Đã sao chép liên kết video": {
+    "en": "Video link copied",
+    "te": "వీడియో లింక్ కాపీ చేయబడింది"
+  },
+  "Không thể sao chép liên kết": {
+    "en": "Could not copy link",
+    "te": "లింక్‌ను కాపీ చేయలేకపోయాం"
+  },
+  "Đang chuẩn bị trình phát": {
+    "en": "Preparing player",
+    "te": "ప్లేయర్‌ను సిద్ధం చేస్తున్నాం"
+  },
+  "Thu nhỏ chế độ rạp chiếu": {
+    "en": "Exit theater mode",
+    "te": "థియేటర్ మోడ్ నుండి నిష్క్రమించండి"
+  },
+  "Chế độ rạp chiếu phim": {
+    "en": "Theater mode",
+    "te": "థియేటర్ మోడ్"
+  },
+  "Video này có thể bị hạn chế nhúng.": {
+    "en": "This video may restrict embedding.",
+    "te": "ఈ వీడియో ఎంబెడింగ్‌ను పరిమితం చేయవచ్చు."
+  },
+  "Chủ sở hữu video đã tắt chế độ phát trên các trang web bên thứ ba.": {
+    "en": "The owner disabled playback on third-party websites.",
+    "te": "యజమాని ఇతర వెబ్‌సైట్‌లలో ప్లేబ్యాక్‌ను నిలిపివేశారు."
+  },
+  "Mở trực tiếp trên YouTube": {
+    "en": "Open directly on YouTube",
+    "te": "నేరుగా YouTubeలో తెరవండి"
+  },
+  "Đã xoá khỏi Xem sau": {
+    "en": "Removed from Watch later",
+    "te": "తర్వాత చూడాలి నుండి తొలగించబడింది"
+  },
+  "Lưu vào danh sách xem sau": {
+    "en": "Save to Watch later",
+    "te": "తర్వాత చూడాలి లో సేవ్ చేయండి"
+  },
+  "Tạo phòng xem chung cùng bạn bè": {
+    "en": "Create a room to watch with friends",
+    "te": "స్నేహితులతో చూడటానికి గదిని సృష్టించండి"
+  },
+  "Lưu vào thư viện": {
+    "en": "Save to library",
+    "te": "లైబ్రరీలో సేవ్ చేయండి"
+  },
+  "Chia sẻ": {
+    "en": "Share",
+    "te": "పంచుకోండి"
+  },
+  "Xem thêm mô tả": {
+    "en": "Show full description",
+    "te": "పూర్తి వివరణ చూపండి"
+  },
+  "Video tiếp theo": {
+    "en": "Next videos",
+    "te": "తదుపరి వీడియోలు"
+  },
+  "Phát khi mở video": {
+    "en": "Play when video opens",
+    "te": "వీడియో తెరిచినప్పుడు ప్లే చేయండి"
+  },
+  "Chưa có video gợi ý.": {
+    "en": "No recommendations yet.",
+    "te": "ఇంకా సిఫార్సులు లేవు."
+  },
+  "Khám phá thêm": {
+    "en": "Explore more",
+    "te": "మరింత అన్వేషించండి"
+  },
+  "Quay lại video đang xem": {
+    "en": "Back to current video",
+    "te": "ప్రస్తుత వీడియోకు తిరిగి వెళ్లండి"
+  },
+  "Về video": {
+    "en": "About this video",
+    "te": "ఈ వీడియో గురించి"
+  },
+  "Lặp lại video": {
+    "en": "Loop video",
+    "te": "వీడియో లూప్"
+  },
+  "Bật/tắt lặp lại — video sẽ phát lại từ đầu": {
+    "en": "Toggle loop — replay the video from the start",
+    "te": "లూప్ మార్చండి — వీడియోను ప్రారంభం నుండి మళ్లీ ప్లే చేయండి"
+  },
+  "Lặp lại:": {
+    "en": "Loop:",
+    "te": "లూప్:"
+  },
+  "Bật": {
+    "en": "On",
+    "te": "ఆన్"
+  },
+  "Tắt": {
+    "en": "Off",
+    "te": "ఆఫ్"
+  },
+  "Tải lại video": {
+    "en": "Reload video",
+    "te": "వీడియోను మళ్లీ లోడ్ చేయండి"
+  },
+  "Tải lại": {
+    "en": "Reload",
+    "te": "మళ్లీ లోడ్ చేయండి"
+  },
+  "Mở YouTube": {
+    "en": "Open YouTube",
+    "te": "YouTube తెరవండి"
+  },
+  "Đăng nhập | XemPhim": {
+    "en": "Sign in — XemPhim",
+    "te": "సైన్ ఇన్ — XemPhim"
+  },
+  "Đăng ký | XemPhim": {
+    "en": "Sign up — XemPhim",
+    "te": "సైన్ అప్ — XemPhim"
+  },
+  "Tài khoản & Cài đặt | XemPhim": {
+    "en": "Account & settings — XemPhim",
+    "te": "ఖాతా & సెట్టింగ్‌లు — XemPhim"
+  },
+  "Quản lý thông tin tài khoản, sở thích đề xuất và cài đặt giao diện trên XemPhim.": {
+    "en": "Manage your account, interests and appearance settings on XemPhim.",
+    "te": "XemPhimలో మీ ఖాతా, అభిరుచులు, రూప సెట్టింగ్‌లను నిర్వహించండి."
+  },
+  "Đang tải tài khoản...": {
+    "en": "Loading account…",
+    "te": "ఖాతాను లోడ్ చేస్తున్నాం…"
+  },
+  "Yêu thích | XemPhim": {
+    "en": "Favorites — XemPhim",
+    "te": "ఇష్టమైనవి — XemPhim"
+  },
+  "Quản lý danh sách video yêu thích và bộ sưu tập của bạn trên XemPhim.": {
+    "en": "Manage your favorite videos and collections on XemPhim.",
+    "te": "XemPhimలో మీ ఇష్టమైన వీడియోలు, సేకరణలను నిర్వహించండి."
+  },
+  "Đang tải thư viện...": {
+    "en": "Loading library…",
+    "te": "లైబ్రరీని లోడ్ చేస్తున్నాం…"
+  },
+  "Chi tiết bộ sưu tập | XemPhim": {
+    "en": "Collection details — XemPhim",
+    "te": "సేకరణ వివరాలు — XemPhim"
+  },
+  "video đã lưu.": {
+    "en": "saved videos.",
+    "te": "సేవ్ చేసిన వీడియోలు."
+  },
+  "← Quay lại": {
+    "en": "← Back",
+    "te": "← వెనక్కి"
+  },
+  "Chưa có video nào": {
+    "en": "No videos yet",
+    "te": "ఇంకా వీడియోలు లేవు"
+  },
+  "Quay lại trang chủ, chọn một video và bấm": {
+    "en": "Go to the home page, choose a video and select",
+    "te": "హోమ్ పేజీకి వెళ్లి వీడియోను ఎంచుకుని దీన్ని నొక్కండి:"
+  },
+  "để thêm vào danh sách.": {
+    "en": "to add it to the collection.",
+    "te": "దాన్ని సేకరణకు జోడించడానికి."
+  },
+  "Lịch sử xem | XemPhim": {
+    "en": "Watch history — XemPhim",
+    "te": "వీక్షణ చరిత్ర — XemPhim"
+  },
+  "Xem lại danh sách và thời gian các video đã xem trên XemPhim.": {
+    "en": "Revisit your watched videos and viewing times on XemPhim.",
+    "te": "XemPhimలో చూసిన వీడియోలు, వీక్షణ సమయాలను మళ్లీ చూడండి."
+  },
+  "Theo dõi các video bạn đã mở và thời gian xem gần đây.": {
+    "en": "Keep track of videos you opened and recently watched.",
+    "te": "మీరు తెరిచిన, ఇటీవల చూసిన వీడియోలను చూడండి."
+  },
+  "XemPhim - Nền tảng xem và khám phá video hiện đại": {
+    "en": "XemPhim — Discover and watch videos",
+    "te": "XemPhim — వీడియోలను అన్వేషించండి, చూడండి"
+  },
+  "Khám phá video YouTube xu hướng, xem chung realtime cùng bạn bè, tìm kiếm thông minh và quản lý thư viện video cá nhân hóa.": {
+    "en": "Discover YouTube videos, watch with friends, search and organize your personal video library.",
+    "te": "YouTube వీడియోలను అన్వేషించండి, స్నేహితులతో చూడండి, వెతకండి, వ్యక్తిగత వీడియో లైబ్రరీని నిర్వహించండి."
+  },
+  "Phòng xem chung | XemPhim": {
+    "en": "Watch rooms — XemPhim",
+    "te": "వీక్షణ గదులు — XemPhim"
+  },
+  "Tạo phòng và xem video YouTube trực tiếp cùng bạn bè với đồng bộ realtime.": {
+    "en": "Create a room and watch YouTube with friends in real time.",
+    "te": "గదిని సృష్టించి స్నేహితులతో నిజ సమయంలో YouTube చూడండి."
+  },
+  "Phòng {p0} | XemPhim": {
+    "en": "Room {p0} — XemPhim",
+    "te": "గది {p0} — XemPhim"
+  },
+  "Xem video YouTube cùng bạn bè trong phòng xem chung XemPhim.": {
+    "en": "Watch YouTube with friends in a XemPhim watch room.",
+    "te": "XemPhim గదిలో స్నేహితులతో YouTube చూడండి."
+  },
+  "Dán liên kết YouTube để xem ngay trên nền tảng XemPhim.": {
+    "en": "Paste a YouTube link to watch on XemPhim.",
+    "te": "XemPhimలో చూడటానికి YouTube లింక్ పేస్ట్ చేయండి."
+  },
+  "Đã nhận diện link YouTube": {
+    "en": "YouTube link recognized",
+    "te": "YouTube లింక్ గుర్తించబడింది"
+  },
+  "Mã video: {p0}": {
+    "en": "Video ID: {p0}",
+    "te": "వీడియో ID: {p0}"
+  },
+  "Đã xóa lịch sử dán link": {
+    "en": "Pasted link history cleared",
+    "te": "పేస్ట్ చేసిన లింక్‌ల చరిత్ర తొలగించబడింది"
+  },
+  "Link không hợp lệ": {
+    "en": "Invalid link",
+    "te": "చెల్లని లింక్"
+  },
+  "Vui lòng dán link YouTube hợp lệ hoặc nhập mã video 11 ký tự.": {
+    "en": "Paste a valid YouTube link or enter an 11-character video ID.",
+    "te": "చెల్లుబాటు అయ్యే YouTube లింక్ పేస్ట్ చేయండి లేదా 11 అక్షరాల వీడియో ID నమోదు చేయండి."
+  },
+  "Trình duyệt không hỗ trợ đọc clipboard tự động.": {
+    "en": "Your browser cannot read the clipboard automatically.",
+    "te": "మీ బ్రౌజర్ క్లిప్‌బోర్డ్‌ను స్వయంచాలకంగా చదవలేదు."
+  },
+  "Clipboard trống": {
+    "en": "Clipboard is empty",
+    "te": "క్లిప్‌బోర్డ్ ఖాళీగా ఉంది"
+  },
+  "Hãy sao chép link YouTube trước.": {
+    "en": "Copy a YouTube link first.",
+    "te": "ముందుగా YouTube లింక్‌ను కాపీ చేయండి."
+  },
+  "Đã dán và nhận diện thành công!": {
+    "en": "Link pasted and recognized!",
+    "te": "లింక్ పేస్ట్ చేసి గుర్తించబడింది!"
+  },
+  "Mã: {p0}": {
+    "en": "ID: {p0}",
+    "te": "ID: {p0}"
+  },
+  "Đã dán nội dung": {
+    "en": "Text pasted",
+    "te": "వచనం పేస్ట్ చేయబడింది"
+  },
+  "Vui lòng kiểm tra lại link YouTube vừa dán.": {
+    "en": "Check the YouTube link you pasted.",
+    "te": "మీరు పేస్ట్ చేసిన YouTube లింక్‌ను తనిఖీ చేయండి."
+  },
+  "Không thể truy cập clipboard": {
+    "en": "Could not access clipboard",
+    "te": "క్లిప్‌బోర్డ్‌ను యాక్సెస్ చేయలేకపోయాం"
+  },
+  "Trình duyệt yêu cầu cấp quyền hoặc hãy nhấn Ctrl + V để dán trực tiếp.": {
+    "en": "Grant clipboard permission or press Ctrl+V to paste.",
+    "te": "క్లిప్‌బోర్డ్ అనుమతి ఇవ్వండి లేదా పేస్ట్ చేయడానికి Ctrl+V నొక్కండి."
+  },
+  "XEM NHANH SIÊU TỐC": {
+    "en": "QUICK WATCH",
+    "te": "త్వరిత వీక్షణ"
+  },
+  "Dán link YouTube để xem ngay": {
+    "en": "Paste a YouTube link to watch now",
+    "te": "ఇప్పుడే చూడటానికి YouTube లింక్ పేస్ట్ చేయండి"
+  },
+  "Hỗ trợ tất cả định dạng: video tiêu chuẩn, Shorts, youtu.be hoặc chỉ mã video (11 ký tự).": {
+    "en": "Supports videos, Shorts, youtu.be links and 11-character video IDs.",
+    "te": "వీడియోలు, Shorts, youtu.be లింక్‌లు, 11 అక్షరాల వీడియో IDలకు మద్దతు ఉంది."
+  },
+  "Dán link YouTube tại đây (Ctrl + V)...": {
+    "en": "Paste a YouTube link here (Ctrl+V)…",
+    "te": "ఇక్కడ YouTube లింక్ పేస్ట్ చేయండి (Ctrl+V)…"
+  },
+  "Xóa ô nhập": {
+    "en": "Clear input",
+    "te": "ఇన్‌పుట్‌ను తొలగించండి"
+  },
+  "Dán link": {
+    "en": "Paste link",
+    "te": "లింక్ పేస్ట్ చేయండి"
+  },
+  "Nhấn": {
+    "en": "Press",
+    "te": "నొక్కండి"
+  },
+  "hoặc nút": {
+    "en": "or select",
+    "te": "లేదా ఎంచుకోండి"
+  },
+  "Xem trước video": {
+    "en": "Preview video",
+    "te": "వీడియో ప్రివ్యూ"
+  },
+  "Mã ID:": {
+    "en": "Video ID:",
+    "te": "వీడియో ID:"
+  },
+  "Video đã sẵn sàng phát": {
+    "en": "Video is ready to play",
+    "te": "వీడియో ప్లే చేయడానికి సిద్ధంగా ఉంది"
+  },
+  "Nhấp vào nút bên dưới để mở trình phát video chuẩn rạp chiếu phim.": {
+    "en": "Select the button below to open the theater player.",
+    "te": "థియేటర్ ప్లేయర్ తెరవడానికి దిగువ బటన్‌ను ఎంచుకోండి."
+  },
+  "Video vừa dán gần đây": {
+    "en": "Recently pasted videos",
+    "te": "ఇటీవల పేస్ట్ చేసిన వీడియోలు"
+  },
+  "Xóa lịch sử": {
+    "en": "Clear history",
+    "te": "చరిత్రను తొలగించండి"
+  },
+  "Mã:": {
+    "en": "ID:",
+    "te": "ID:"
+  },
+  "Nhấn để phát lại": {
+    "en": "Click to play again",
+    "te": "మళ్లీ ప్లే చేయడానికి నొక్కండి"
+  },
+  "Đang mở video": {
+    "en": "Opening video",
+    "te": "వీడియోను తెరుస్తున్నాం"
+  },
+  "Đang chuẩn bị video…": {
+    "en": "Preparing video…",
+    "te": "వీడియోను సిద్ధం చేస్తున్నాం…"
+  },
+  "Không tìm thấy video - XemPhim": {
+    "en": "Video not found — XemPhim",
+    "te": "వీడియో కనుగొనబడలేదు — XemPhim"
+  },
+  "Xem video trên XemPhim": {
+    "en": "Watch videos on XemPhim",
+    "te": "XemPhimలో వీడియోలు చూడండి"
+  },
+  "Chưa tải được thông tin video. Bạn vẫn có thể thử phát bên dưới hoặc mở trên YouTube.": {
+    "en": "Could not load video details. Try playing below or open on YouTube.",
+    "te": "వీడియో వివరాలను లోడ్ చేయలేకపోయాం. దిగువ ప్లే చేయండి లేదా YouTubeలో తెరవండి."
+  },
+  "Không tạo được phòng": {
+    "en": "Could not create room",
+    "te": "గదిని సృష్టించలేకపోయాం"
+  },
+  "Thử lại sau nhé.": {
+    "en": "Please try again later.",
+    "te": "దయచేసి తర్వాత మళ్లీ ప్రయత్నించండి."
+  },
+  "Mất kết nối. Chưa xác nhận được thao tác.": {
+    "en": "Disconnected. Your action has not been confirmed.",
+    "te": "కనెక్షన్ పోయింది. మీ చర్య నిర్ధారించబడలేదు."
+  },
+  "Khách": {
+    "en": "Guest",
+    "te": "అతిథి"
+  },
+  "Không thực hiện được thao tác.": {
+    "en": "Could not perform action.",
+    "te": "చర్యను చేయలేకపోయాం."
+  },
+  "Phòng đang kết nối lại. Vui lòng thử lại khi có kết nối.": {
+    "en": "Reconnecting. Please try again when connected.",
+    "te": "మళ్లీ కనెక్ట్ అవుతున్నాం. కనెక్ట్ అయినప్పుడు మళ్లీ ప్రయత్నించండి."
+  },
+  "Chưa nhận được xác nhận. Hãy kiểm tra trước khi gửi lại.": {
+    "en": "No confirmation received. Please check before sending again.",
+    "te": "నిర్ధారణ రాలేదు. మళ్లీ పంపే ముందు తనిఖీ చేయండి."
+  },
+  "Liên quan nhất": {
+    "en": "Most relevant",
+    "te": "అత్యంత సంబంధిత"
+  },
+  "Mới nhất": {
+    "en": "Newest",
+    "te": "తాజావి"
+  },
+  "Xem nhiều nhất": {
+    "en": "Most viewed",
+    "te": "అత్యధిక వీక్షణలు"
+  },
+  "Đánh giá cao": {
+    "en": "Top rated",
+    "te": "అత్యధిక రేటింగ్"
+  },
+  "Mọi thời lượng": {
+    "en": "Any duration",
+    "te": "ఏ నిడివైనా"
+  },
+  "Dưới 4 phút": {
+    "en": "Under 4 minutes",
+    "te": "4 నిమిషాల కంటే తక్కువ"
+  },
+  "4 – 20 phút": {
+    "en": "4–20 minutes",
+    "te": "4–20 నిమిషాలు"
+  },
+  "Trên 20 phút": {
+    "en": "Over 20 minutes",
+    "te": "20 నిమిషాల కంటే ఎక్కువ"
+  },
+  "Mọi lúc": {
+    "en": "Any time",
+    "te": "ఎప్పుడైనా"
+  },
+  "1 giờ qua": {
+    "en": "Past hour",
+    "te": "గత గంట"
+  },
+  "Tháng này": {
+    "en": "This month",
+    "te": "ఈ నెల"
+  },
+  "Năm nay": {
+    "en": "This year",
+    "te": "ఈ సంవత్సరం"
+  },
+  "Khách ": {
+    "en": "Guest ",
+    "te": "అతిథి "
+  },
+  " đã phát video": {
+    "en": " started playing",
+    "te": " ప్లే ప్రారంభించారు"
+  },
+  " đã tạm dừng": {
+    "en": " paused playback",
+    "te": " ప్లేబ్యాక్ పాజ్ చేశారు"
+  },
+  " đã tua video": {
+    "en": " sought the video",
+    "te": " వీడియో సమయాన్ని మార్చారు"
+  },
+  " đã đổi video": {
+    "en": " changed the video",
+    "te": " వీడియోను మార్చారు"
+  },
+  "{p0}M lượt xem": {
+    "en": "{p0}M views",
+    "te": "{p0}M వీక్షణలు"
+  },
+  "{p0}K lượt xem": {
+    "en": "{p0}K views",
+    "te": "{p0}K వీక్షణలు"
+  },
+  "{p0} lượt xem": {
+    "en": "{p0} views",
+    "te": "{p0} వీక్షణలు"
+  },
+  "Đưa {p0} lên": {
+    "en": "Move {p0} up",
+    "te": "{p0} పైకి తరలించండి"
+  },
+  "Đưa {p0} xuống": {
+    "en": "Move {p0} down",
+    "te": "{p0} కిందకు తరలించండి"
+  },
+  "Ngôn ngữ": {
+    "en": "Language",
+    "te": "భాష"
+  },
+  "lượt xem": {
+    "en": "views",
+    "te": "వీక్షణలు"
+  },
+  "{name} đã phát video": {
+    "en": "{name} started playing",
+    "te": "{name} ప్లే ప్రారంభించారు"
+  },
+  "{name} đã tạm dừng": {
+    "en": "{name} paused playback",
+    "te": "{name} ప్లేబ్యాక్ పాజ్ చేశారు"
+  },
+  "{name} đã tua video": {
+    "en": "{name} sought the video",
+    "te": "{name} వీడియో సమయాన్ని మార్చారు"
+  },
+  "{name} đã đổi video": {
+    "en": "{name} changed the video",
+    "te": "{name} వీడియోను మార్చారు"
+  },
+  "Xem nhanh": {
+    "en": "Quick watch",
+    "te": "త్వరిత వీక్షణ"
+  },
+  "Xem": {
+    "en": "Watch",
+    "te": "చూడండి"
+  },
+  "Xem nhanh | XemPhim": {
+    "en": "Quick watch — XemPhim",
+    "te": "త్వరిత వీక్షణ — XemPhim"
+  },
+  "Phim & Review": {
+    "en": "Films & reviews",
+    "te": "సినిమాలు & సమీక్షలు"
+  },
+  "Podcast & Talkshow": {
+    "en": "Podcasts & talk shows",
+    "te": "పాడ్‌కాస్ట్‌లు & టాక్ షోలు"
+  },
+  "Phim ảnh": {
+    "en": "Films",
+    "te": "సినిమాలు"
+  },
+  "Lập trình": {
+    "en": "Coding",
+    "te": "కోడింగ్"
+  },
+  "Khoa học": {
+    "en": "Science",
+    "te": "విజ్ఞానం"
+  },
+  "Hoạt hình": {
+    "en": "Animation",
+    "te": "యానిమేషన్"
+  },
+  "Game": {
+    "en": "Games",
+    "te": "ఆటలు"
+  },
+  "Gaming": {
+    "en": "Gaming",
+    "te": "గేమింగ్"
+  },
+  "Podcast": {
+    "en": "Podcasts",
+    "te": "పాడ్‌కాస్ట్‌లు"
+  },
+  "Dữ liệu điều khiển không hợp lệ.": {
+    "en": "Invalid playback command.",
+    "te": "చెల్లని ప్లేబ్యాక్ ఆదేశం."
+  },
+  "Phòng đã đóng.": {
+    "en": "Room is closed.",
+    "te": "గది మూసివేయబడింది."
+  },
+  "Bạn cần tham gia phòng trước khi điều khiển.": {
+    "en": "Join the room before controlling playback.",
+    "te": "ప్లేబ్యాక్ నియంత్రించడానికి ముందుగా గదిలో చేరండి."
+  },
+  "Chỉ chủ phòng được đổi quyền điều khiển.": {
+    "en": "Only the host can change control permissions.",
+    "te": "హోస్ట్ మాత్రమే నియంత్రణ అనుమతులు మార్చగలరు."
+  },
+  "Chủ phòng đang khóa điều khiển.": {
+    "en": "The host locked playback controls.",
+    "te": "హోస్ట్ ప్లేబ్యాక్ నియంత్రణలను లాక్ చేశారు."
+  },
+  "Bạn cần tham gia phòng.": {
+    "en": "Join the room first.",
+    "te": "ముందుగా గదిలో చేరండి."
+  },
+  "Chỉ chủ phòng được sửa hàng đợi khi đang khóa.": {
+    "en": "Only the host can edit the locked queue.",
+    "te": "లాక్ చేసిన క్యూను హోస్ట్ మాత్రమే మార్చగలరు."
+  },
+  "Hàng đợi tối đa 50 video.": {
+    "en": "The queue can hold up to 50 videos.",
+    "te": "క్యూలో గరిష్ఠంగా 50 వీడియోలు ఉండవచ్చు."
+  },
+  "Bạn cần đăng nhập để chat.": {
+    "en": "Sign in to chat.",
+    "te": "చాట్ చేయడానికి సైన్ ఇన్ చేయండి."
+  },
+  "Tin nhắn không hợp lệ.": {
+    "en": "Invalid message.",
+    "te": "చెల్లని సందేశం."
+  },
+  "Hiện chưa có đề xuất chính.": {
+    "en": "No recommendations yet.",
+    "te": "ఇంకా సిఫార్సులు లేవు."
+  },
+  "Vui lòng nhập chủ đề hoặc chọn ít nhất một sở thích.": {
+    "en": "Enter a topic or choose at least one interest.",
+    "te": "అంశాన్ని నమోదు చేయండి లేదా కనీసం ఒక అభిరుచిని ఎంచుకోండి."
+  },
+  "Không tìm thấy video phù hợp.": {
+    "en": "No matching videos found.",
+    "te": "సరిపోలే వీడియోలు లేవు."
+  },
+  "Đã xảy ra lỗi không mong muốn.": {
+    "en": "An unexpected error occurred.",
+    "te": "అనుకోని లోపం వచ్చింది."
+  },
+  "Tên danh sách không được trống.": {
+    "en": "Collection name is required.",
+    "te": "సేకరణ పేరు అవసరం."
+  },
+  "Dữ liệu không hợp lệ.": {
+    "en": "Invalid data.",
+    "te": "చెల్లని డేటా."
+  },
+  "Không thể tạo danh sách.": {
+    "en": "Could not create collection.",
+    "te": "సేకరణను సృష్టించలేకపోయాం."
+  },
+  "Thiếu id hoặc tham số all.": {
+    "en": "Missing ID or all parameter.",
+    "te": "ID లేదా all పరామితి లేదు."
+  },
+  "Bạn cần đăng nhập để tạo phòng.": {
+    "en": "Sign in to create a room.",
+    "te": "గదిని సృష్టించడానికి సైన్ ఇన్ చేయండి."
+  },
+  "Không thể tạo phòng.": {
+    "en": "Could not create room.",
+    "te": "గదిని సృష్టించలేకపోయాం."
+  },
+  "Không sinh được mã phòng, thử lại giúp mình nhé.": {
+    "en": "Could not generate a room code. Please try again.",
+    "te": "గది కోడ్‌ను సృష్టించలేకపోయాం. మళ్లీ ప్రయత్నించండి."
+  },
+  "Email không hợp lệ.": {
+    "en": "Invalid email address.",
+    "te": "చెల్లని ఇమెయిల్ చిరునామా."
+  },
+  "Mật khẩu tối thiểu 6 ký tự.": {
+    "en": "Password must contain at least 6 characters.",
+    "te": "పాస్‌వర్డ్ కనీసం 6 అక్షరాలు ఉండాలి."
+  },
+  "Vui lòng nhập tên.": {
+    "en": "Enter your name.",
+    "te": "మీ పేరు నమోదు చేయండి."
+  },
+  "Body không hợp lệ.": {
+    "en": "Invalid request.",
+    "te": "చెల్లని అభ్యర్థన."
+  },
+  "Email đã được sử dụng.": {
+    "en": "This email is already in use.",
+    "te": "ఈ ఇమెయిల్ ఇప్పటికే వాడుకలో ఉంది."
+  },
+  "Không thể lưu video. Vui lòng thử lại.": {
+    "en": "Could not save video. Please try again.",
+    "te": "వీడియోను సేవ్ చేయలేకపోయాం. మళ్లీ ప్రయత్నించండి."
+  },
+  "Nguồn gửi không hợp lệ.": {
+    "en": "Invalid request origin.",
+    "te": "చెల్లని అభ్యర్థన మూలం."
+  },
+  "Dữ liệu quá lớn.": {
+    "en": "Request is too large.",
+    "te": "అభ్యర్థన చాలా పెద్దది."
+  },
+  "Lệnh không hợp lệ.": {
+    "en": "Invalid command.",
+    "te": "చెల్లని ఆదేశం."
+  },
+  "Không cập nhật được phòng. Vui lòng thử lại.": {
+    "en": "Could not update room. Please try again.",
+    "te": "గదిని నవీకరించలేకపోయాం. మళ్లీ ప్రయత్నించండి."
+  },
+  "Phòng không tồn tại.": {
+    "en": "Room not found.",
+    "te": "గది కనుగొనబడలేదు."
+  },
+  "Không thể cập nhật phòng. Vui lòng thử lại.": {
+    "en": "Could not update room. Please try again.",
+    "te": "గదిని నవీకరించలేకపోయాం. మళ్లీ ప్రయత్నించండి."
+  },
+  "Unauthorized": {
+    "en": "Please sign in.",
+    "te": "దయచేసి సైన్ ఇన్ చేయండి."
+  },
+  "Forbidden": {
+    "en": "You do not have permission.",
+    "te": "మీకు అనుమతి లేదు."
+  },
+  "Not found": {
+    "en": "Not found.",
+    "te": "కనుగొనబడలేదు."
+  },
+  "Đã cập nhật thứ tự hàng đợi": {
+    "en": "Queue order updated",
+    "te": "క్యూ క్రమం నవీకరించబడింది"
+  },
+  "Xem sau": {
+    "en": "Watch later",
+    "te": "తర్వాత చూడాలి"
+  },
+  "WATCH PARTY THEATER": {
+    "en": "WATCH TOGETHER",
+    "te": "కలిసి చూడండి"
+  },
+  "video": {
+    "en": "videos",
+    "te": "వీడియోలు"
+  },
+  "Tài khoản & Cài đặt": {
+    "en": "Account & settings",
+    "te": "ఖాతా & సెట్టింగ్‌లు"
+  },
+  "Chi tiết bộ sưu tập": {
+    "en": "Collection details",
+    "te": "సేకరణ వివరాలు"
+  },
+  "Phòng {p0}": {
+    "en": "Room {p0}",
+    "te": "గది {p0}"
+  },
+  "Bạn cần đăng nhập để xóa phòng.": {
+    "en": "Sign in to delete a room.",
+    "te": "గదిని తొలగించడానికి సైన్ ఇన్ చేయండి."
+  },
+  "Phòng đã đóng hoặc không tồn tại.": {
+    "en": "Room is closed or does not exist.",
+    "te": "గది మూసివేయబడింది లేదా ఉనికిలో లేదు."
+  },
+  "Chỉ chủ phòng được xóa phòng.": {
+    "en": "Only the host can delete a room.",
+    "te": "హోస్ట్ మాత్రమే గదిని తొలగించగలరు."
+  },
+  "Đã xóa phòng.": {
+    "en": "Room deleted.",
+    "te": "గది తొలగించబడింది."
+  },
+  "Yêu cầu tới YouTube quá thời gian. Vui lòng thử lại.": {
+    "en": "YouTube request timed out. Please try again.",
+    "te": "YouTube అభ్యర్థన సమయం ముగిసింది. మళ్లీ ప్రయత్నించండి."
+  },
+  "Không thể kết nối tới YouTube. Kiểm tra mạng và thử lại.": {
+    "en": "Could not connect to YouTube. Check your connection and try again.",
+    "te": "YouTubeకు కనెక్ట్ కాలేకపోయాం. కనెక్షన్ తనిఖీ చేసి మళ్లీ ప్రయత్నించండి."
+  },
+  "Chưa cấu hình YOUTUBE_API_KEY trên máy chủ.": {
+    "en": "Video search is not configured on the server.",
+    "te": "సర్వర్‌లో వీడియో శోధన కాన్ఫిగర్ చేయబడలేదు."
+  },
+  "Lỗi không xác định từ YouTube.": {
+    "en": "An unexpected YouTube error occurred.",
+    "te": "అనుకోని YouTube లోపం వచ్చింది."
+  },
+  "Xem {title}": {
+    "en": "Watch {title}",
+    "te": "{title} చూడండి"
+  },
+  "Video: {count}": {
+    "en": "Videos: {count}",
+    "te": "వీడియోలు: {count}"
+  }
+}

@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -34,6 +35,7 @@ type Props = {
 };
 
 export function WatchView({ video, relatedVideos, loop = false }: Props) {
+  const t = useTranslations();
   const { data: session } = useSession();
   const { toast } = useToast();
   const { createRoom, isCreating } = useCreateRoom();
@@ -106,16 +108,22 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
     }
     try {
       await navigator.clipboard.writeText(window.location.href);
-      toast({ title: "Đã sao chép liên kết video", description: video.title });
+      toast({
+        title: t("Đã sao chép liên kết video"),
+        description: video.title,
+      });
     } catch {
-      toast({ title: "Không thể sao chép liên kết", variant: "destructive" });
+      toast({
+        title: t("Không thể sao chép liên kết"),
+        variant: "destructive",
+      });
     }
   };
 
   const isQueued = watchLater.has(video.id);
 
   const publishedDateFormatted = video.publishedAt
-    ? new Date(video.publishedAt).toLocaleDateString("vi-VN", {
+    ? new Date(video.publishedAt).toLocaleDateString(t.locale, {
         day: "2-digit",
         month: "short",
         year: "numeric",
@@ -161,7 +169,7 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
                 <div
                   className="aspect-video bg-muted"
                   role="status"
-                  aria-label="Đang chuẩn bị trình phát"
+                  aria-label={t("Đang chuẩn bị trình phát")}
                 />
               )}
 
@@ -172,8 +180,8 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
                 className="absolute right-4 top-4 hidden rounded-xl border border-white/20 bg-black/70 p-2 text-white/90 backdrop-blur-md transition hover:bg-black/95 hover:text-white sm:block shadow-lg"
                 title={
                   theaterMode
-                    ? "Thu nhỏ chế độ rạp chiếu"
-                    : "Chế độ rạp chiếu phim"
+                    ? t("Thu nhỏ chế độ rạp chiếu")
+                    : t("Chế độ rạp chiếu phim")
                 }
               >
                 {theaterMode ? (
@@ -189,11 +197,12 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
           {video.embeddable === false && (
             <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-500">
               <p className="font-semibold">
-                Video này có thể bị hạn chế nhúng.
+                {t("Video này có thể bị hạn chế nhúng.")}{" "}
               </p>
               <p className="mt-0.5 text-xs opacity-90">
-                Chủ sở hữu video đã tắt chế độ phát trên các trang web bên thứ
-                ba.
+                {t(
+                  "Chủ sở hữu video đã tắt chế độ phát trên các trang web bên thứ ba.",
+                )}{" "}
               </p>
               <Button
                 asChild
@@ -206,8 +215,8 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Mở trực tiếp
-                  trên YouTube
+                  <ExternalLink className="mr-1.5 h-3.5 w-3.5" />{" "}
+                  {t("Mở trực tiếp trên YouTube")}{" "}
                 </a>
               </Button>
             </div>
@@ -230,7 +239,9 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
                   {video.channel}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {video.viewCount > 0 ? formatViews(video.viewCount) : ""}
+                  {video.viewCount > 0
+                    ? formatViews(video.viewCount, t.locale)
+                    : ""}
                   {video.viewCount > 0 && publishedDateFormatted ? " • " : ""}
                   {publishedDateFormatted}
                 </p>
@@ -248,25 +259,25 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
                   watchLater.toggle(video);
                   toast({
                     title: isQueued
-                      ? "Đã xoá khỏi Xem sau"
-                      : "Đã thêm vào Xem sau",
+                      ? t("Đã xoá khỏi Xem sau")
+                      : t("Đã thêm vào Xem sau"),
                   });
                 }}
                 className={cn(
                   "rounded-xl border border-border gap-1.5",
                   isQueued && "text-rose-400 border-rose-500/30",
                 )}
-                title="Lưu vào danh sách xem sau"
+                title={t("Lưu vào danh sách xem sau")}
               >
                 {isQueued ? (
                   <>
                     <Check className="h-4 w-4 text-rose-500" />
-                    <span>Đã lưu</span>
+                    <span>{t("Đã lưu")}</span>
                   </>
                 ) : (
                   <>
                     <Clock className="h-4 w-4" />
-                    <span>Xem sau</span>
+                    <span>{t("Xem sau")} </span>
                   </>
                 )}
               </Button>
@@ -279,10 +290,10 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
                 disabled={isCreating}
                 onClick={() => void createRoom(video)}
                 className="rounded-xl border border-border gap-1.5 hover:border-purple-500/40 hover:text-purple-400"
-                title="Tạo phòng xem chung cùng bạn bè"
+                title={t("Tạo phòng xem chung cùng bạn bè")}
               >
                 <Users className="h-4 w-4" />
-                <span className="hidden sm:inline">Xem cùng</span>
+                <span className="hidden sm:inline">{t("Xem cùng")}</span>
               </Button>
 
               {/* Add Collection */}
@@ -292,10 +303,10 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
                 size="sm"
                 onClick={() => setCollectionOpen(true)}
                 className="rounded-xl border border-border gap-1.5 hover:bg-muted"
-                title="Lưu vào thư viện"
+                title={t("Lưu vào thư viện")}
               >
                 <BookmarkPlus className="h-4 w-4" />
-                <span>Lưu vào thư viện</span>
+                <span>{t("Lưu vào thư viện")}</span>
               </Button>
 
               {/* Share */}
@@ -305,10 +316,10 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
                 size="sm"
                 onClick={handleShare}
                 className="rounded-xl border border-border gap-1.5 hover:bg-muted"
-                title="Chia sẻ video"
+                title={t("Chia sẻ video")}
               >
                 <Share2 className="h-4 w-4" />
-                <span className="hidden sm:inline">Chia sẻ</span>
+                <span className="hidden sm:inline">{t("Chia sẻ")}</span>
               </Button>
             </div>
           </div>
@@ -331,12 +342,12 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
               >
                 {descExpanded ? (
                   <>
-                    <span>Thu gọn</span>
+                    <span>{t("Thu gọn")}</span>
                     <ChevronUp className="h-3.5 w-3.5" />
                   </>
                 ) : (
                   <>
-                    <span>Xem thêm mô tả</span>
+                    <span>{t("Xem thêm mô tả")}</span>
                     <ChevronDown className="h-3.5 w-3.5" />
                   </>
                 )}
@@ -354,7 +365,7 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
         >
           <div className="flex items-center justify-between pb-1">
             <h2 className="font-display text-base sm:text-lg font-bold">
-              Video tiếp theo
+              {t("Video tiếp theo")}{" "}
             </h2>
             {/* Autoplay Toggle */}
             <button
@@ -364,7 +375,7 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
               onClick={toggleAutoplay}
               className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground"
             >
-              <span>Phát khi mở video</span>
+              <span>{t("Phát khi mở video")}</span>
               <span
                 className={cn(
                   "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
@@ -385,12 +396,12 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
           <div className="flex flex-col gap-3">
             {!relatedVideos.length && (
               <p className="rounded-xl border border-border p-4 text-sm text-muted-foreground">
-                Chưa có video gợi ý.{" "}
+                {t("Chưa có video gợi ý.")}{" "}
                 <Link
                   href="/"
                   className="font-medium text-primary hover:underline"
                 >
-                  Khám phá thêm
+                  {t("Khám phá thêm")}{" "}
                 </Link>
               </p>
             )}
@@ -420,7 +431,7 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
                     {item.channel}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {formatViews(item.viewCount)}
+                    {formatViews(item.viewCount, t.locale)}
                   </p>
                 </div>
               </Link>
@@ -432,7 +443,7 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
       {/* Sticky Mini Player when scrolled past */}
       {showStickyMini && (
         <aside
-          aria-label="Quay lại video đang xem"
+          aria-label={t("Quay lại video đang xem")}
           className="fixed bottom-20 right-4 z-40 hidden w-80 animate-in-up overflow-hidden rounded-2xl border border-border bg-card/95 shadow-2xl backdrop-blur-2xl sm:block"
         >
           <div className="flex items-center justify-between p-3">
@@ -447,7 +458,7 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
               }}
               className="h-7 px-2.5 text-xs rounded-lg"
             >
-              Về video
+              {t("Về video")}{" "}
             </Button>
           </div>
         </aside>

@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "@/components/locale-provider";
 import { Check, ChevronDown, RotateCcw, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,13 +32,14 @@ type Props = {
 };
 
 export function VideoFiltersBar({ value, onChange, disabled }: Props) {
+  const t = useTranslations();
   const activeCount = countActiveFilters(value);
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       <span className="inline-flex items-center gap-1.5 pr-1 text-xs text-muted-foreground">
         <SlidersHorizontal className="h-3.5 w-3.5" />
-        Bộ lọc
+        {t("Bộ lọc")}{" "}
         {activeCount > 0 ? (
           <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[11px]">
             {activeCount}
@@ -46,7 +48,7 @@ export function VideoFiltersBar({ value, onChange, disabled }: Props) {
       </span>
 
       <FilterSelect
-        label="Sắp xếp"
+        label={t("Sắp xếp")}
         options={ORDER_LABELS}
         selected={value.order}
         isDefault={value.order === DEFAULT_FILTERS.order}
@@ -54,20 +56,24 @@ export function VideoFiltersBar({ value, onChange, disabled }: Props) {
         onSelect={(key) => onChange({ ...value, order: key as SortOrder })}
       />
       <FilterSelect
-        label="Thời lượng"
+        label={t("Thời lượng")}
         options={DURATION_LABELS}
         selected={value.duration}
         isDefault={value.duration === DEFAULT_FILTERS.duration}
         disabled={disabled}
-        onSelect={(key) => onChange({ ...value, duration: key as DurationFilter })}
+        onSelect={(key) =>
+          onChange({ ...value, duration: key as DurationFilter })
+        }
       />
       <FilterSelect
-        label="Ngày đăng"
+        label={t("Ngày đăng")}
         options={UPLOAD_DATE_LABELS}
         selected={value.uploadDate}
         isDefault={value.uploadDate === DEFAULT_FILTERS.uploadDate}
         disabled={disabled}
-        onSelect={(key) => onChange({ ...value, uploadDate: key as UploadDateFilter })}
+        onSelect={(key) =>
+          onChange({ ...value, uploadDate: key as UploadDateFilter })
+        }
       />
 
       {isDefaultFilters(value) ? null : (
@@ -79,7 +85,7 @@ export function VideoFiltersBar({ value, onChange, disabled }: Props) {
           onClick={() => onChange(DEFAULT_FILTERS)}
           className="text-muted-foreground"
         >
-          <RotateCcw className="mr-1 h-3.5 w-3.5" /> Đặt lại
+          <RotateCcw className="mr-1 h-3.5 w-3.5" /> {t("Đặt lại")}{" "}
         </Button>
       )}
     </div>
@@ -101,6 +107,7 @@ function FilterSelect({
   disabled?: boolean;
   onSelect: (key: string) => void;
 }) {
+  const t = useTranslations();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -114,7 +121,7 @@ function FilterSelect({
             !isDefault && "border-primary/40 bg-primary/10 text-foreground",
           )}
         >
-          {options[selected] ?? label}
+          {t(options[selected] ?? label)}
           <ChevronDown className="ml-1 h-3.5 w-3.5 opacity-60" />
         </Button>
       </DropdownMenuTrigger>
@@ -122,8 +129,12 @@ function FilterSelect({
         <DropdownMenuLabel>{label}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {Object.entries(options).map(([key, text]) => (
-          <DropdownMenuItem key={key} onSelect={() => onSelect(key)} className="gap-2">
-            <span className="flex-1">{text}</span>
+          <DropdownMenuItem
+            key={key}
+            onSelect={() => onSelect(key)}
+            className="gap-2"
+          >
+            <span className="flex-1">{t(text)}</span>
             <Check
               className={cn(
                 "h-4 w-4 text-primary",
