@@ -128,6 +128,7 @@ export const POST = withRequestLog(SCOPE, async (request, context) => {
   const payload: RoomSyncResponse = {
     queue: playbackDto(room).queue,
     playbackGeneration: room.playbackGeneration,
+    roomTitle: room.title,
     revision: room.updatedAt.toISOString(),
     playback: {
       isPlaying: room.isPlaying,

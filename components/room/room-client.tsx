@@ -25,6 +25,7 @@ import { RoomChat } from "./room-chat";
 import { RoomMembers } from "./room-members";
 import { RoomSearch } from "./room-search";
 import { RoomQueue } from "./room-queue";
+import { RenameRoomButton } from "./rename-room-button";
 import { DeleteRoomButton } from "./delete-room-button";
 import { JoinGate } from "./join-gate";
 import { useRoomSync } from "@/hooks/use-room-sync";
@@ -90,7 +91,13 @@ export function RoomClient({ code }: { code: string }) {
     displayName: identity.name,
     userId: currentUserId,
   });
-  const { appendLocal, leave, applyPlayback, request: sendCommand } = sync;
+  const {
+    appendLocal,
+    leave,
+    applyPlayback,
+    editQueue,
+    request: sendCommand,
+  } = sync;
 
   // The host is identified by account, so they keep the role across devices.
   const isHost = Boolean(
@@ -133,6 +140,29 @@ export function RoomClient({ code }: { code: string }) {
 
   const changeQueue = useCallback(
     async (payload: Extract<RoomCommand, { type: "queue" }>["payload"]) => {
+      if (
+        payload.action === "add" ||
+        payload.action === "move" ||
+        payload.action === "remove"
+      ) {
+        if (
+          !canControl ||
+          sync.isOffline ||
+          (payload.action === "add" && sync.queue.length >= 50) ||
+          sync.queueEdits.length >= 20
+        )
+          return false;
+        void editQueue(payload).catch((error) =>
+          toast({
+            title: t(
+              error instanceof Error
+                ? error.message
+                : "Không cập nhật được hàng đợi",
+            ),
+          }),
+        );
+        return true;
+      }
       setQueuePending(true);
       try {
         applyPlayback(
@@ -151,7 +181,17 @@ export function RoomClient({ code }: { code: string }) {
         setQueuePending(false);
       }
     },
-    [sendCommand, applyPlayback, toast, t],
+    [
+      sendCommand,
+      applyPlayback,
+      editQueue,
+      canControl,
+      sync.isOffline,
+      sync.queue.length,
+      sync.queueEdits.length,
+      toast,
+      t,
+    ],
   );
 
   const reportEnded = useCallback(async () => {
@@ -320,12 +360,16 @@ export function RoomClient({ code }: { code: string }) {
   ]);
 
   const onSend = useCallback(
-    async (body: string) => {
+    async (body: string, messageId: string) => {
       try {
-        const message = (await sendCommand({
-          type: "chat",
-          body,
-        })) as RoomMessageDto;
+        const message = (await sendCommand(
+          {
+            type: "chat",
+            body,
+            messageId,
+          },
+          messageId,
+        )) as RoomMessageDto;
         appendLocal(message);
         return true;
       } catch (error) {
@@ -447,6 +491,7 @@ export function RoomClient({ code }: { code: string }) {
     );
   }
 
+  const roomTitle = sync.roomTitle ?? room.title;
   const video = sync.video ?? room.video;
   const playback = sync.playback ?? room.playback;
   const activity = describeAction(playback, t);
@@ -462,7 +507,25 @@ export function RoomClient({ code }: { code: string }) {
         </Badge>
 
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-base font-semibold">{room.title}</h1>
+          <div className="flex items-center gap-1">
+            <h1 className="truncate text-base font-semibold" title={roomTitle}>
+              {roomTitle}
+            </h1>
+            {isHost && (
+              <RenameRoomButton
+                title={roomTitle}
+                disabled={sync.isOffline}
+                onSave={async (title) => {
+                  applyPlayback(
+                    (await sendCommand({
+                      type: "rename",
+                      title,
+                    })) as RoomPlaybackUpdate,
+                  );
+                }}
+              />
+            )}
+          </div>
           <RoomMembers members={sync.members} myClientId={identity.clientId} />
         </div>
 
@@ -498,7 +561,7 @@ export function RoomClient({ code }: { code: string }) {
           {isHost && (
             <DeleteRoomButton
               code={code}
-              title={room.title}
+              title={roomTitle}
               onDeleted={() => {
                 void leave();
                 router.replace("/rooms");
@@ -667,6 +730,7 @@ export function RoomClient({ code }: { code: string }) {
               messages={sync.messages}
               canChat={Boolean(currentUserId)}
               currentUserId={currentUserId}
+              currentUser={session?.user}
               onSend={onSend}
             />
           </div>
@@ -693,7 +757,7 @@ export function RoomClient({ code }: { code: string }) {
                   });
               }}
               activeVideoId={video.videoId}
-              disabled={!canControl || sync.isOffline || queuePending}
+              disabled={!canControl || sync.isOffline}
               locked={!canControl}
             />
           )}

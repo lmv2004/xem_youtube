@@ -25,3 +25,12 @@ test("queue commands require a valid generation and bounded video metadata", () 
   assert.equal(roomCommand.safeParse({ type: "queue", requestId: "q", payload: { action: "add", video: { videoId: "invalid", title: "QA" } } }).success, false);
   assert.equal(roomCommand.safeParse({ type: "queue", requestId: "q", payload: { action: "next", generation: 0 } }).success, true);
 });
+
+
+test("room rename trims names and rejects blank or oversized titles", () => {
+ const input = { type: "rename", requestId: "rename", title: "  Listening room  " };
+ const parsed = roomCommand.parse(input);
+ assert.equal(parsed.type === "rename" && parsed.title, "Listening room");
+ assert.equal(roomCommand.safeParse({ ...input, title: " " }).success, false);
+ assert.equal(roomCommand.safeParse({ ...input, title: "a".repeat(81) }).success, false);
+});

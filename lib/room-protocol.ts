@@ -23,11 +23,17 @@ export const playbackInput = z.object({
 });
 export const roomCommand = z.discriminatedUnion("type", [
   z.object({
+    type: z.literal("rename"),
+    requestId: z.string().min(1).max(64),
+    title: z.string().trim().min(1).max(80),
+  }),
+  z.object({
     type: z.literal("queue"),
     requestId: z.string().min(1).max(64),
     payload: z.discriminatedUnion("action", [
       z.object({
         action: z.literal("add"),
+        id: z.string().uuid().optional(),
         video: playbackInput.shape.video.unwrap(),
       }),
       z.object({ action: z.literal("remove"), id: z.string().min(1).max(64) }),
@@ -35,6 +41,8 @@ export const roomCommand = z.discriminatedUnion("type", [
         action: z.literal("move"),
         id: z.string().min(1).max(64),
         direction: z.enum(["up", "down"]),
+        beforeId: z.string().min(1).max(64).optional(),
+        afterId: z.string().min(1).max(64).optional(),
       }),
       z.object({
         action: z.literal("next"),
@@ -51,6 +59,7 @@ export const roomCommand = z.discriminatedUnion("type", [
     type: z.literal("chat"),
     requestId: z.string().min(1).max(64),
     body: z.string().trim().min(1).max(500),
+    messageId: z.string().uuid().optional(),
   }),
   z.object({
     type: z.literal("playback"),
@@ -76,5 +85,6 @@ export type RoomNotice = {
   code: string;
   kind: "chat" | "playback" | "members" | "closed";
   id?: string;
+  commandId?: string;
 };
 export const NOTICE_CHANNEL = "xemphim_rooms_v1";

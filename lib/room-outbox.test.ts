@@ -4,7 +4,9 @@ import { createRoomOutbox, type OutboxMessage } from "./room-outbox";
 
 function deferred() {
   let resolve!: (ok: boolean) => void;
-  const promise = new Promise<boolean>((done) => { resolve = done; });
+  const promise = new Promise<boolean>((done) => {
+    resolve = done;
+  });
   return { promise, resolve };
 }
 const flush = () => new Promise<void>((resolve) => setImmediate(resolve));
@@ -14,14 +16,25 @@ test("rapid submissions keep distinct text and send in order without overlapping
   const second = deferred();
   const calls: string[] = [];
   let snapshot: OutboxMessage[] = [];
-  const outbox = createRoomOutbox((body) => {
-    calls.push(body);
-    return calls.length === 1 ? first.promise : second.promise;
-  }, (messages) => { snapshot = messages; });
+  const outbox = createRoomOutbox(
+    (body) => {
+      calls.push(body);
+      return calls.length === 1 ? first.promise : second.promise;
+    },
+    (messages) => {
+      snapshot = messages;
+    },
+  );
   outbox.enqueue("First message");
   outbox.enqueue("Next message");
   assert.deepEqual(calls, ["First message"]);
-  assert.deepEqual(snapshot.map((m) => [m.body, m.status]), [["First message", "sending"], ["Next message", "queued"]]);
+  assert.deepEqual(
+    snapshot.map((m) => [m.body, m.status]),
+    [
+      ["First message", "sending"],
+      ["Next message", "queued"],
+    ],
+  );
   first.resolve(true);
   await flush();
   assert.deepEqual(calls, ["First message", "Next message"]);
@@ -33,7 +46,12 @@ test("rapid submissions keep distinct text and send in order without overlapping
 
 test("failed text survives while later messages can be sent", async () => {
   let snapshot: OutboxMessage[] = [];
-  const outbox = createRoomOutbox(async (body) => body !== "failed", (messages) => { snapshot = messages; });
+  const outbox = createRoomOutbox(
+    async (body) => body !== "failed",
+    (messages) => {
+      snapshot = messages;
+    },
+  );
   outbox.enqueue("failed");
   outbox.enqueue("next");
   await flush();
@@ -46,7 +64,15 @@ test("failed text survives while later messages can be sent", async () => {
 test("transport exceptions retain the message without automatically retrying", async () => {
   let calls = 0;
   let snapshot: OutboxMessage[] = [];
-  const outbox = createRoomOutbox(async () => { calls++; throw new Error("offline"); }, (messages) => { snapshot = messages; });
+  const outbox = createRoomOutbox(
+    async () => {
+      calls++;
+      throw new Error("offline");
+    },
+    (messages) => {
+      snapshot = messages;
+    },
+  );
   outbox.enqueue("Keep this text");
   await flush();
   assert.equal(calls, 1);
@@ -58,7 +84,15 @@ test("leaving stops queued sends and late UI updates", async () => {
   const first = deferred();
   let calls = 0;
   let updates = 0;
-  const outbox = createRoomOutbox(() => { calls++; return first.promise; }, () => { updates++; });
+  const outbox = createRoomOutbox(
+    () => {
+      calls++;
+      return first.promise;
+    },
+    () => {
+      updates++;
+    },
+  );
   outbox.enqueue("first");
   outbox.enqueue("second");
   outbox.stop();
@@ -72,11 +106,39 @@ test("leaving stops queued sends and late UI updates", async () => {
 
 test("outbox is bounded and cannot restore an in-flight message", () => {
   let snapshot: OutboxMessage[] = [];
-  const outbox = createRoomOutbox(() => new Promise(() => {}), (messages) => { snapshot = messages; });
+  const outbox = createRoomOutbox(
+    () => new Promise(() => {}),
+    (messages) => {
+      snapshot = messages;
+    },
+  );
   assert.equal(outbox.enqueue("  "), false);
   for (let i = 0; i < 20; i++) assert.equal(outbox.enqueue(String(i)), true);
   assert.equal(outbox.enqueue("overflow"), false);
   assert.equal(snapshot.length, 20);
   assert.equal(outbox.restore(snapshot[0].id), null);
   outbox.stop();
+});
+
+test("identical messages have distinct stable identities and late confirmation clears failed slots", async () => {
+  let snapshot: OutboxMessage[] = [];
+  const calls: string[] = [];
+  const outbox = createRoomOutbox(
+    async (_body, id) => {
+      calls.push(id);
+      return false;
+    },
+    (messages) => {
+      snapshot = messages;
+    },
+  );
+  outbox.enqueue("Same text");
+  outbox.enqueue("Same text");
+  await flush();
+  assert.equal(calls.length, 2);
+  assert.notEqual(calls[0], calls[1]);
+  assert.equal(snapshot.length, 2);
+  outbox.acknowledge(new Set([calls[0]]));
+  assert.equal(snapshot.length, 1);
+  assert.equal(snapshot[0].messageId, calls[1]);
 });

@@ -1,6 +1,6 @@
 import { Prisma, type Room } from "@prisma/client";
 import { prisma } from "./db";
-import { moveQueueItem } from "./room-queue-order";
+import { placeQueueItem } from "./room-queue-placement";
 import {
   playbackInput,
   NOTICE_CHANNEL,
@@ -36,6 +36,7 @@ export async function notifyRoom(
 }
 export function playbackDto(room: Room): RoomPlaybackUpdate {
   return {
+    roomTitle: room.title,
     queue: room.queue as RoomQueueItem[],
     playbackGeneration: room.playbackGeneration,
     revision: room.updatedAt.toISOString(),
@@ -159,6 +160,7 @@ export async function updateQueue(
   clientId: string,
   actor: RoomActor,
   command: Extract<RoomCommand, { type: "queue" }>["payload"],
+  commandId?: string,
 ) {
   return prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM "Room" WHERE code = ${code} FOR UPDATE`;
@@ -192,13 +194,24 @@ export async function updateQueue(
       ),
     };
     if (command.action === "add") {
+      if (command.id && queue.some((item) => item.id === command.id))
+        return playbackDto(room);
       if (queue.length >= 50)
         throw new RoomCommandError(400, "Hàng đợi tối đa 50 video.");
-      data.queue = [...queue, { ...command.video, id: crypto.randomUUID() }];
+      data.queue = [
+        ...queue,
+        { ...command.video, id: command.id ?? crypto.randomUUID() },
+      ];
     } else if (command.action === "remove") {
       data.queue = queue.filter((item) => item.id !== command.id);
     } else if (command.action === "move") {
-      const reordered = moveQueueItem(queue, command.id, command.direction);
+      const reordered = placeQueueItem(
+        queue,
+        command.id,
+        command.direction,
+        command.beforeId,
+        command.afterId,
+      );
       if (reordered === queue) return playbackDto(room);
       data.queue = reordered;
     } else {
@@ -241,14 +254,15 @@ export async function updateQueue(
         });
     }
     const updated = await tx.room.update({ where: { code }, data });
-    await notifyRoom(tx, { code, kind: "playback" });
-    return playbackDto(updated);
+    await notifyRoom(tx, { code, kind: "playback", commandId });
+    return { ...playbackDto(updated), confirmedCommandId: commandId };
   });
 }
 export async function postRoomMessage(
   code: string,
   actor: RoomActor,
   body: string,
+  messageId?: string,
 ) {
   if (!actor.id) throw new RoomCommandError(401, "Bạn cần đăng nhập để chat.");
   if (!body.trim() || body.trim().length > 500)
@@ -257,10 +271,30 @@ export async function postRoomMessage(
     await tx.$queryRaw`SELECT id FROM "Room" WHERE code = ${code} FOR UPDATE`;
     const room = await tx.room.findUnique({ where: { code } });
     if (!room) throw new RoomCommandError(404, "Phòng đã đóng.");
-    const row = await tx.roomMessage.create({
-      data: { roomId: room.id, userId: actor.id!, body: body.trim() },
-      include: { user: { select: { id: true, name: true, image: true } } },
-    });
+    const existing = messageId
+      ? await tx.roomMessage.findUnique({
+          where: { id: messageId },
+          include: { user: { select: { id: true, name: true, image: true } } },
+        })
+      : null;
+    if (
+      existing &&
+      (existing.roomId !== room.id ||
+        existing.userId !== actor.id ||
+        existing.body !== body.trim())
+    )
+      throw new RoomCommandError(409, "Tin nhắn không hợp lệ.");
+    const row =
+      existing ??
+      (await tx.roomMessage.create({
+        data: {
+          id: messageId,
+          roomId: room.id,
+          userId: actor.id!,
+          body: body.trim(),
+        },
+        include: { user: { select: { id: true, name: true, image: true } } },
+      }));
     await notifyRoom(tx, { code, kind: "chat", id: row.id });
     return {
       id: row.id,
@@ -268,5 +302,32 @@ export async function postRoomMessage(
       createdAt: row.createdAt.toISOString(),
       author: row.user,
     };
+  });
+}
+
+/** Room metadata is independent of the playback anchor and control lock. */
+export async function renameRoom(
+  code: string,
+  actor: RoomActor,
+  title: string,
+) {
+  const value = title.trim();
+  if (!value || value.length > 80)
+    throw new RoomCommandError(400, "Tên phòng phải có từ 1 đến 80 ký tự.");
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "Room" WHERE code = ${code} FOR UPDATE`;
+    const room = await tx.room.findUnique({ where: { code } });
+    if (!room) throw new RoomCommandError(404, "Phòng đã đóng.");
+    if (!actor.id || actor.id !== room.hostId)
+      throw new RoomCommandError(403, "Chỉ chủ phòng được đổi tên phòng.");
+    const updated = await tx.room.update({
+      where: { code },
+      data: {
+        title: value,
+        updatedAt: new Date(Math.max(Date.now(), room.updatedAt.getTime() + 1)),
+      },
+    });
+    await notifyRoom(tx, { code, kind: "playback" });
+    return playbackDto(updated);
   });
 }
