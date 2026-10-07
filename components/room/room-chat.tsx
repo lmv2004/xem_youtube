@@ -3,7 +3,7 @@ import { useTranslations } from "@/components/locale-provider";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Loader2, Send, Smile } from "lucide-react";
+import { Send, Smile } from "lucide-react";
 import confetti from "canvas-confetti";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,8 @@ type Props = {
   messages: RoomMessageDto[];
   canChat: boolean;
   currentUserId?: string | null;
-  onSend: (body: string) => Promise<boolean>;
+  currentUser?: { name?: string | null; image?: string | null };
+  onSend: (body: string, messageId: string) => Promise<boolean>;
 };
 
 function initialOf(name: string | null) {
@@ -29,7 +30,13 @@ function timeOf(iso: string, locale: string) {
   return d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
 }
 
-export function RoomChat({ messages, canChat, currentUserId, onSend }: Props) {
+export function RoomChat({
+  messages,
+  canChat,
+  currentUserId,
+  currentUser,
+  onSend,
+}: Props) {
   const t = useTranslations();
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState<OutboxMessage[]>([]);
@@ -39,7 +46,7 @@ export function RoomChat({ messages, canChat, currentUserId, onSend }: Props) {
   const outboxRef = useRef<ReturnType<typeof createRoomOutbox> | null>(null);
   useEffect(() => {
     const outbox = createRoomOutbox(
-      (body) => sendRef.current(body),
+      (body, messageId) => sendRef.current(body, messageId),
       setPending,
     );
     outboxRef.current = outbox;
@@ -48,6 +55,9 @@ export function RoomChat({ messages, canChat, currentUserId, onSend }: Props) {
       outboxRef.current = null;
     };
   }, []);
+  useEffect(() => {
+    outboxRef.current?.acknowledge(new Set(messages.map((m) => m.id)));
+  }, [messages]);
   const updateDraft = (value: string) => {
     draftRef.current = value;
     setDraft(value);
@@ -87,6 +97,23 @@ export function RoomChat({ messages, canChat, currentUserId, onSend }: Props) {
     }
   };
 
+  const confirmed = new Set(messages.map((m) => m.id));
+  const timeline: (RoomMessageDto & { pending?: OutboxMessage })[] = [
+    ...messages,
+    ...pending
+      .filter((m) => !confirmed.has(m.messageId))
+      .map((m) => ({
+        id: m.messageId,
+        body: m.body,
+        createdAt: m.createdAt,
+        author: {
+          id: currentUserId ?? "",
+          name: currentUser?.name ?? null,
+          image: currentUser?.image ?? null,
+        },
+        pending: m,
+      })),
+  ].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   return (
     <div className="flex h-[440px] flex-col rounded-3xl border border-white/10 bg-card/80 shadow-2xl backdrop-blur-2xl lg:h-[580px] overflow-hidden">
       {/* Header */}
@@ -124,8 +151,25 @@ export function RoomChat({ messages, canChat, currentUserId, onSend }: Props) {
             </p>
           </div>
         ) : (
-          messages.map((m) => {
+          timeline.map((m) => {
             const mine = m.author.id === currentUserId;
+            const confirmed = new Set(messages.map((m) => m.id));
+            const timeline: (RoomMessageDto & { pending?: OutboxMessage })[] = [
+              ...messages,
+              ...pending
+                .filter((m) => !confirmed.has(m.messageId))
+                .map((m) => ({
+                  id: m.messageId,
+                  body: m.body,
+                  createdAt: m.createdAt,
+                  author: {
+                    id: currentUserId ?? "",
+                    name: currentUser?.name ?? null,
+                    image: currentUser?.image ?? null,
+                  },
+                  pending: m,
+                })),
+            ].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
             return (
               <div
                 key={m.id}
@@ -154,50 +198,35 @@ export function RoomChat({ messages, canChat, currentUserId, onSend }: Props) {
                   >
                     {m.body}
                   </p>
+                  {m.pending && (
+                    <p
+                      role="status"
+                      className="mt-1 text-[10px] text-muted-foreground"
+                    >
+                      {m.pending.status === "failed"
+                        ? t("Chưa xác nhận gửi thành công")
+                        : t("Đang gửi…")}
+                    </p>
+                  )}
+                  {m.pending?.status === "failed" && (
+                    <button
+                      type="button"
+                      disabled={Boolean(draft)}
+                      className="mt-1 text-xs text-primary underline disabled:opacity-40"
+                      onClick={() => {
+                        if (draftRef.current) return;
+                        const body = outboxRef.current?.restore(m.pending!.id);
+                        if (body) updateDraft(body);
+                      }}
+                    >
+                      {t("Đưa lại vào ô soạn")}
+                    </button>
+                  )}
                 </div>
               </div>
             );
           })
         )}
-        {pending.map((message) => (
-          <div
-            key={`outbox-${message.id}`}
-            className="ml-auto max-w-[80%] text-right"
-          >
-            <p className="inline-block whitespace-pre-wrap break-words rounded-2xl bg-purple-600/40 px-3.5 py-2 text-sm">
-              {message.body}
-            </p>
-            <p
-              className="mt-1 flex items-center justify-end gap-1 text-xs text-muted-foreground"
-              role="status"
-            >
-              {message.status === "failed" ? (
-                t("Chưa xác nhận gửi thành công")
-              ) : (
-                <>
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  {message.status === "sending"
-                    ? t("Đang gửi…")
-                    : t("Chờ gửi…")}
-                </>
-              )}
-            </p>
-            {message.status === "failed" && (
-              <button
-                type="button"
-                disabled={Boolean(draft)}
-                className="mt-1 text-xs text-primary underline disabled:opacity-40"
-                onClick={() => {
-                  if (draftRef.current) return;
-                  const body = outboxRef.current?.restore(message.id);
-                  if (body) updateDraft(body);
-                }}
-              >
-                {t("Đưa lại vào ô soạn")}
-              </button>
-            )}
-          </div>
-        ))}
       </div>
 
       {/* Footer Reaction Bar & Input */}

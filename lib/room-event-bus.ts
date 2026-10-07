@@ -85,7 +85,7 @@ export class RoomEventBus {
     if (notice.kind !== "members" && notice.kind !== "playback") return null;
     const room = await prisma.room.findUnique({ where: { code: notice.code } });
     if (!room) return { type: "closed" };
-    if (notice.kind === "playback") return { type: "playback", update: playbackDto(room) };
+    if (notice.kind === "playback") return { type: "playback", update: { ...playbackDto(room), confirmedCommandId: notice.commandId } };
     const rows = await prisma.roomPresence.findMany({ where: { roomId: room.id, lastSeenAt: { gte: new Date(Date.now() - PRESENCE_TIMEOUT_MS) } }, orderBy: { joinedAt: "asc" }, take: 100 });
     return { type: "members", members: rows.map((p) => ({ clientId: p.clientId, name: p.name, image: p.image,
       isHost: p.userId === room.hostId, isGuest: !p.userId, joinedAt: p.joinedAt.toISOString() })) };

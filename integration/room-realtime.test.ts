@@ -42,7 +42,7 @@ test(
             };
             const timer = setTimeout(() => {
               waiters.delete(check);
-              reject(new Error("Expected websocket event did not arrive"));
+              reject(new Error(`Expected websocket event did not arrive: ${predicate.toString()}; buffered events: ${events.map((event) => event.type === "ack" ? `ack:${event.requestId}:${event.ok}:${event.message ?? ""}` : event.type === "playback" ? `playback:${event.update.roomTitle}:${event.update.queue.length}` : event.type).join(", ")}`));
             }, 10_000);
             waiters.add(check);
             check();
@@ -192,6 +192,52 @@ test(
         assert.equal(reply.type, "ack");
         return reply as Extract<RoomEvent, { type: "ack" }>;
       };
+      const beforeRename = await prisma.room.findUniqueOrThrow({
+        where: { code },
+      });
+      assert.equal(
+        (await command(guest, { type: "rename", title: "Unauthorized" })).ok,
+        false,
+      );
+      assert.equal(
+        (
+          await command(host, {
+            type: "rename",
+            title: "  My listening room  ",
+          })
+        ).ok,
+        true,
+      );
+      const renamed = await guest.wait(
+        (event) =>
+          event.type === "playback" &&
+          event.update.roomTitle === "My listening room",
+      );
+      assert.ok(renamed.type === "playback");
+      assert.equal(
+        renamed.update.playback.lastSyncAt,
+        beforeRename.lastSyncAt.toISOString(),
+      );
+      assert.equal(
+        renamed.update.playback.positionSeconds,
+        beforeRename.positionSeconds,
+      );
+      assert.equal(
+        renamed.update.playbackGeneration,
+        beforeRename.playbackGeneration,
+      );
+      const messageId = crypto.randomUUID();
+      const duplicate = { type: "chat", body: "Stable identity", messageId };
+      assert.equal((await command(host, duplicate)).ok, true);
+      assert.equal((await command(host, duplicate)).ok, true);
+      assert.equal(
+        await prisma.roomMessage.count({ where: { id: messageId } }),
+        1,
+      );
+      assert.equal(
+        (await command(host, { ...duplicate, body: "Changed body" })).ok,
+        false,
+      );
       const video = {
         videoId: "aqz-KE-bpKQ",
         title: "Queued video",
@@ -210,7 +256,27 @@ test(
         ).ok,
         false,
       );
-      await command(host, { type: "queue", payload: { action: "add", video } });
+      const queueEntryId = crypto.randomUUID();
+      await command(host, {
+        type: "queue",
+        payload: { action: "add", video, id: queueEntryId },
+      });
+      await command(host, {
+        type: "queue",
+        payload: { action: "add", video, id: queueEntryId },
+      });
+      assert.equal(
+        (await prisma.room.findUniqueOrThrow({ where: { code } }))
+          .queue instanceof Array,
+        true,
+      );
+      assert.equal(
+        (
+          (await prisma.room.findUniqueOrThrow({ where: { code } }))
+            .queue as unknown[]
+        ).length,
+        1,
+      );
       await command(host, { type: "queue", payload: { action: "add", video } });
       const queued = await guest.wait(
         (event) => event.type === "playback" && event.update.queue.length === 2,

@@ -108,6 +108,8 @@ export type RoomMessageDto = {
 };
 
 export type RoomSyncResponse = {
+  roomTitle?: string;
+  confirmedCommandId?: string;
   queue: RoomQueueItem[];
   playbackGeneration: number;
   revision: string;
@@ -124,6 +126,8 @@ export type RoomSyncResponse = {
 export type RoomQueueItem = RoomVideo & { id: string };
 export type RoomPlaybackUpdate = Pick<
   RoomSyncResponse,
+  | "roomTitle"
+  | "confirmedCommandId"
   | "playback"
   | "video"
   | "hostOnlyControl"

@@ -74,6 +74,10 @@ export function RoomSearch({
   }, [run]);
 
   const pick = async (item: VideoItem, enqueue = false) => {
+    if (enqueue) {
+      await onEnqueue(item);
+      return;
+    }
     setPickingId(item.id);
     try {
       await (enqueue ? onEnqueue(item) : onPick(item));

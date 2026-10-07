@@ -2410,5 +2410,29 @@
   "Video: {count}": {
     "en": "Videos: {count}",
     "te": "వీడియోలు: {count}"
+  },
+  "Đổi tên phòng": {
+    "en": "Rename room",
+    "te": "గది పేరు మార్చండి"
+  },
+  "Tên phòng được cập nhật cho tất cả thành viên, không ảnh hưởng video đang phát.": {
+    "en": "The room name updates for everyone without interrupting playback.",
+    "te": "వీడియో ప్లేబ్యాక్‌కు అంతరాయం లేకుండా సభ్యులందరికీ గది పేరు నవీకరించబడుతుంది."
+  },
+  "Lưu tên phòng": {
+    "en": "Save room name",
+    "te": "గది పేరును సేవ్ చేయండి"
+  },
+  "Tên phòng phải có từ 1 đến 80 ký tự.": {
+    "en": "Room names must contain 1 to 80 characters.",
+    "te": "గది పేరులో 1 నుండి 80 అక్షరాలు ఉండాలి."
+  },
+  "Chỉ chủ phòng được đổi tên phòng.": {
+    "en": "Only the host can rename the room.",
+    "te": "హోస్ట్ మాత్రమే గది పేరును మార్చగలరు."
+  },
+  "Đang lưu…": {
+    "en": "Saving…",
+    "te": "సేవ్ చేస్తోంది…"
   }
 }
