@@ -43,7 +43,11 @@ test("two independent gateways deliver chat, controls, presence and room closure
       const bus = new RoomEventBus();
       const server = createServer(); servers.push(server);
       const gateway = new WebSocketServer({ server, maxPayload: 16_384 }); wss.push(gateway);
-      gateway.on("connection", (socket) => { void serveRoomSocket(socket, code, clientId, host ? "Host" : "Guest", host ? { id: user.id } : {}, 240_000, bus); });
+      gateway.on("connection", (socket) => {
+        // Simulate a runtime adapter handing over a paused upgraded socket.
+        socket.pause();
+        void serveRoomSocket(socket, code, clientId, host ? "Host" : "Guest", host ? { id: user.id } : {}, 240_000, bus);
+      });
       await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
       const address = server.address(); assert.ok(address && typeof address !== "string");
       const socket = new WebSocket(`ws://127.0.0.1:${address.port}`); sockets.push(socket);

@@ -86,6 +86,9 @@ export async function serveRoomSocket(socket: WebSocket, code: string, clientId:
         } finally { queued--; }
       });
     });
+    // Upgrade adapters may hand over a paused transport. Resume only after the
+    // command listener is installed so buffered client frames are not lost.
+    socket.resume();
     // Browser WebSockets answer protocol ping automatically, even in background tabs.
     timer = setInterval(() => {
       if (Date.now() - lastPong > 60_000) { socket.terminate(); return; }
