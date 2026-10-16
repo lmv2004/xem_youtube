@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Loader2, PlayCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type Props = {
   src: string;
@@ -28,7 +29,7 @@ export function LazyEmbed({ src, title, poster, onReady, className }: Props) {
   }, [loaded, onReady]);
 
   return (
-    <div className={className ?? "relative aspect-video w-full bg-black"}>
+    <div className={cn("relative aspect-video w-full bg-black", className)}>
       {!loaded && (
         <div className="absolute inset-0 grid place-items-center">
           {poster ? (
@@ -55,7 +56,7 @@ export function LazyEmbed({ src, title, poster, onReady, className }: Props) {
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         allowFullScreen
         onLoad={() => setLoaded(true)}
-        className="min-h-0 w-full flex-1 border-0"
+        className="absolute inset-0 h-full w-full border-0"
       />
     </div>
   );
