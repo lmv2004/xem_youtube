@@ -31,7 +31,8 @@ export function VideoGrid({
     <div
       className={cn(
         view === "grid"
-          ? "grid grid-cols-1 gap-x-5 gap-y-7 min-[520px]:grid-cols-2 xl:grid-cols-3"
+          // Desktop >=1280: 4 cards, laptop 3, tablet 2, mobile 1-2
+          ? "grid grid-cols-1 gap-x-4 gap-y-6 min-[520px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
           : "flex flex-col gap-3",
         className,
       )}
@@ -62,9 +63,10 @@ export function VideoGridSkeleton({
 }) {
   return (
     <div
+      aria-hidden
       className={cn(
         view === "grid"
-          ? "grid grid-cols-1 gap-x-5 gap-y-7 min-[520px]:grid-cols-2 xl:grid-cols-3"
+          ? "grid grid-cols-1 gap-x-4 gap-y-6 min-[520px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
           : "flex flex-col gap-3",
         className,
       )}

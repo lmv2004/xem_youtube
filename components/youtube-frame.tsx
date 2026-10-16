@@ -3,6 +3,7 @@ import { useTranslations } from "@/components/locale-provider";
 
 import { useEffect, useState } from "react";
 import { ExternalLink, Repeat, RotateCcw } from "lucide-react";
+import { LazyEmbed } from "@/components/lazy-embed";
 import { youtubeEmbedUrl } from "@/lib/youtube-embed";
 
 export function YouTubeFrame({
@@ -23,13 +24,11 @@ export function YouTubeFrame({
   }, [id, loop]);
   return (
     <div className="flex h-full w-full flex-col bg-black">
-      <iframe
+      <LazyEmbed
         key={`${id}:${attempt}`}
         src={youtubeEmbedUrl(id, loopEnabled)}
         title={title}
-        referrerPolicy="strict-origin-when-cross-origin"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        allowFullScreen
+        poster={`https://i.ytimg.com/vi/${encodeURIComponent(id)}/hqdefault.jpg`}
         className="min-h-0 w-full flex-1 border-0"
       />
       <div

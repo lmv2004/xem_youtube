@@ -96,9 +96,9 @@ export function VideoCard({
     <>
       <article
         className={cn(
-          "group min-w-0 rounded-2xl",
-          view === "list" &&
-            "flex gap-3 rounded-2xl border border-border bg-card p-3 sm:gap-5",
+          // Giảm nháy layout khi hover: chỉ đổi màu viền/thumbnail.
+          "group min-w-0 rounded-2xl border border-transparent transition-colors hover:border-border",
+          view === "list" && "flex gap-3 rounded-2xl border-border bg-card p-3 sm:gap-5",
           active && "ring-2 ring-primary ring-offset-4 ring-offset-background",
         )}
       >
@@ -116,15 +116,17 @@ export function VideoCard({
               src={item.thumbnail}
               alt=""
               loading="lazy"
+              decoding="async"
+              sizes="(max-width: 520px) 100vw, (max-width: 1280px) 50vw, 33vw"
               onError={() => setImageFailed(true)}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+              className="h-full w-full object-cover"
             />
           ) : (
             <div className="grid h-full place-items-center text-muted-foreground">
               <Play className="h-8 w-8" />
             </div>
           )}
-          <span className="absolute inset-0 grid place-items-center bg-black/15 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+          <span className="absolute inset-0 grid place-items-center bg-black/15 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
             <span className="grid h-11 w-11 place-items-center rounded-full bg-white text-zinc-950 shadow-lg">
               <Play className="h-5 w-5 fill-current" />
             </span>
@@ -203,7 +205,7 @@ export function VideoCard({
             {item.viewCount > 0 && (
               <span>{formatViews(item.viewCount, t.locale)}</span>
             )}
-            {item.viewCount > 0 && date && <span aria-hidden>·</span>}
+            {item.viewCount > 0 && date && <span aria-hidden>?</span>}
             {date && <span>{date}</span>}
           </p>
           <button

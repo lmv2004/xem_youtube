@@ -14,7 +14,7 @@ const SEARCH_ENDPOINT = API_BASE + "/search";
 const VIDEOS_ENDPOINT = API_BASE + "/videos";
 const DEFAULT_TIMEOUT_MS = 8000;
 
-export const PAGE_SIZE = 12;
+export const PAGE_SIZE = 16;
 
 type YouTubeError = { code: ErrorCode; message: string };
 
@@ -98,11 +98,13 @@ type VideosListItem = {
 function pickThumbnail(snip: Snippet | undefined): string {
   const thumbs = snip?.thumbnails;
   if (!thumbs) return "";
+  // Prefer medium/high: grid thumbnails render ~320-640px wide; maxres (~1280)
+  // would quadruple transfer size for no visible gain.
   return (
-    thumbs.maxres?.url ||
-    thumbs.standard?.url ||
-    thumbs.high?.url ||
     thumbs.medium?.url ||
+    thumbs.high?.url ||
+    thumbs.standard?.url ||
+    thumbs.maxres?.url ||
     thumbs.default?.url ||
     ""
   );

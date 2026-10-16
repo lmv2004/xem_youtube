@@ -2,7 +2,6 @@
 import { useTranslations } from "@/components/locale-provider";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { Heart, History, LogIn, Settings, User } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
@@ -23,7 +22,7 @@ import { LanguageSelector } from "./language-selector";
 
 export function SiteHeader() {
   const t = useTranslations();
-  const pathname = usePathname();
+  // Header search luôn hiển thị, trang chủ vẫn giữ ô tìm kiếm lớn ở hero.
   const { data: session, status } = useSession();
   const user = session?.user;
   const initial = (user?.name ?? user?.email ?? "U").slice(0, 1).toUpperCase();
@@ -41,8 +40,15 @@ export function SiteHeader() {
             <Wordmark hideTextOnMobile />
           </Link>
 
-          {/* Centered Large Search Bar */}
-          {pathname === "/" ? <div className="flex-1" /> : <HeaderSearch />}
+          {/* Ô tìm kiếm toàn cục ở giữa ở desktop, nút mở rộng ở mobile */}
+          <div className="hidden min-w-0 flex-1 justify-center px-2 md:flex">
+            <div className="w-full max-w-md">
+              <HeaderSearch />
+            </div>
+          </div>
+          <div className="flex-1 md:hidden">
+            <HeaderSearch />
+          </div>
 
           {/* Global Controls & Account */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">

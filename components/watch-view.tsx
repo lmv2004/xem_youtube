@@ -3,6 +3,7 @@ import { useTranslations } from "@/components/locale-provider";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   BookmarkPlus,
   Check,
@@ -27,6 +28,7 @@ import { useWatchLater } from "@/hooks/use-watch-later";
 import { cn } from "@/lib/utils";
 
 const AUTOPLAY_STORAGE_KEY = "xemphim:autoplay";
+const THEATER_STORAGE_KEY = "xemphim:default_theater";
 
 type Props = {
   video: VideoItem;
@@ -36,6 +38,7 @@ type Props = {
 
 export function WatchView({ video, relatedVideos, loop = false }: Props) {
   const t = useTranslations();
+  const router = useRouter();
   const { data: session } = useSession();
   const { toast } = useToast();
   const { createRoom, isCreating } = useCreateRoom();
@@ -50,11 +53,14 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
 
   const playerRef = useRef<HTMLDivElement | null>(null);
 
-  // Load autoplay preference before mounting the player.
+  // Load autoplay + default-theater preferences before mounting the player.
   useEffect(() => {
     try {
       const storedAutoplay = localStorage.getItem(AUTOPLAY_STORAGE_KEY);
       setAutoplay(storedAutoplay === null || storedAutoplay === "1");
+      if (localStorage.getItem(THEATER_STORAGE_KEY) === "1") {
+        setTheaterMode(true);
+      }
     } catch {
       /* ignore */
     }
@@ -150,7 +156,7 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
           <div className="relative group/player">
             {/* Radiant Ambilight Glow */}
             <div
-              className="pointer-events-none absolute -inset-3 -z-10 rounded-[32px] bg-gradient-to-tr from-rose-600/35 via-purple-600/25 to-cyan-500/20 opacity-75 blur-3xl transition-opacity duration-700"
+              className="pointer-events-none absolute -inset-3 -z-10 rounded-[32px] bg-gradient-to-tr from-rose-600/20 via-purple-600/12 to-transparent opacity-60 blur-3xl transition-opacity duration-700"
               aria-hidden
             />
 
@@ -436,6 +442,20 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
                 </div>
               </Link>
             ))}
+
+            {/* Jump straight into a watch party with the first suggestion. */}
+            {relatedVideos.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  const next = relatedVideos[0];
+                  if (next) router.push(`/watch/${next.id}`);
+                }}
+                className="mt-1 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-muted/60 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
+              >
+                {t("Phát video đầu tiên trong danh sách")}
+              </button>
+            )}
           </div>
         </div>
       </div>

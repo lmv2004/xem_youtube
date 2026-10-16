@@ -5,6 +5,7 @@ import {
   Library,
   Link2,
   Settings,
+  UserRound,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -40,7 +41,7 @@ export const LIBRARY_NAV: NavItem[] = [
 ];
 
 export const ACCOUNT_NAV: NavItem[] = [
-  { href: "/account", label: "Tài khoản", shortLabel: "Tài khoản", icon: Settings },
+  { href: "/account", label: "Tài khoản", shortLabel: "Tài khoản", icon: UserRound },
   { href: "/account?tab=settings", label: "Cài đặt", shortLabel: "Cài đặt", icon: Settings },
 ];
 
