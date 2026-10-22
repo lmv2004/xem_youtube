@@ -2779,6 +2779,14 @@
     "en": "Play when a video opens",
     "te": "వీడియో తెరిచినప్పుడు ప్లే చేయండి"
   },
+  "Gợi ý từ khóa": {
+    "en": "Suggested keywords",
+    "te": "సూచించిన శోధన పదాలు"
+  },
+  "↑ ↓ để chọn · Enter để tìm · Esc để đóng": {
+    "en": "↑ ↓ to choose · Enter to search · Esc to close",
+    "te": "↑ ↓ ఎంచుకోండి · Enter శోధించండి · Esc మూసివేయండి"
+  },
   "Bắt đầu phát khi bạn mở trang video, nếu trình duyệt cho phép.": {
     "en": "Start playback when you open a video, if your browser allows it.",
     "te": "బ్రౌజర్ అనుమతిస్తే వీడియో తెరిచినప్పుడు ప్లేబ్యాక్ ప్రారంభించండి."

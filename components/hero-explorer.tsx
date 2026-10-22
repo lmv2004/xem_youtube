@@ -6,17 +6,16 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowUpRight,
-  Clock,
   Compass,
   LayoutGrid,
   List,
   Loader2,
   Search,
   SlidersHorizontal,
-  Trash2,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SearchBox } from "@/components/search-box";
 import { FilterChips } from "@/components/filter-chips";
 import { VideoFiltersBar } from "@/components/video-filters";
 import {
@@ -64,9 +63,7 @@ export function HeroExplorer() {
   const [view, setView] = useState<ViewMode>("grid");
   const [preferencesOpen, setPreferencesOpen] = useState(false);
   const [retry, setRetry] = useState(0);
-  const [suggestOpen, setSuggestOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const searchBoxRef = useRef<HTMLDivElement>(null);
   const requestRef = useRef<AbortController | null>(null);
   const watchLater = useWatchLater();
   const recent = useRecentSearches();
@@ -88,19 +85,6 @@ export function HeroExplorer() {
     setInput(topic);
   }, [topic]);
 
-  // Close the search suggestion dropdown on outside click.
-  useEffect(() => {
-    const onPointerDown = (event: PointerEvent) => {
-      if (
-        searchBoxRef.current &&
-        !searchBoxRef.current.contains(event.target as Node)
-      ) {
-        setSuggestOpen(false);
-      }
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, []);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
@@ -254,90 +238,41 @@ export function HeroExplorer() {
             {t("Xem cùng bạn bè")} <ArrowUpRight className="h-4 w-4" />
           </Link>
         </div>
-        <div ref={searchBoxRef} className="relative">
-          <form
-            role="search"
-            onSubmit={(event) => {
-              event.preventDefault();
-              setSuggestOpen(false);
-              search(input);
-            }}
+        <div className="relative">
+          <SearchBox
+            value={input}
+            onChange={setInput}
+            onSearch={search}
+            inputRef={inputRef}
+            placeholder={t("Từ khóa hoặc link YouTube")}
+            inputClassName="h-10 min-w-0 flex-1 bg-transparent px-2 text-sm outline-none"
             className="flex items-center gap-2 rounded-2xl border border-input bg-background p-2 shadow-sm focus-within:ring-2 focus-within:ring-ring"
-          >
-            <Search className="ml-2 hidden h-5 w-5 shrink-0 text-muted-foreground sm:block" />
-            <input
-              ref={inputRef}
-              minLength={2}
-              maxLength={500}
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              onFocus={() => setSuggestOpen(true)}
-              onKeyDown={(event) => {
-                if (event.key === "Escape") {
-                  setSuggestOpen(false);
-                  inputRef.current?.blur();
-                }
-              }}
-              aria-label={t("Tìm video hoặc dán liên kết YouTube")}
-              placeholder={t("Từ khóa hoặc link YouTube")}
-              className="h-10 min-w-0 flex-1 bg-transparent px-2 text-sm outline-none"
-            />
-            {input && (
-              <button
-                type="button"
-                aria-label={t("Xóa từ khóa")}
-                onClick={() => {
-                  setInput("");
-                  inputRef.current?.focus();
-                }}
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-muted"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-            <Button type="submit" className="h-10 rounded-xl px-3 sm:px-5">
-              <Search className="sm:hidden" />
-              <span className="hidden sm:inline">{t("Tìm kiếm")}</span>
-              <span className="sr-only sm:hidden">{t("Tìm kiếm")}</span>
-            </Button>
-          </form>
-
-          {suggestOpen && recent.items.length > 0 && (
-            <div className="absolute inset-x-0 top-full z-30 mt-2 rounded-2xl border border-border bg-popover shadow-xl">
-              <div className="flex items-center justify-between px-3 pt-3">
-                <p className="px-1 text-xs font-semibold text-muted-foreground">
-                  {t("Tìm kiếm gần đây")}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    recent.clear();
-                    setSuggestOpen(false);
-                  }}
-                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-                >
-                  <Trash2 className="h-3.5 w-3.5" /> {t("Xóa lịch sử")}
-                </button>
-              </div>
-              <ul className="p-2">
-                {recent.items.map((term) => (
-                  <li key={term}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSuggestOpen(false);
-                        search(term);
-                      }}
-                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm hover:bg-muted"
-                    >
-                      <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      <span className="truncate">{term}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+            leading={
+              <Search className="ml-2 hidden h-5 w-5 shrink-0 text-muted-foreground sm:block" />
+            }
+            actions={
+              <>
+                {input && (
+                  <button
+                    type="button"
+                    aria-label={t("Xóa từ khóa")}
+                    onClick={() => {
+                      setInput("");
+                      inputRef.current?.focus();
+                    }}
+                    className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-muted"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+                <Button type="submit" className="h-10 rounded-xl px-3 sm:px-5">
+                  <Search className="sm:hidden" />
+                  <span className="hidden sm:inline">{t("Tìm kiếm")}</span>
+                  <span className="sr-only sm:hidden">{t("Tìm kiếm")}</span>
+                </Button>
+              </>
+            }
+          />
         </div>
         {!topic && recent.items.length > 0 && (
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
