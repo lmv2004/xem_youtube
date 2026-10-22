@@ -3,6 +3,7 @@ import { useTranslations } from "@/components/locale-provider";
 
 import { useState, type MouseEvent } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   BookmarkPlus,
   Check,
@@ -98,7 +99,8 @@ export function VideoCard({
         className={cn(
           // Giảm nháy layout khi hover: chỉ đổi màu viền/thumbnail.
           "group min-w-0 rounded-2xl border border-transparent transition-colors hover:border-border",
-          view === "list" && "flex gap-3 rounded-2xl border-border bg-card p-3 sm:gap-5",
+          view === "list" &&
+            "flex gap-3 rounded-2xl border-border bg-card p-3 sm:gap-5",
           active && "ring-2 ring-primary ring-offset-4 ring-offset-background",
         )}
       >
@@ -112,12 +114,16 @@ export function VideoCard({
           )}
         >
           {item.thumbnail && !imageFailed ? (
-            <img
+            <Image
               src={item.thumbnail}
               alt=""
+              fill
               loading="lazy"
-              decoding="async"
-              sizes="(max-width: 520px) 100vw, (max-width: 1280px) 50vw, 33vw"
+              sizes={
+                view === "list"
+                  ? "(max-width: 640px) 128px, 240px"
+                  : "(max-width: 520px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 30vw, 24vw"
+              }
               onError={() => setImageFailed(true)}
               className="h-full w-full object-cover"
             />
@@ -205,7 +211,7 @@ export function VideoCard({
             {item.viewCount > 0 && (
               <span>{formatViews(item.viewCount, t.locale)}</span>
             )}
-            {item.viewCount > 0 && date && <span aria-hidden>?</span>}
+            {item.viewCount > 0 && date && <span aria-hidden>·</span>}
             {date && <span>{date}</span>}
           </p>
           <button

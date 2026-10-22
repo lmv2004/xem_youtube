@@ -2,9 +2,7 @@ import { getTranslator } from "@/lib/locale-server";
 import { Suspense } from "react";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { SiteHeader } from "@/components/site/site-header";
-import { SiteFooter } from "@/components/site/site-footer";
-import { GradientMesh } from "@/components/site/gradient-mesh";
+import { SiteShell } from "@/components/site/site-shell";
 import { AccountDashboard } from "@/components/account-dashboard";
 import { prisma } from "@/lib/db";
 
@@ -73,21 +71,16 @@ export default async function AccountPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <GradientMesh />
-      <SiteHeader />
-      <main className="container max-w-4xl flex-1 py-10">
-        <Suspense
-          fallback={
-            <div className="text-center py-10 text-muted-foreground">
-              {t("Đang tải tài khoản...")}
-            </div>
-          }
-        >
-          <AccountDashboard user={userInfo} stats={stats} />
-        </Suspense>
-      </main>
-      <SiteFooter />
-    </div>
+    <SiteShell>
+      <Suspense
+        fallback={
+          <div className="text-center py-10 text-muted-foreground">
+            {t("Đang tải tài khoản...")}
+          </div>
+        }
+      >
+        <AccountDashboard user={userInfo} stats={stats} />
+      </Suspense>
+    </SiteShell>
   );
 }

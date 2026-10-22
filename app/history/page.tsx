@@ -1,11 +1,9 @@
+import { SiteShell } from "@/components/site/site-shell";
 import { getTranslator } from "@/lib/locale-server";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { History as HistoryIcon } from "lucide-react";
 import { prisma } from "@/lib/db";
-import { SiteHeader } from "@/components/site/site-header";
-import { SiteFooter } from "@/components/site/site-footer";
-import { GradientMesh } from "@/components/site/gradient-mesh";
 import { HistoryList } from "@/components/history-list";
 
 export async function generateMetadata() {
@@ -47,25 +45,20 @@ export default async function HistoryPage() {
   }));
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <GradientMesh />
-      <SiteHeader />
-      <main className="container max-w-4xl flex-1 space-y-6 py-8">
-        <div className="animate-in-up">
-          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight inline-flex items-center gap-3">
-            <span className="rounded-2xl bg-primary/15 p-2.5 ring-1 ring-primary/30 text-primary">
-              <HistoryIcon className="h-6 w-6" />
-            </span>
-            {t("Lịch sử xem")}{" "}
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            {t("Theo dõi các video bạn đã mở và thời gian xem gần đây.")}{" "}
-          </p>
-        </div>
+    <SiteShell>
+      <div className="animate-in-up">
+        <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight inline-flex items-center gap-3">
+          <span className="rounded-2xl bg-primary/15 p-2.5 ring-1 ring-primary/30 text-primary">
+            <HistoryIcon className="h-6 w-6" />
+          </span>
+          {t("Lịch sử xem")}{" "}
+        </h1>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+          {t("Theo dõi các video bạn đã mở và thời gian xem gần đây.")}{" "}
+        </p>
+      </div>
 
-        <HistoryList initialItems={formattedItems} />
-      </main>
-      <SiteFooter />
-    </div>
+      <HistoryList initialItems={formattedItems} />
+    </SiteShell>
   );
 }

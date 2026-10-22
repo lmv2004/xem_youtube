@@ -41,14 +41,7 @@ export function SiteHeader() {
           </Link>
 
           {/* Ô tìm kiếm toàn cục ở giữa ở desktop, nút mở rộng ở mobile */}
-          <div className="hidden min-w-0 flex-1 justify-center px-2 md:flex">
-            <div className="w-full max-w-md">
-              <HeaderSearch />
-            </div>
-          </div>
-          <div className="flex-1 md:hidden">
-            <HeaderSearch />
-          </div>
+          <HeaderSearch />
 
           {/* Global Controls & Account */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">

@@ -20,6 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Glass } from "@/components/ui/glass";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SyncPlayer, type SyncPlayerHandle } from "./sync-player";
 import { RoomChat } from "./room-chat";
 import { RoomMembers } from "./room-members";
@@ -42,7 +43,6 @@ import {
 } from "@/lib/rooms";
 import type { RoomCommand } from "@/lib/room-protocol";
 import type { VideoItem } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 /** How long to ignore local player events after we move the player ourselves. */
 const ECHO_WINDOW_MS = 1200;
@@ -442,6 +442,16 @@ export function RoomClient({ code }: { code: string }) {
     }
   };
 
+  const copyCode = async () => {
+    if (!room) return;
+    try {
+      await navigator.clipboard.writeText(room.code);
+      toast({ title: t("Đã sao chép mã phòng"), description: room.code });
+    } catch {
+      toast({ title: t("Không sao chép được liên kết") });
+    }
+  };
+
   const handleJoin = () => {
     setJoining(true);
     identity.persistName(identity.name);
@@ -489,6 +499,7 @@ export function RoomClient({ code }: { code: string }) {
         onNameChange={identity.rename}
         onJoin={handleJoin}
         joining={joining}
+        hostOnlyControl={room.hostOnlyControl}
       />
     );
   }
@@ -502,15 +513,25 @@ export function RoomClient({ code }: { code: string }) {
     <div className="space-y-5">
       <Glass
         intensity="strong"
-        className="flex flex-wrap items-center gap-3 p-4"
+        className="flex flex-wrap items-center gap-3 p-4 sm:p-5"
       >
-        <Badge className="bg-primary/15 text-foreground ring-1 ring-primary/30">
-          <Radio className="mr-1 h-3 w-3 text-primary" /> {t("Mã")} {room.code}
-        </Badge>
+        <Button
+          type="button"
+          variant="secondary"
+          className="gap-2 font-mono tracking-wider"
+          onClick={() => void copyCode()}
+          aria-label={t("Sao chép mã phòng {p0}", { p0: room.code })}
+        >
+          <Radio className="h-4 w-4 text-primary" /> {room.code}
+          <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+        </Button>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1">
-            <h1 className="truncate text-base font-semibold" title={roomTitle}>
+            <h1
+              className="line-clamp-2 text-lg font-semibold"
+              title={roomTitle}
+            >
               {roomTitle}
             </h1>
             {isHost && (
@@ -528,16 +549,28 @@ export function RoomClient({ code }: { code: string }) {
               />
             )}
           </div>
-          <RoomMembers members={sync.members} myClientId={identity.clientId} />
+          <div className="flex flex-wrap items-center gap-x-3">
+            <RoomMembers
+              members={sync.members}
+              myClientId={identity.clientId}
+            />
+            <span className="text-xs text-muted-foreground">
+              {isHost
+                ? t("Bạn là chủ phòng")
+                : t("Chủ phòng: {p0}", {
+                    p0: room.host.name ?? t("Người dùng"),
+                  })}
+            </span>
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 border-t border-border pt-3">
           {isHost ? (
             <Button
               type="button"
               size="sm"
               variant={hostOnlyControl ? "default" : "outline"}
-              disabled={lockPending}
+              disabled={lockPending || sync.isOffline}
               onClick={() => void toggleLock()}
               title={
                 hostOnlyControl
@@ -609,14 +642,20 @@ export function RoomClient({ code }: { code: string }) {
       </Glass>
 
       {sync.isOffline && !sync.hasConnected && !sync.isClosed ? (
-        <p role="status" className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-4 py-2 text-sm text-muted-foreground">
+        <p
+          role="status"
+          className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-4 py-2 text-sm text-muted-foreground"
+        >
           <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
           {sync.showSyncWarning
             ? t("Kết nối đang mất nhiều thời gian hơn dự kiến…")
             : t("Đang kết nối với phòng…")}
         </p>
       ) : sync.showSyncWarning ? (
-        <p role="status" className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm">
+        <p
+          role="status"
+          className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm"
+        >
           {t(
             "Đồng bộ phòng đang gián đoạn. Video vẫn tiếp tục; đang thử lại.",
           )}{" "}
@@ -624,7 +663,7 @@ export function RoomClient({ code }: { code: string }) {
       ) : null}
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="space-y-3">
+        <div className="min-w-0 space-y-3">
           <SyncPlayer
             videoId={room.video.videoId}
             onReady={(handle) => {
@@ -659,10 +698,12 @@ export function RoomClient({ code }: { code: string }) {
           />
 
           <div>
-            <h2 className="text-sm font-semibold leading-snug">
+            <h2 className="text-base font-semibold leading-snug sm:text-lg">
               {video.title}
             </h2>
-            <p className="text-xs text-muted-foreground">{video.channel}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {video.channel}
+            </p>
           </div>
 
           {canControl ? (
@@ -688,62 +729,60 @@ export function RoomClient({ code }: { code: string }) {
           )}
         </div>
 
-        <div className="space-y-2">
-          <div className="flex gap-1 rounded-xl bg-foreground/5 p-1">
-            <button
-              type="button"
-              onClick={() => setTab("chat")}
-              className={cn(
-                "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition",
-                tab === "chat"
-                  ? "bg-background shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
+        <Tabs
+          value={tab}
+          onValueChange={(value) => setTab(value as typeof tab)}
+          className="min-w-0 space-y-2"
+        >
+          <TabsList
+            className="grid h-12 w-full grid-cols-3 rounded-xl p-1"
+            aria-label={t("Hoạt động trong phòng")}
+          >
+            <TabsTrigger
+              value="chat"
+              className="h-10 min-w-0 gap-1.5 rounded-lg px-2 text-xs sm:text-sm"
             >
-              <MessageSquare className="h-4 w-4" /> {t("Trò chuyện")}{" "}
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("search")}
-              className={cn(
-                "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition",
-                tab === "search"
-                  ? "bg-background shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
+              <MessageSquare className="h-4 w-4 shrink-0" />{" "}
+              <span className="truncate">{t("Trò chuyện")}</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="search"
+              className="h-10 min-w-0 gap-1.5 rounded-lg px-2 text-xs sm:text-sm"
             >
               {canControl ? (
-                <Search className="h-4 w-4" />
+                <Search className="h-4 w-4 shrink-0" />
               ) : (
-                <Lock className="h-4 w-4" />
+                <Lock className="h-4 w-4 shrink-0" />
               )}
-              {t("Tìm video")}{" "}
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("queue")}
-              className={cn(
-                "flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-sm font-medium transition",
-                tab === "queue"
-                  ? "bg-background shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
+              <span className="truncate">{t("Tìm video")}</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="queue"
+              className="h-10 min-w-0 gap-1 rounded-lg px-2 text-xs sm:text-sm"
             >
-              <ListVideo className="h-4 w-4" /> {t("Chờ (")}
-              {sync.queue.length})
-            </button>
-          </div>
+              <ListVideo className="h-4 w-4 shrink-0" />{" "}
+              <span className="truncate">{t("Danh sách chờ")}</span>
+              <span className="rounded-md bg-muted px-1 text-xs tabular-nums">
+                {sync.queue.length}
+              </span>
+            </TabsTrigger>
+          </TabsList>
 
-          <div hidden={tab !== "chat"}>
+          <TabsContent
+            value="chat"
+            forceMount
+            className="mt-0 data-[state=inactive]:hidden"
+          >
             <RoomChat
               messages={sync.messages}
               canChat={Boolean(currentUserId)}
+              connectionReady={!sync.isOffline}
               currentUserId={currentUserId}
               currentUser={session?.user}
               onSend={onSend}
             />
-          </div>
-          {tab === "search" && (
+          </TabsContent>
+          <TabsContent value="search" className="mt-0">
             <RoomSearch
               onPick={changeVideo}
               onEnqueue={async (item) => {
@@ -769,8 +808,8 @@ export function RoomClient({ code }: { code: string }) {
               disabled={!canControl || sync.isOffline}
               locked={!canControl}
             />
-          )}
-          {tab === "queue" && (
+          </TabsContent>
+          <TabsContent value="queue" className="mt-0">
             <RoomQueue
               items={sync.queue}
               disabled={!canControl || sync.isOffline}
@@ -792,8 +831,8 @@ export function RoomClient({ code }: { code: string }) {
               }
               onSearch={() => setTab("search")}
             />
-          )}
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

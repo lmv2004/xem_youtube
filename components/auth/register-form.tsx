@@ -16,12 +16,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { authReturnPath } from "@/lib/auth-navigation";
 
-export function RegisterForm() {
+export function RegisterForm({
+  googleEnabled = false,
+}: {
+  googleEnabled?: boolean;
+}) {
   const t = useTranslations();
   const router = useRouter();
   const search = useSearchParams();
-  const callbackUrl = search.get("callbackUrl") ?? "/";
+  const callbackUrl = authReturnPath(search.get("callbackUrl"));
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,38 +37,54 @@ export function RegisterForm() {
     e.preventDefault();
     setPending(true);
     setError(null);
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
-    });
-    if (!res.ok) {
-      const data = (await res.json().catch(() => ({}))) as { message?: string };
-      setError(data.message ?? t("Đăng ký thất bại."));
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as {
+          message?: string;
+        };
+        setError(data.message ?? t("Đăng ký thất bại."));
+        setPending(false);
+        return;
+      }
+      const login = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
       setPending(false);
-      return;
+      if (!login || login.error) {
+        setError(
+          t(
+            "Đăng ký thành công nhưng đăng nhập tự động thất bại. Hãy thử lại.",
+          ),
+        );
+        return;
+      }
+      router.push(callbackUrl);
+      router.refresh();
+    } catch {
+      setError(t("Không thể kết nối. Vui lòng thử lại."));
+    } finally {
+      setPending(false);
     }
-    const login = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
-    setPending(false);
-    if (!login || login.error) {
-      setError(
-        t("Đăng ký thành công nhưng đăng nhập tự động thất bại. Hãy thử lại."),
-      );
-      return;
-    }
-    router.push(callbackUrl);
-    router.refresh();
   }
 
   async function onGoogle() {
     setPending(true);
     setError(null);
     // signIn with redirect=true so the browser navigates to /api/auth/signin/google
-    await signIn("google", { callbackUrl });
+    try {
+      await signIn("google", { callbackUrl });
+    } catch {
+      setError(t("Không thể kết nối. Vui lòng thử lại."));
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -111,30 +132,39 @@ export function RegisterForm() {
             />
           </div>
           {error ? (
-            <p className="text-sm text-destructive">{t(error ?? "")}</p>
+            <p role="alert" className="text-sm text-destructive">
+              {t(error ?? "")}
+            </p>
           ) : null}
           <Button type="submit" className="w-full" disabled={pending}>
             {pending ? t("Đang tạo tài khoản...") : t("Đăng ký")}
           </Button>
         </form>
-        <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
-          <Separator className="flex-1" />
-          <span>{t("hoặc")}</span>
-          <Separator className="flex-1" />
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={() => void onGoogle()}
-          disabled={pending}
-        >
-          {t("Đăng ký với Google")}{" "}
-        </Button>
+        {googleEnabled && (
+          <>
+            <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
+              <Separator className="flex-1" />
+              <span>{t("hoặc")}</span>
+              <Separator className="flex-1" />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => void onGoogle()}
+              disabled={pending}
+            >
+              {t("Đăng ký với Google")}{" "}
+            </Button>
+          </>
+        )}
       </CardContent>
       <CardFooter className="justify-center text-sm text-muted-foreground">
         {t("Đã có tài khoản?")}{" "}
-        <Link href="/login" className="ml-1 text-primary hover:underline">
+        <Link
+          href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`}
+          className="ml-1 text-primary hover:underline"
+        >
           {t("Đăng nhập")}{" "}
         </Link>
       </CardFooter>

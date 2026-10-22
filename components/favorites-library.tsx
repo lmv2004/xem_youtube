@@ -1,28 +1,26 @@
 "use client";
-import { useTranslations } from "@/components/locale-provider";
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  BookmarkPlus,
+  Bookmark,
   FolderOpen,
   Heart,
   LayoutGrid,
   Library,
   List,
-  Play,
   Plus,
   Search,
-  SlidersHorizontal,
-  Sparkles,
-  Trash2,
 } from "lucide-react";
 import type { VideoItem } from "@/lib/types";
+import { useTranslations } from "@/components/locale-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { VideoGrid, type ViewMode } from "@/components/video-grid";
 import { NewCollectionForm } from "@/components/new-collection-form";
+import { useWatchLater } from "@/hooks/use-watch-later";
 import { cn } from "@/lib/utils";
 
 type CollectionWithItems = {
@@ -33,337 +31,330 @@ type CollectionWithItems = {
   updatedAt: string;
   thumbnails: string[];
 };
-
-type Props = {
-  collections: CollectionWithItems[];
-  savedVideos: VideoItem[];
-};
+type Props = { collections: CollectionWithItems[]; savedVideos: VideoItem[] };
 
 export function FavoritesLibrary({ collections, savedVideos }: Props) {
   const t = useTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialTab =
+  const activeTab =
     searchParams.get("tab") === "collections" ? "collections" : "favorites";
-
-  const [activeTab, setActiveTab] = useState<"favorites" | "collections">(
-    initialTab,
-  );
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "title">("newest");
   const [view, setView] = useState<ViewMode>("grid");
   const [newCollectionOpen, setNewCollectionOpen] = useState(false);
+  const watchLater = useWatchLater();
+  const query = searchQuery.trim().toLocaleLowerCase();
 
-  // Filter and sort saved videos
   const filteredVideos = useMemo(() => {
-    let result = [...savedVideos];
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (v) =>
-          v.title.toLowerCase().includes(q) ||
-          v.channel.toLowerCase().includes(q),
-      );
-    }
-
-    if (sortBy === "title") {
-      result.sort((a, b) => a.title.localeCompare(b.title));
-    } else if (sortBy === "oldest") {
-      result.reverse();
-    }
-
+    const result = savedVideos.filter(
+      (item) =>
+        !query ||
+        `${item.title} ${item.channel}`.toLocaleLowerCase().includes(query),
+    );
+    if (sortBy === "title")
+      result.sort((a, b) => a.title.localeCompare(b.title, t.locale));
+    if (sortBy === "oldest") result.reverse();
     return result;
-  }, [savedVideos, searchQuery, sortBy]);
+  }, [savedVideos, query, sortBy, t.locale]);
+
+  const filteredCollections = useMemo(() => {
+    const result = collections.filter(
+      (collection) =>
+        !query || collection.name.toLocaleLowerCase().includes(query),
+    );
+    if (sortBy === "title")
+      result.sort((a, b) => a.name.localeCompare(b.name, t.locale));
+    if (sortBy === "oldest") result.reverse();
+    return result;
+  }, [collections, query, sortBy, t.locale]);
+
+  function tabUrl(tab: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tab);
+    return `/favorites?${params}`;
+  }
 
   return (
-    <div className="space-y-7 animate-in-up">
-      {/* Top Header & Tabs Bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-white/10 pb-5">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-              {t("Thư viện cá nhân")}{" "}
-            </h1>
-            <span className="rounded-full border border-purple-500/30 bg-purple-500/10 px-2.5 py-0.5 text-xs font-bold text-purple-400">
-              {t("Bộ sưu tập")}{" "}
-            </span>
-          </div>
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            {t(
-              "Lưu trữ, phân loại theo danh sách chủ đề và thưởng thức video chất lượng cao mọi lúc.",
-            )}{" "}
+    <div className="space-y-6">
+      <header className="flex flex-col justify-between gap-4 border-b pb-6 sm:flex-row sm:items-start">
+        <div className="space-y-2">
+          <p className="flex items-center gap-2 text-sm font-medium text-primary">
+            <Library className="h-4 w-4" />
+            {t("Thư viện của bạn")}
+          </p>
+          <h1 className="font-display text-3xl font-bold tracking-tight">
+            {t("Thư viện cá nhân")}
+          </h1>
+          <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
+            {t("Tất cả video đã lưu và bộ sưu tập, gọn trong một nơi.")}
           </p>
         </div>
+        <Button asChild variant="outline">
+          <Link href="/watch-later">
+            <Bookmark className="mr-2 h-4 w-4" />
+            {t("Xem sau")}
+          </Link>
+        </Button>
+      </header>
 
-        {/* Tab Switcher */}
-        <div className="flex items-center gap-1.5 rounded-2xl border border-white/10 bg-card/80 p-1.5 backdrop-blur-xl self-start sm:self-auto shadow-lg">
-          <button
-            type="button"
-            onClick={() => setActiveTab("favorites")}
+      <nav aria-label={t("Thư viện cá nhân")} className="flex flex-wrap gap-2">
+        {[
+          {
+            value: "favorites",
+            icon: Heart,
+            label: t("Yêu thích"),
+            count: savedVideos.length,
+          },
+          {
+            value: "collections",
+            icon: FolderOpen,
+            label: t("Bộ sưu tập"),
+            count: collections.length,
+          },
+        ].map(({ value, icon: Icon, label, count }) => (
+          <Link
+            key={value}
+            href={tabUrl(value)}
+            prefetch={false}
+            scroll={false}
+            onClick={(event) => {
+              if (
+                event.metaKey ||
+                event.ctrlKey ||
+                event.shiftKey ||
+                event.altKey ||
+                event.button !== 0
+              )
+                return;
+              event.preventDefault();
+              // Native history updates useSearchParams without another database render.
+              window.history.pushState(null, "", tabUrl(value));
+            }}
+            aria-current={activeTab === value ? "page" : undefined}
             className={cn(
-              "flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all duration-200",
-              activeTab === "favorites"
-                ? "bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-[0_0_15px_rgba(255,42,84,0.4)]"
-                : "text-muted-foreground hover:text-foreground hover:bg-white/5",
+              "inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 text-sm font-medium transition-colors",
+              activeTab === value
+                ? "border-primary bg-primary text-primary-foreground"
+                : "bg-card text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           >
-            <Heart
+            <Icon className="h-4 w-4" />
+            {label}
+            <span
               className={cn(
-                "h-3.5 w-3.5",
-                activeTab === "favorites" && "fill-white",
+                "rounded-full px-2 text-xs",
+                activeTab === value ? "bg-primary-foreground/15" : "bg-muted",
               )}
-            />
-            <span>
-              {t("Video yêu thích (")}
-              {savedVideos.length})
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("collections")}
-            className={cn(
-              "flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all duration-200",
-              activeTab === "collections"
-                ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-[0_0_15px_rgba(139,92,246,0.4)]"
-                : "text-muted-foreground hover:text-foreground hover:bg-white/5",
-            )}
-          >
-            <Library className="h-3.5 w-3.5" />
-            <span>
-              {t("Bộ sưu tập (")}
-              {collections.length})
-            </span>
-          </button>
-        </div>
-      </div>
-
-      {/* Tab 1: Video yêu thích */}
-      {activeTab === "favorites" && (
-        <div className="space-y-6">
-          {/* Controls Bar: Search & Sort & View */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t("Lọc video trong yêu thích...")}
-                className="h-10 rounded-xl border-white/10 bg-white/5 pl-9 text-xs sm:text-sm focus:border-rose-500/50"
-              />
-            </div>
-
-            <div className="flex items-center gap-2 self-end sm:self-auto">
-              <select
-                value={sortBy}
-                onChange={(e) =>
-                  setSortBy(e.target.value as "newest" | "oldest" | "title")
-                }
-                className="h-10 rounded-xl border border-white/10 bg-card/80 px-3 text-xs font-semibold text-foreground backdrop-blur-md focus:outline-none focus:border-rose-500/50"
-              >
-                <option value="newest">{t("Mới lưu nhất")}</option>
-                <option value="oldest">{t("Lưu cũ nhất")}</option>
-                <option value="title">{t("Tên video (A-Z)")}</option>
-              </select>
-
-              <div className="flex items-center gap-0.5 rounded-xl border border-white/10 bg-card/80 p-0.5 backdrop-blur-md">
-                <button
-                  type="button"
-                  onClick={() => setView("grid")}
-                  className={cn(
-                    "grid h-8 w-8 place-items-center rounded-lg transition",
-                    view === "grid"
-                      ? "bg-white/10 text-foreground"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                  title={t("Chế độ lưới")}
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setView("list")}
-                  className={cn(
-                    "grid h-8 w-8 place-items-center rounded-lg transition",
-                    view === "list"
-                      ? "bg-white/10 text-foreground"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                  title={t("Chế độ danh sách")}
-                >
-                  <List className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Videos Grid */}
-          {filteredVideos.length === 0 ? (
-            <div className="p-12 text-center rounded-3xl border border-white/10 bg-card/50 backdrop-blur-2xl space-y-4">
-              <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-rose-500/10 text-rose-500">
-                <Heart className="h-7 w-7" />
-              </div>
-              <div className="space-y-1">
-                <p className="font-display text-lg font-bold text-foreground">
-                  {savedVideos.length === 0
-                    ? t("Chưa có video yêu thích nào")
-                    : t("Không tìm thấy video phù hợp")}
-                </p>
-                <p className="text-xs sm:text-sm text-muted-foreground max-w-sm mx-auto">
-                  {savedVideos.length === 0
-                    ? t(
-                        "Nhấn nút 'Thích' hoặc biểu tượng trái tim ở bất kỳ video nào để lưu vào thư viện xem lại sau.",
-                      )
-                    : t(
-                        "Hãy thử đổi từ khóa tìm kiếm trong danh sách đã lưu của bạn.",
-                      )}
-                </p>
-              </div>
-              {savedVideos.length === 0 && (
-                <Button
-                  asChild
-                  size="sm"
-                  className="rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 text-white font-semibold shadow-[0_0_20px_rgba(255,42,84,0.4)]"
-                >
-                  <Link href="/">{t("Khám phá video ngay")}</Link>
-                </Button>
-              )}
-            </div>
-          ) : (
-            <VideoGrid
-              items={filteredVideos}
-              view={view}
-              onPlay={(item) => router.push(`/watch/${item.id}`)}
-            />
-          )}
-        </div>
-      )}
-
-      {/* Tab 2: Danh sách bộ sưu tập */}
-      {activeTab === "collections" && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="font-display text-lg font-bold text-foreground">
-              {t("Danh sách bộ sưu tập của bạn")}
-            </h2>
-            <Button
-              size="sm"
-              onClick={() => setNewCollectionOpen(!newCollectionOpen)}
-              className="rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 font-semibold text-white shadow-[0_0_20px_rgba(139,92,246,0.4)] gap-1.5"
             >
-              <Plus className="h-4 w-4" />
-              <span>{t("Tạo bộ sưu tập")}</span>
-            </Button>
-          </div>
+              {count}
+            </span>
+          </Link>
+        ))}
+      </nav>
 
-          {/* New Collection Form Drawer */}
-          {newCollectionOpen && (
-            <div className="p-5 rounded-3xl border border-purple-500/30 bg-card/90 shadow-2xl backdrop-blur-2xl animate-in-up space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="font-display font-bold text-sm text-foreground">
-                  {t("Tạo bộ sưu tập mới")}
-                </h3>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            aria-label={
+              activeTab === "favorites"
+                ? t("Lọc video trong yêu thích...")
+                : t("Tìm bộ sưu tập")
+            }
+            placeholder={
+              activeTab === "favorites"
+                ? t("Lọc video trong yêu thích...")
+                : t("Tìm bộ sưu tập")
+            }
+            className="h-11 bg-card pl-10"
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={sortBy}
+            onChange={(event) => setSortBy(event.target.value as typeof sortBy)}
+            aria-label={t("Sắp xếp thư viện")}
+            className="h-11 flex-1 rounded-xl border bg-card px-3 text-sm sm:flex-none"
+          >
+            <option value="newest">{t("Mới lưu nhất")}</option>
+            <option value="oldest">{t("Lưu cũ nhất")}</option>
+            <option value="title">{t("Tên (A–Z)")}</option>
+          </select>
+          {activeTab === "favorites" && (
+            <div className="flex rounded-xl border bg-card p-0.5">
+              {[
+                {
+                  value: "grid" as const,
+                  icon: LayoutGrid,
+                  label: t("Chế độ lưới"),
+                },
+                {
+                  value: "list" as const,
+                  icon: List,
+                  label: t("Chế độ danh sách"),
+                },
+              ].map(({ value, icon: Icon, label }) => (
                 <button
+                  key={value}
                   type="button"
-                  onClick={() => setNewCollectionOpen(false)}
-                  className="text-xs text-muted-foreground hover:text-foreground"
+                  onClick={() => setView(value)}
+                  aria-label={label}
+                  aria-pressed={view === value}
+                  className={cn(
+                    "grid h-10 w-10 place-items-center rounded-lg",
+                    view === value
+                      ? "bg-muted text-foreground"
+                      : "text-muted-foreground hover:bg-muted",
+                  )}
                 >
-                  {t("Đóng")}{" "}
+                  <Icon className="h-4 w-4" />
                 </button>
-              </div>
-              <NewCollectionForm />
-            </div>
-          )}
-
-          {collections.length === 0 ? (
-            <div className="p-12 text-center rounded-3xl border border-white/10 bg-card/50 backdrop-blur-2xl space-y-4">
-              <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-purple-500/10 text-purple-400">
-                <Library className="h-7 w-7" />
-              </div>
-              <div className="space-y-1">
-                <p className="font-display text-lg font-bold text-foreground">
-                  {t("Bạn chưa có bộ sưu tập nào")}
-                </p>
-                <p className="text-xs sm:text-sm text-muted-foreground max-w-sm mx-auto">
-                  {t(
-                    "Tạo các bộ sưu tập theo chủ đề (Học lập trình, Nhạc chill, Phim hay...) để sắp xếp video gọn gàng.",
-                  )}{" "}
-                </p>
-              </div>
-              <Button
-                size="sm"
-                onClick={() => setNewCollectionOpen(true)}
-                className="rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold shadow-[0_0_20px_rgba(139,92,246,0.4)]"
-              >
-                {t("Tạo bộ sưu tập đầu tiên")}{" "}
-              </Button>
-            </div>
-          ) : (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {collections.map((c) => (
-                <Link
-                  key={c.id}
-                  href={`/favorites/${c.id}`}
-                  className="group flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-card/65 transition-all duration-300 hover:border-purple-500/40 hover:bg-card/90 hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/50"
-                >
-                  {/* Collage Cover from first 4 thumbnails */}
-                  <div className="relative aspect-video w-full bg-black/60 overflow-hidden">
-                    {c.thumbnails.length >= 4 ? (
-                      <div className="grid grid-cols-2 grid-rows-2 h-full w-full gap-0.5">
-                        {c.thumbnails.slice(0, 4).map((thumb, idx) => (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            key={idx}
-                            src={thumb}
-                            alt=""
-                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          />
-                        ))}
-                      </div>
-                    ) : c.thumbnails.length > 0 ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={c.thumbnails[0]}
-                        alt=""
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="grid h-full w-full place-items-center text-muted-foreground">
-                        <FolderOpen className="h-9 w-9 opacity-40 text-purple-400" />
-                      </div>
-                    )}
-
-                    {/* Gradient overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80" />
-
-                    {/* Overlay badge with video count */}
-                    <div className="absolute bottom-3 right-3 rounded-lg border border-white/20 bg-black/75 px-2.5 py-0.5 text-xs font-bold text-white backdrop-blur-md">
-                      {c.itemCount} video
-                    </div>
-                  </div>
-
-                  <div className="p-4 flex flex-col justify-between flex-1">
-                    <div>
-                      <h3 className="font-display font-bold text-base text-foreground group-hover:text-purple-400 transition-colors truncate">
-                        {c.name}
-                      </h3>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {t("Cập nhật")}{" "}
-                        {new Date(c.updatedAt).toLocaleDateString(t.locale)}
-                      </p>
-                    </div>
-
-                    <div className="mt-4 flex items-center justify-between pt-3 border-t border-white/10 text-xs text-muted-foreground">
-                      <span className="font-semibold text-purple-400 group-hover:underline">
-                        {t("Mở bộ sưu tập")}{" "}
-                      </span>
-                      <Play className="h-3.5 w-3.5 text-muted-foreground group-hover:text-purple-400 group-hover:translate-x-0.5 transition" />
-                    </div>
-                  </div>
-                </Link>
               ))}
             </div>
           )}
+          {activeTab === "collections" && (
+            <Button
+              onClick={() => setNewCollectionOpen(!newCollectionOpen)}
+              aria-expanded={newCollectionOpen}
+              aria-controls="new-collection"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              {t("Tạo bộ sưu tập")}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {activeTab === "collections" && newCollectionOpen && (
+        <section
+          id="new-collection"
+          className="space-y-4 rounded-2xl border bg-card p-5"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-semibold">{t("Tạo bộ sưu tập mới")}</h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setNewCollectionOpen(false)}
+            >
+              {t("Đóng")}
+            </Button>
+          </div>
+          <NewCollectionForm />
+        </section>
+      )}
+
+      <p role="status" className="text-sm text-muted-foreground">
+        {activeTab === "favorites"
+          ? t("{count} video đã lưu", { count: filteredVideos.length })
+          : t("{count} bộ sưu tập", { count: filteredCollections.length })}
+      </p>
+
+      {activeTab === "favorites" ? (
+        filteredVideos.length > 0 ? (
+          <VideoGrid
+            items={filteredVideos}
+            view={view}
+            onPlay={(item) => router.push(`/watch/${item.id}`)}
+            onToggleWatchLater={watchLater.toggle}
+            isInWatchLater={watchLater.has}
+          />
+        ) : (
+          <div className="space-y-4 rounded-2xl border border-dashed bg-card px-5 py-14 text-center">
+            <Heart className="mx-auto h-8 w-8 text-primary" />
+            <h2 className="text-xl font-semibold">
+              {savedVideos.length === 0
+                ? t("Chưa có video yêu thích nào")
+                : t("Không tìm thấy video phù hợp")}
+            </h2>
+            <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
+              {savedVideos.length === 0
+                ? t(
+                    "Nhấn nút 'Thích' hoặc biểu tượng trái tim ở bất kỳ video nào để lưu vào thư viện xem lại sau.",
+                  )
+                : t(
+                    "Hãy thử đổi từ khóa tìm kiếm trong danh sách đã lưu của bạn.",
+                  )}
+            </p>
+            {savedVideos.length === 0 ? (
+              <Button asChild>
+                <Link href="/">{t("Khám phá video ngay")}</Link>
+              </Button>
+            ) : (
+              <Button variant="outline" onClick={() => setSearchQuery("")}>
+                {t("Xóa bộ lọc")}
+              </Button>
+            )}
+          </div>
+        )
+      ) : filteredCollections.length === 0 ? (
+        <div className="space-y-4 rounded-2xl border border-dashed bg-card px-5 py-14 text-center">
+          <FolderOpen className="mx-auto h-8 w-8 text-primary" />
+          <h2 className="text-xl font-semibold">
+            {collections.length === 0
+              ? t("Bạn chưa có bộ sưu tập nào")
+              : t("Không tìm thấy bộ sưu tập")}
+          </h2>
+          <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
+            {t(
+              "Tạo các bộ sưu tập theo chủ đề (Học lập trình, Nhạc chill, Phim hay...) để sắp xếp video gọn gàng.",
+            )}
+          </p>
+          <Button
+            variant={collections.length === 0 ? "default" : "outline"}
+            onClick={() =>
+              collections.length === 0
+                ? setNewCollectionOpen(true)
+                : setSearchQuery("")
+            }
+          >
+            {collections.length === 0
+              ? t("Tạo bộ sưu tập đầu tiên")
+              : t("Xóa bộ lọc")}
+          </Button>
+        </div>
+      ) : (
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredCollections.map((collection) => (
+            <Link
+              key={collection.id}
+              href={`/favorites/${collection.id}`}
+              className="group overflow-hidden rounded-2xl border bg-card transition-colors hover:border-primary/50"
+            >
+              <div className="relative aspect-video overflow-hidden bg-muted">
+                {collection.thumbnails.length ? (
+                  <Image
+                    unoptimized
+                    width={640}
+                    height={360}
+                    src={collection.thumbnails[0]}
+                    alt=""
+                    loading="lazy"
+                    className="h-full w-full object-cover transition-transform group-hover:scale-105 motion-reduce:transform-none"
+                  />
+                ) : (
+                  <div className="grid h-full place-items-center">
+                    <FolderOpen className="h-10 w-10 text-muted-foreground" />
+                  </div>
+                )}
+                <span className="absolute bottom-2 right-2 rounded-lg bg-black/80 px-2 py-1 text-xs font-medium text-white">
+                  {t("{count} video", { count: collection.itemCount })}
+                </span>
+              </div>
+              <div className="space-y-2 p-4">
+                <h2 className="truncate font-semibold group-hover:text-primary">
+                  {collection.name}
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  {t("Cập nhật")}{" "}
+                  {new Date(collection.updatedAt).toLocaleDateString(t.locale)}
+                </p>
+              </div>
+            </Link>
+          ))}
         </div>
       )}
     </div>

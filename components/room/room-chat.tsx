@@ -1,8 +1,9 @@
 "use client";
 import { useTranslations } from "@/components/locale-provider";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Send, Smile } from "lucide-react";
 import confetti from "canvas-confetti";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { cn } from "@/lib/utils";
 type Props = {
   messages: RoomMessageDto[];
   canChat: boolean;
+  connectionReady?: boolean;
   currentUserId?: string | null;
   currentUser?: { name?: string | null; image?: string | null };
   onSend: (body: string, messageId: string) => Promise<boolean>;
@@ -33,11 +35,13 @@ function timeOf(iso: string, locale: string) {
 export function RoomChat({
   messages,
   canChat,
+  connectionReady = true,
   currentUserId,
   currentUser,
   onSend,
 }: Props) {
   const t = useTranslations();
+  const pathname = usePathname();
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState<OutboxMessage[]>([]);
   const draftRef = useRef("");
@@ -79,7 +83,7 @@ export function RoomChat({
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canChat) return;
+    if (!canChat || !connectionReady) return;
     if (outboxRef.current?.enqueue(draftRef.current)) {
       updateDraft("");
       pinnedRef.current = true;
@@ -87,8 +91,12 @@ export function RoomChat({
   };
 
   const handleEmojiClick = (emoji: string) => {
-    if (!canChat || !outboxRef.current?.enqueue(emoji)) return;
-    if (emoji === "🎉" || emoji === "🔥" || emoji === "❤️") {
+    if (!canChat || !connectionReady || !outboxRef.current?.enqueue(emoji))
+      return;
+    if (
+      (emoji === "🎉" || emoji === "🔥" || emoji === "❤️") &&
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
       confetti({
         particleCount: 25,
         spread: 50,
@@ -97,40 +105,51 @@ export function RoomChat({
     }
   };
 
-  const confirmed = new Set(messages.map((m) => m.id));
-  const timeline: (RoomMessageDto & { pending?: OutboxMessage })[] = [
-    ...messages,
-    ...pending
-      .filter((m) => !confirmed.has(m.messageId))
-      .map((m) => ({
-        id: m.messageId,
-        body: m.body,
-        createdAt: m.createdAt,
-        author: {
-          id: currentUserId ?? "",
-          name: currentUser?.name ?? null,
-          image: currentUser?.image ?? null,
-        },
-        pending: m,
-      })),
-  ].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const timeline = useMemo(() => {
+    const confirmed = new Set(messages.map((message) => message.id));
+    const items: (RoomMessageDto & { pending?: OutboxMessage })[] = [
+      ...messages,
+      ...pending
+        .filter((message) => !confirmed.has(message.messageId))
+        .map((message) => ({
+          id: message.messageId,
+          body: message.body,
+          createdAt: message.createdAt,
+          author: {
+            id: currentUserId ?? "",
+            name: currentUser?.name ?? null,
+            image: currentUser?.image ?? null,
+          },
+          pending: message,
+        })),
+    ];
+    return items.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  }, [messages, pending, currentUserId, currentUser?.name, currentUser?.image]);
   return (
-    <div className="flex h-[440px] flex-col rounded-3xl border border-white/10 bg-card/80 shadow-2xl backdrop-blur-2xl lg:h-[580px] overflow-hidden">
+    <div className="flex h-[min(580px,70dvh)] min-h-[360px] flex-col overflow-hidden rounded-2xl border border-border bg-card lg:h-[620px]">
       {/* Header */}
-      <div className="border-b border-white/10 px-4 py-3.5 flex items-center justify-between">
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div>
-          <h2 className="font-display text-sm font-bold text-foreground">
+          <h2 className="text-sm font-semibold text-foreground">
             {t("Trò chuyện trực tiếp")}
           </h2>
-          <p className="text-[11px] text-muted-foreground font-medium">
+          <p className="text-xs text-muted-foreground">
             {messages.length > 0
               ? t("{p0} tin nhắn", { p0: messages.length })
               : t("Phòng đang sẵn sàng")}
           </p>
         </div>
-        <span className="relative flex h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+        <span
+          className="flex items-center gap-1.5 text-xs text-muted-foreground"
+          role="status"
+        >
+          <span
+            className={cn(
+              "h-2 w-2 rounded-full",
+              connectionReady ? "bg-emerald-500" : "bg-amber-500",
+            )}
+          />
+          {connectionReady ? t("Đã đồng bộ") : t("Đang đồng bộ lại")}
         </span>
       </div>
 
@@ -138,7 +157,10 @@ export function RoomChat({
       <div
         ref={listRef}
         onScroll={onScroll}
-        className="flex-1 space-y-3.5 overflow-y-auto px-4 py-3.5"
+        className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4"
+        role="log"
+        aria-label={t("Trò chuyện trực tiếp")}
+        aria-relevant="additions"
       >
         {messages.length === 0 && pending.length === 0 ? (
           <div className="pt-16 text-center space-y-1">
@@ -146,54 +168,37 @@ export function RoomChat({
             <p className="text-xs font-semibold text-foreground">
               {t("Chưa có ai nhắn tin")}
             </p>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {t("Hãy gửi tin nhắn đầu tiên để khuấy động phòng nhé!")}{" "}
             </p>
           </div>
         ) : (
           timeline.map((m) => {
             const mine = m.author.id === currentUserId;
-            const confirmed = new Set(messages.map((m) => m.id));
-            const timeline: (RoomMessageDto & { pending?: OutboxMessage })[] = [
-              ...messages,
-              ...pending
-                .filter((m) => !confirmed.has(m.messageId))
-                .map((m) => ({
-                  id: m.messageId,
-                  body: m.body,
-                  createdAt: m.createdAt,
-                  author: {
-                    id: currentUserId ?? "",
-                    name: currentUser?.name ?? null,
-                    image: currentUser?.image ?? null,
-                  },
-                  pending: m,
-                })),
-            ].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
             return (
               <div
                 key={m.id}
                 className={cn("flex gap-2.5", mine && "flex-row-reverse")}
               >
-                <Avatar className="h-7 w-7 shrink-0 ring-1 ring-white/10">
+                <Avatar className="h-7 w-7 shrink-0 ring-1 ring-border">
                   <AvatarImage src={m.author.image ?? ""} alt="" />
-                  <AvatarFallback className="text-[10px] font-bold bg-gradient-to-br from-purple-500 to-rose-500 text-white">
+                  <AvatarFallback className="bg-muted text-xs font-medium text-foreground">
                     {initialOf(m.author.name)}
                   </AvatarFallback>
                 </Avatar>
                 <div
                   className={cn("min-w-0 max-w-[80%]", mine && "text-right")}
                 >
-                  <p className="text-[10px] text-muted-foreground font-medium">
+                  <p className="text-xs text-muted-foreground">
                     {mine ? t("Bạn") : (m.author.name ?? t("Người dùng"))} ·{" "}
                     {timeOf(m.createdAt, t.locale)}
                   </p>
                   <p
                     className={cn(
-                      "mt-1 inline-block whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-xs sm:text-sm font-medium",
+                      "mt-1 inline-block max-w-full whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-sm leading-relaxed [overflow-wrap:anywhere]",
                       mine
-                        ? "bg-gradient-to-r from-purple-600 to-rose-600 text-white shadow-md shadow-purple-500/20"
-                        : "bg-white/5 border border-white/10 text-foreground",
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-foreground",
                     )}
                   >
                     {m.body}
@@ -201,7 +206,7 @@ export function RoomChat({
                   {m.pending && (
                     <p
                       role="status"
-                      className="mt-1 text-[10px] text-muted-foreground"
+                      className="mt-1 text-xs text-muted-foreground"
                     >
                       {m.pending.status === "failed"
                         ? t("Chưa xác nhận gửi thành công")
@@ -230,17 +235,17 @@ export function RoomChat({
       </div>
 
       {/* Footer Reaction Bar & Input */}
-      <div className="border-t border-white/10 p-3 space-y-2.5 bg-black/20">
+      <div className="space-y-2 border-t border-border bg-card p-3">
         {canChat ? (
           <>
-            <div className="flex items-center gap-1 overflow-x-auto pb-0.5 text-base scrollbar-none">
+            <div className="flex items-center gap-1 overflow-x-auto text-base">
               {["👍", "❤️", "😂", "🔥", "🍿", "👏", "🎉", "😮"].map((emoji) => (
                 <button
-                  disabled={pending.length >= 20}
+                  disabled={!connectionReady || pending.length >= 20}
                   key={emoji}
                   type="button"
                   onClick={() => void handleEmojiClick(emoji)}
-                  className="rounded-lg p-1.5 transition hover:bg-white/10 hover:scale-125 duration-150"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40"
                   title={t("Gửi {p0}", { p0: emoji })}
                 >
                   {emoji}
@@ -262,14 +267,20 @@ export function RoomChat({
                 aria-label={t("Tin nhắn")}
                 placeholder={t("Nhập tin nhắn...")}
                 maxLength={MAX_MESSAGE_LENGTH}
-                className="h-10 rounded-xl border-white/10 bg-white/5 text-xs sm:text-sm focus:border-purple-500/50"
+                className="h-11 min-w-0 flex-1 rounded-xl border-border bg-background text-sm"
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && event.nativeEvent.isComposing)
+                    event.preventDefault();
+                }}
               />
               <Button
                 type="submit"
                 size="icon"
                 aria-label={t("Gửi tin nhắn")}
-                disabled={pending.length >= 20 || !draft.trim()}
-                className="rounded-xl bg-purple-600 hover:bg-purple-500 text-white shadow-[0_0_12px_rgba(139,92,246,0.4)] shrink-0"
+                disabled={
+                  !connectionReady || pending.length >= 20 || !draft.trim()
+                }
+                className="h-11 w-11 shrink-0 rounded-xl"
               >
                 <Send className="h-4 w-4" />
               </Button>
@@ -278,8 +289,8 @@ export function RoomChat({
         ) : (
           <p className="text-center text-xs text-muted-foreground py-1">
             <Link
-              href="/login"
-              className="font-bold text-rose-400 hover:underline"
+              href={`/login?callbackUrl=${encodeURIComponent(pathname)}`}
+              className="font-semibold text-primary hover:underline"
             >
               {t("Đăng nhập")}{" "}
             </Link>{" "}

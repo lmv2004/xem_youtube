@@ -2,16 +2,16 @@ import { getTranslator } from "@/lib/locale-server";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
-import { GradientMesh } from "@/components/site/gradient-mesh";
 import { getVideoById, getRelatedVideos } from "@/lib/youtube";
 import { MobileNav } from "@/components/site/mobile-nav";
 import { WatchView } from "@/components/watch-view";
+import { parseWatchTimestamp } from "@/lib/watch-progress";
 
 export const dynamic = "force-dynamic";
 
 type Params = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ loop?: string }>;
+  searchParams: Promise<{ loop?: string; t?: string; start?: string }>;
 };
 
 export async function generateMetadata({ params }: Params) {
@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: Params) {
 export default async function WatchPage({ params, searchParams }: Params) {
   const t = await getTranslator();
   const { id } = await params;
-  const { loop } = await searchParams;
+  const { loop, t: timestamp, start } = await searchParams;
   if (!/^[A-Za-z0-9_-]{11}$/.test(id)) notFound();
   const wantLoop = loop === "1" || loop === "true";
 
@@ -74,7 +74,6 @@ export default async function WatchPage({ params, searchParams }: Params) {
 
   return (
     <div className="flex min-h-screen flex-col pb-20 lg:pb-0">
-      <GradientMesh />
       <SiteHeader />
       <main
         id="main-content"
@@ -92,9 +91,11 @@ export default async function WatchPage({ params, searchParams }: Params) {
           </p>
         )}
         <WatchView
+          key={video.id}
           video={video}
           relatedVideos={relatedVideos}
           loop={wantLoop}
+          startTimestamp={parseWatchTimestamp(timestamp ?? start ?? null)}
         />
       </main>
       <SiteFooter />

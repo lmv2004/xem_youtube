@@ -87,7 +87,7 @@ export function RoomSearch({
   };
 
   return (
-    <div className="flex h-[420px] flex-col rounded-2xl border border-border bg-card lg:h-[560px]">
+    <div className="flex h-[min(580px,70dvh)] min-h-[360px] flex-col overflow-hidden rounded-2xl border border-border bg-card lg:h-[620px]">
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -99,12 +99,14 @@ export function RoomSearch({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t("Tìm video để phát trong phòng...")}
-          className="h-9"
+          className="h-11"
+          aria-label={t("Tìm video")}
         />
         <Button
           type="submit"
           size="icon"
-          className="h-9 w-9"
+          className="h-11 w-11 shrink-0"
+          aria-label={t("Tìm video")}
           disabled={loading}
         >
           {loading ? (
@@ -129,7 +131,7 @@ export function RoomSearch({
         {heading}
       </div>
 
-      <div className="flex-1 space-y-2 overflow-y-auto p-3">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-3">
         {error ? (
           <p className="pt-6 text-center text-sm text-muted-foreground">
             {t(error ?? "")}
@@ -162,10 +164,10 @@ export function RoomSearch({
                 ) : null}
 
                 <div className="flex min-w-0 flex-1 flex-col">
-                  <p className="line-clamp-2 text-xs font-medium leading-snug">
+                  <p className="line-clamp-2 text-sm font-medium leading-snug">
                     {item.title}
                   </p>
-                  <p className="truncate text-[11px] text-muted-foreground">
+                  <p className="truncate text-xs text-muted-foreground">
                     {item.channel}
                     {item.durationSeconds > 0
                       ? " · " + formatDuration(item.durationSeconds)
@@ -177,7 +179,7 @@ export function RoomSearch({
                       type="button"
                       size="sm"
                       variant="secondary"
-                      className="h-7 text-xs"
+                      className="min-h-9 text-xs"
                       disabled={disabled || pickingId !== null}
                       onClick={() => void pick(item, true)}
                     >
@@ -193,7 +195,7 @@ export function RoomSearch({
                         type="button"
                         size="sm"
                         variant="outline"
-                        className="h-7 text-xs"
+                        className="min-h-9 text-xs"
                         disabled={disabled || pickingId !== null}
                         onClick={() => void pick(item)}
                       >

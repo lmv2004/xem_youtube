@@ -25,7 +25,7 @@ import {
   type ViewMode,
 } from "@/components/video-grid";
 import { WatchLaterPanel } from "@/components/watch-later-panel";
-import { ContinueWatchingRail } from "@/components/home-rails";
+import { ContinueWatchingRail } from "@/components/continue-watching";
 import { OnboardingModal } from "@/components/onboarding-modal";
 import { useWatchLater } from "@/hooks/use-watch-later";
 import { useRecentSearches } from "@/hooks/use-recent-searches";
@@ -224,24 +224,19 @@ export function HeroExplorer() {
 
   return (
     <div className="space-y-7 sm:space-y-9">
-      <section className="discovery-intro rounded-3xl border border-border p-5 sm:p-8">
-        <div className="mb-6 flex items-start justify-between gap-4">
+      <section className="discovery-intro rounded-2xl border border-border p-4 sm:p-5">
+        <div className="mb-4 flex items-start justify-between gap-4">
           <div>
             {!topic && (
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-primary">
                 {t("Khám phá mỗi ngày")}{" "}
               </p>
             )}
-            <h1 className="font-display text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+            <h1 className="font-display text-2xl font-semibold leading-tight tracking-tight sm:text-3xl">
               {topic ? (
                 t("Tìm kiếm video")
               ) : (
-                <>
-                  {t("Một video hay.")} <br />
-                  <span className="text-muted-foreground">
-                    {t("Một khoảng nghỉ xứng đáng.")}{" "}
-                  </span>
-                </>
+                <>{t("Khám phá điều bạn thích")}</>
               )}
             </h1>
             {!topic && (
@@ -367,9 +362,7 @@ export function HeroExplorer() {
       />
 
       {/* Rail "Xem tiếp" chỉ hiển thị ở trang chủ trống, giúp quay lại nhanh. */}
-      {!topic && !loading && watchLater.items.length > 0 && (
-        <ContinueWatchingRail items={watchLater.items} />
-      )}
+      {!topic && <ContinueWatchingRail />}
       <section
         aria-labelledby="feed-heading"
         aria-busy={loading}

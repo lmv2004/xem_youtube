@@ -113,12 +113,14 @@ export function AppSidebar() {
       return pathname === path && currentTab === query;
     }
     if (href === "/favorites") {
-      return pathname === "/favorites" && !currentTab;
+      return (
+        pathname === "/favorites" && (!currentTab || currentTab === "favorites")
+      );
     }
     if (href === "/account") {
       return pathname === "/account" && !currentTab;
     }
-    return pathname.startsWith(href);
+    return pathname === href || pathname.startsWith(`${href}/`);
   };
 
   return (
