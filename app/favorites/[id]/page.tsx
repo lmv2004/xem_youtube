@@ -48,6 +48,7 @@ export default async function CollectionDetailPage({
       </Glass>
 
       <CollectionManager
+        ownerId={session.user.id}
         collectionId={collection.id}
         collectionName={collection.name}
         items={collection.items.map((it) => ({

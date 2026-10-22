@@ -25,9 +25,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { formatDuration } from "@/lib/format";
+import { useStartPlaylist } from "@/hooks/use-start-playlist";
 
 export function WatchLaterLibrary() {
   const t = useTranslations();
+  const startPlaylist = useStartPlaylist();
   const { items, hydrated, remove, clear, move } = useWatchLater();
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("custom");
@@ -65,11 +67,9 @@ export function WatchLaterLibrary() {
         </div>
         <div className="flex flex-wrap gap-2">
           {filtered.length > 0 && (
-            <Button asChild>
-              <Link href={`/watch/${filtered[0].id}`}>
+            <Button onClick={() => startPlaylist(filtered, t("Xem sau"))}>
                 <Play className="mr-2 h-4 w-4" />
                 {t("Bắt đầu xem")}
-              </Link>
             </Button>
           )}
           {items.length > 0 && (
@@ -171,6 +171,11 @@ export function WatchLaterLibrary() {
                   >
                     <Link
                       href={`/watch/${item.id}`}
+                      onClick={(event) => {
+                        if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                        event.preventDefault();
+                        startPlaylist(filtered, t("Xem sau"), item.id);
+                      }}
                       aria-label={t("Phát ") + item.title}
                       className="relative aspect-video w-28 shrink-0 overflow-hidden rounded-lg bg-muted sm:w-44"
                     >
@@ -194,6 +199,11 @@ export function WatchLaterLibrary() {
                     <div className="min-w-0 flex-1">
                       <Link
                         href={`/watch/${item.id}`}
+                        onClick={(event) => {
+                          if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                          event.preventDefault();
+                          startPlaylist(filtered, t("Xem sau"), item.id);
+                        }}
                         className="line-clamp-2 text-sm font-semibold leading-relaxed hover:text-primary"
                       >
                         {item.title}

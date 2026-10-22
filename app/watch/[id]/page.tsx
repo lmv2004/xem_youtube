@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 type Params = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ loop?: string; t?: string; start?: string }>;
+  searchParams: Promise<{ loop?: string; t?: string; start?: string; playlist?: string }>;
 };
 
 export async function generateMetadata({ params }: Params) {
@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: Params) {
 export default async function WatchPage({ params, searchParams }: Params) {
   const t = await getTranslator();
   const { id } = await params;
-  const { loop, t: timestamp, start } = await searchParams;
+  const { loop, t: timestamp, start, playlist } = await searchParams;
   if (!/^[A-Za-z0-9_-]{11}$/.test(id)) notFound();
   const wantLoop = loop === "1" || loop === "true";
 
@@ -63,7 +63,25 @@ export default async function WatchPage({ params, searchParams }: Params) {
       viewCount: 0,
     };
   }
-  if (!video) notFound();
+  if (!video) {
+    if (!playlist || !/^[a-zA-Z0-9-]{16,64}$/.test(playlist)) notFound();
+    // Keep the private, browser-side queue controls accessible when a saved
+    // video is deleted or made private, so viewers can explicitly skip it.
+    metadataUnavailable = true;
+    video = {
+      id,
+      title: t("Video không còn khả dụng"),
+      description: "",
+      channel: "YouTube",
+      publishedAt: "",
+      thumbnail: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+      embedUrl: `https://www.youtube.com/embed/${id}`,
+      watchUrl: `https://www.youtube.com/watch?v=${id}`,
+      durationSeconds: 0,
+      viewCount: 0,
+      embeddable: false,
+    };
+  }
 
   let relatedVideos: Awaited<ReturnType<typeof getRelatedVideos>> = [];
   try {

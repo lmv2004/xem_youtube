@@ -42,6 +42,9 @@ import { useCreateRoom } from "@/hooks/use-create-room";
 import { useToast } from "@/hooks/use-toast";
 import { useWatchLater } from "@/hooks/use-watch-later";
 import { cn } from "@/lib/utils";
+import { usePersonalPlaylist } from "@/hooks/use-personal-playlist";
+import { PersonalPlaylistPanel } from "@/components/personal-playlist-panel";
+import { standaloneVideoUrl } from "@/lib/personal-playlist";
 
 const AUTOPLAY_STORAGE_KEY = "xemphim:autoplay";
 const THEATER_STORAGE_KEY = "xemphim:default_theater";
@@ -61,7 +64,7 @@ export function WatchView({
 }: Props) {
   const t = useTranslations();
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
   const { toast } = useToast();
   const { createRoom, isCreating } = useCreateRoom();
   const watchLater = useWatchLater();
@@ -82,6 +85,10 @@ export function WatchView({
 
   const playerRef = useRef<HTMLDivElement | null>(null);
   const playerApi = useRef<WatchPlayerApi | null>(null);
+  const playlist = usePersonalPlaylist(video.id, () => {
+    playerApi.current?.seekTo(0, true);
+    playerApi.current?.playVideo();
+  }, session?.user?.id, sessionStatus === "loading");
 
   // Load autoplay + default-theater preferences before mounting the player.
   useEffect(() => {
@@ -217,7 +224,7 @@ export function WatchView({
     setShareSeconds(
       Math.floor(playerApi.current?.getCurrentTime() ?? startSeconds),
     );
-    setShareBase(window.location.href);
+    setShareBase(standaloneVideoUrl(window.location.href));
     setShareOpen(true);
   };
   const shareUrl = shareBase
@@ -282,11 +289,12 @@ export function WatchView({
                 <WatchPlayer
                   key={video.id}
                   video={video}
-                  autoPlay={autoplay}
+                  autoPlay={autoplay || Boolean(playlist.playlist)}
                   loop={loop}
                   startSeconds={startSeconds}
                   onReady={onPlayerReady}
                   onProgress={onProgress}
+                  onEnded={playlist.ended}
                 />
               ) : (
                 <div
@@ -297,6 +305,8 @@ export function WatchView({
               )}
             </div>
           </div>
+
+          <PersonalPlaylistPanel controller={playlist} videoId={video.id} />
 
           {resumeSeconds > 0 && (
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-muted/50 px-4 py-2 text-sm">

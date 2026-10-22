@@ -23,6 +23,7 @@ type Namespace = {
         onReady(event: { target: WatchPlayerApi }): void;
         onStateChange(event: { data: number; target: WatchPlayerApi }): void;
         onError(event: { data: number }): void;
+        onAutoplayBlocked?(): void;
       };
     },
   ) => WatchPlayerApi;

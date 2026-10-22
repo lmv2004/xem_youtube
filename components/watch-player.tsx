@@ -17,6 +17,7 @@ type Props = {
   startSeconds: number;
   onReady(player: WatchPlayerApi | null): void;
   onProgress(seconds: number, duration: number): void;
+  onEnded?(): void;
 };
 
 /** One player for the lifetime of a video. Layout and preference changes never remount it. */
@@ -27,17 +28,19 @@ export function WatchPlayer({
   startSeconds,
   onReady,
   onProgress,
+  onEnded,
 }: Props) {
   const t = useTranslations();
   const [started, setStarted] = useState(autoPlay);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [loopEnabled, setLoopEnabled] = useState(loop);
   const container = useRef<HTMLDivElement>(null);
   const api = useRef<WatchPlayerApi | null>(null);
-  const callbacks = useRef({ onReady, onProgress });
-  callbacks.current = { onReady, onProgress };
+  const callbacks = useRef({ onReady, onProgress, onEnded });
+  callbacks.current = { onReady, onProgress, onEnded };
   const loopRef = useRef(loopEnabled);
   loopRef.current = loopEnabled;
   const startRef = useRef(startSeconds);
@@ -55,8 +58,10 @@ export function WatchPlayer({
     if (!started || video.embeddable === false) return;
     let disposed = false;
     let isReady = false;
+    let ended = false;
     setReady(false);
     setFailed(false);
+    setAutoplayBlocked(false);
     const capture = () => {
       const player = api.current;
       if (!isReady || !player) return;
@@ -99,6 +104,8 @@ export function WatchPlayer({
             onStateChange: ({ data, target }) => {
               if (disposed) return;
               if (data === 0) {
+                if (ended) return;
+                ended = true;
                 callbacks.current.onProgress(
                   target.getDuration(),
                   target.getDuration(),
@@ -106,8 +113,12 @@ export function WatchPlayer({
                 if (loopRef.current) {
                   target.seekTo(0, true);
                   target.playVideo();
-                }
-              } else if (data === 2) capture();
+                } else callbacks.current.onEnded?.();
+              } else if (data === 1) {
+                ended = false;
+                setAutoplayBlocked(false);
+              }
+              else if (data === 2) capture();
             },
             onError: () => {
               if (disposed) return;
@@ -115,6 +126,9 @@ export function WatchPlayer({
               window.clearTimeout(timeout);
               setFailed(true);
               callbacks.current.onReady(null);
+            },
+            onAutoplayBlocked: () => {
+              if (!disposed) setAutoplayBlocked(true);
             },
           },
         });
@@ -209,6 +223,14 @@ export function WatchPlayer({
           </div>
         )}
       </div>
+      {autoplayBlocked && !failed && (
+        <div role="status" className="flex flex-wrap items-center justify-between gap-2 border-t border-white/10 bg-zinc-950 px-3 py-2 text-sm text-zinc-200">
+          <span>{t("Trình duyệt cần bạn nhấn Phát để tiếp tục.")}</span>
+          <Button variant="secondary" size="sm" onClick={() => api.current?.playVideo()}>
+            <Play />{t("Phát")}
+          </Button>
+        </div>
+      )}
       <div className="flex min-h-11 flex-wrap items-center justify-between gap-x-4 border-t border-white/10 bg-zinc-950 px-3 text-xs text-zinc-300">
         <button
           type="button"
@@ -217,7 +239,7 @@ export function WatchPlayer({
           className={`inline-flex min-h-11 items-center gap-2 rounded px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${loopEnabled ? "text-emerald-300" : "hover:text-white"}`}
         >
           <Repeat className="h-4 w-4" />
-          {t("Lặp lại:")} {loopEnabled ? t("Bật") : t("Tắt")}
+          {t("Lặp video:")} {loopEnabled ? t("Bật") : t("Tắt")}
         </button>
         <a
           href={`https://www.youtube.com/watch?v=${encodeURIComponent(video.id)}`}

@@ -2826,5 +2826,89 @@
   "Bắt đầu phát khi bạn mở trang video, nếu trình duyệt cho phép.": {
     "en": "Start playback when you open a video, if your browser allows it.",
     "te": "బ్రౌజర్ అనుమతిస్తే వీడియో తెరిచినప్పుడు ప్లేబ్యాక్ ప్రారంభించండి."
+  },
+  "Danh sách chỉ được giữ trong phiên hiện tại": {
+    "en": "Playlist is only available for this session",
+    "te": "ప్లేలిస్ట్ ఈ సెషన్‌లో మాత్రమే అందుబాటులో ఉంటుంది"
+  },
+  "Trình duyệt đang chặn lưu trữ. Tải lại trang có thể mất danh sách phát.": {
+    "en": "Your browser is blocking storage. Reloading may lose this playlist.",
+    "te": "మీ బ్రౌజర్ నిల్వను నిరోధిస్తోంది. పేజీని మళ్లీ లోడ్ చేస్తే ఈ ప్లేలిస్ట్ పోవచ్చు."
+  },
+  "Danh sách phát cá nhân": {
+    "en": "Personal playlist",
+    "te": "వ్యక్తిగత ప్లేలిస్ట్"
+  },
+  "Danh sách phát không còn trong phiên này. Bạn vẫn có thể xem video hoặc mở lại danh sách từ thư viện.": {
+    "en": "This playlist is no longer in this session. You can still watch this video or reopen the playlist from your library.",
+    "te": "ఈ సెషన్‌లో ఈ ప్లేలిస్ట్ ఇక అందుబాటులో లేదు. మీరు వీడియోను చూడవచ్చు లేదా లైబ్రరీ నుంచి ప్లేలిస్ట్‌ను మళ్లీ తెరవవచ్చు."
+  },
+  "Xem video riêng": {
+    "en": "Watch video on its own",
+    "te": "వీడియోను విడిగా చూడండి"
+  },
+  "Video {current} / {total}": {
+    "en": "Video {current} / {total}",
+    "te": "వీడియో {current} / {total}"
+  },
+  "Thoát danh sách phát": {
+    "en": "Exit playlist",
+    "te": "ప్లేలిస్ట్ నుంచి నిష్క్రమించండి"
+  },
+  "Video trước": {
+    "en": "Previous video",
+    "te": "మునుపటి వీడియో"
+  },
+  "Video kế tiếp": {
+    "en": "Next video",
+    "te": "తదుపరి వీడియో"
+  },
+  "Xáo trộn": {
+    "en": "Shuffle",
+    "te": "షఫుల్"
+  },
+  "Lặp danh sách": {
+    "en": "Repeat playlist",
+    "te": "ప్లేలిస్ట్‌ను పునరావృతం చేయండి"
+  },
+  "Đang chuyển video…": {
+    "en": "Switching video…",
+    "te": "వీడియో మారుతోంది…"
+  },
+  "Đã phát hết danh sách.": {
+    "en": "Playlist finished.",
+    "te": "ప్లేలిస్ట్ పూర్తయింది."
+  },
+  "Xem danh sách phát": {
+    "en": "Show playlist",
+    "te": "ప్లేలిస్ట్‌ను చూపించండి"
+  },
+  "Lặp video:": {
+    "en": "Repeat video:",
+    "te": "వీడియో పునరావృతం:"
+  },
+  "Chưa chuyển được video. Kiểm tra kết nối và thử lại.": {
+    "en": "Could not switch videos. Check your connection and try again.",
+    "te": "వీడియోను మార్చలేకపోయాము. మీ కనెక్షన్‌ను తనిఖీ చేసి మళ్లీ ప్రయత్నించండి."
+  },
+  "Video không còn khả dụng": {
+    "en": "Video is no longer available",
+    "te": "వీడియో ఇక అందుబాటులో లేదు"
+  },
+  "Mỗi phiên phát tối đa {count} video": {
+    "en": "Up to {count} videos per playback session",
+    "te": "ఒక్కో ప్లేబ్యాక్ సెషన్‌లో గరిష్ఠంగా {count} వీడియోలు"
+  },
+  "Đang dùng video {first}–{last} trong danh sách.": {
+    "en": "Using videos {first}–{last} from this list.",
+    "te": "ఈ జాబితాలోని {first}–{last} వీడియోలను ఉపయోగిస్తోంది."
+  },
+  "Trình duyệt cần bạn nhấn Phát để tiếp tục.": {
+    "en": "Your browser needs you to press Play to continue.",
+    "te": "కొనసాగించడానికి మీ బ్రౌజర్‌లో ప్లే నొక్కండి."
+  },
+  "Phát": {
+    "en": "Play",
+    "te": "ప్లే"
   }
 }
