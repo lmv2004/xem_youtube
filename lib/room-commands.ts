@@ -8,6 +8,8 @@ import {
 import type { RoomQueueItem } from "./rooms";
 import {
   PRESENCE_TIMEOUT_MS,
+  canAddToQueue,
+  canControlPlayback,
   type RoomPlaybackUpdate,
   type PlaybackActionKind,
 } from "./rooms";
@@ -49,6 +51,7 @@ export function playbackDto(room: Room): RoomPlaybackUpdate {
       duration: room.duration,
     },
     hostOnlyControl: room.hostOnlyControl,
+    allowQueueAdds: room.allowQueueAdds,
     serverTime: new Date().toISOString(),
   };
 }
@@ -79,8 +82,8 @@ export async function updatePlayback(
         "Bạn cần tham gia phòng trước khi điều khiển.",
       );
     const isHost = actor.id === room.hostId;
-    const { isPlaying, positionSeconds, hostOnlyControl, video } = parsed.data;
-    if (hostOnlyControl !== undefined && !isHost)
+    const { isPlaying, positionSeconds, hostOnlyControl, allowQueueAdds, video } = parsed.data;
+    if ((hostOnlyControl !== undefined || allowQueueAdds !== undefined) && !isHost)
       throw new RoomCommandError(
         403,
         "Chỉ chủ phòng được đổi quyền điều khiển.",
@@ -90,13 +93,14 @@ export async function updatePlayback(
       isPlaying !== undefined ||
       positionSeconds !== undefined ||
       video !== undefined;
-    if (changed && locked && !isHost)
+    if (changed && !canControlPlayback({ hostOnlyControl: locked, isHost }))
       throw new RoomCommandError(403, "Chủ phòng đang khóa điều khiển.");
     const now = new Date();
     const updated = await tx.room.update({
       where: { code },
       data: {
         hostOnlyControl: locked,
+        allowQueueAdds: allowQueueAdds ?? room.allowQueueAdds,
         updatedAt: new Date(
           Math.max(now.getTime(), room.updatedAt.getTime() + 1),
         ),
@@ -166,11 +170,15 @@ export async function updateQueue(
     )
       throw new RoomCommandError(403, "Bạn cần tham gia phòng.");
     // Any active viewer can report a genuine end, even if the host is absent.
-    if (
-      command.action !== "ended" &&
-      room.hostOnlyControl &&
-      actor.id !== room.hostId
-    ) {
+    const permissions = {
+      hostOnlyControl: room.hostOnlyControl,
+      allowQueueAdds: room.allowQueueAdds,
+      isHost: actor.id === room.hostId,
+    };
+    const mayEdit = command.action === "add"
+      ? canAddToQueue(permissions)
+      : canControlPlayback(permissions);
+    if (command.action !== "ended" && !mayEdit) {
       throw new RoomCommandError(
         403,
         "Chỉ chủ phòng được sửa hàng đợi khi đang khóa.",

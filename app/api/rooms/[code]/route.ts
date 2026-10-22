@@ -55,6 +55,7 @@ export const GET = withRequestLog(SCOPE, async (_request, context) => {
       lastActionKind: (room.lastActionKind as PlaybackActionKind | null) ?? null,
     },
     hostOnlyControl: room.hostOnlyControl,
+    allowQueueAdds: room.allowQueueAdds,
     createdAt: room.createdAt.toISOString(),
   };
 

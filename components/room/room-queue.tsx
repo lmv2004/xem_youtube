@@ -14,6 +14,7 @@ import type { RoomQueueItem } from "@/lib/rooms";
 export function RoomQueue({
   items,
   disabled,
+  canContribute,
   pending,
   onRemove,
   onMove,
@@ -22,6 +23,7 @@ export function RoomQueue({
 }: {
   items: RoomQueueItem[];
   disabled: boolean;
+  canContribute: boolean;
   pending: boolean;
   onRemove: (id: string) => void;
   onNext: () => void;
@@ -140,7 +142,11 @@ export function RoomQueue({
       </div>
       {disabled && (
         <p className="border-t border-border p-3 text-xs text-muted-foreground">
-          {t("Kết nối lại hoặc chờ chủ phòng mở quyền để sửa hàng đợi.")}
+          {t(
+            canContribute
+              ? "Bạn có thể thêm video ở mục Tìm video. Chủ phòng sắp xếp, xóa và chuyển bài."
+              : "Kết nối lại hoặc chờ chủ phòng mở quyền để sửa hàng đợi.",
+          )}
         </p>
       )}
     </section>

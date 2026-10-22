@@ -18,7 +18,7 @@ type State = Omit<RoomSyncResponse, "cursor" | "playback" | "video"> & {
 };
 const initialState: State = {
   queueEdits: [], queue: [], playbackGeneration: 0, revision: "",
-  playback: null, video: null, messages: [], members: [], hostOnlyControl: false,
+  playback: null, video: null, messages: [], members: [], hostOnlyControl: false, allowQueueAdds: false,
   serverTime: "", isOffline: true, hasConnected: false,
   showSyncWarning: false, isClosed: false, receivedAt: 0,
 };

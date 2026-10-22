@@ -171,6 +171,9 @@ model Room {
   // When on, only the host may drive playback. Off by default: a room stays
   // collaborative unless the host actively locks it.
   hostOnlyControl Boolean @default(false)
+  // A locked room may still accept suggestions without granting playback control.
+  // Default false preserves the permissions of existing locked rooms.
+  allowQueueAdds Boolean @default(false)
 
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt

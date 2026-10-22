@@ -14,6 +14,8 @@ type Props = {
   activeVideoId?: string | null;
   /** True when the host locked control: browsing stays open, switching does not. */
   disabled?: boolean;
+  /** Adding to the queue can remain available while immediate playback is locked. */
+  enqueueDisabled?: boolean;
   locked?: boolean;
 };
 
@@ -27,6 +29,7 @@ export function RoomSearch({
   onEnqueue,
   activeVideoId,
   disabled = false,
+  enqueueDisabled = disabled,
   locked = false,
 }: Props) {
   const t = useTranslations();
@@ -121,7 +124,9 @@ export function RoomSearch({
         <p className="flex items-start gap-1.5 border-b border-border bg-amber-500/10 px-3 py-2 text-xs text-muted-foreground">
           <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           {t(
-            "Chủ phòng đang khoá điều khiển. Bạn vẫn xem được đề xuất nhưng chưa đổi được video.",
+            enqueueDisabled
+              ? "Chủ phòng đang khoá điều khiển. Bạn vẫn xem được đề xuất nhưng chưa đổi được video."
+              : "Chủ phòng giữ điều khiển. Bạn có thể thêm video vào hàng đợi.",
           )}{" "}
         </p>
       ) : null}
@@ -180,7 +185,7 @@ export function RoomSearch({
                       size="sm"
                       variant="secondary"
                       className="min-h-9 text-xs"
-                      disabled={disabled || pickingId !== null}
+                      disabled={enqueueDisabled || pickingId !== null}
                       onClick={() => void pick(item, true)}
                     >
                       <ListPlus className="mr-1 h-3 w-3" />{" "}

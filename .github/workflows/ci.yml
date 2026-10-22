@@ -57,7 +57,9 @@ jobs:
         run: npx prisma db push --skip-generate
 
       - name: Verify additive queue upgrade on existing schema
-        run: node scripts/ensure-room-queue.mjs
+        run: |
+          node scripts/ensure-room-queue.mjs
+          node scripts/ensure-room-queue.mjs
 
       - name: Verify additive search analytics upgrade
         run: |

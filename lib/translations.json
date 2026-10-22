@@ -1151,6 +1151,34 @@
     "en": "Everyone",
     "te": "అందరూ"
   },
+  "Cho mọi người thêm video": {
+    "en": "Let everyone add videos",
+    "te": "అందరినీ వీడియోలు జోడించనివ్వండి"
+  },
+  "Thành viên chỉ được thêm video; chủ phòng giữ quyền điều khiển và quản lý hàng đợi.": {
+    "en": "Members can only add videos; the host keeps playback and queue management controls.",
+    "te": "సభ్యులు వీడియోలు మాత్రమే జోడించగలరు; ప్లేబ్యాక్ మరియు క్యూ నిర్వహణ హోస్ట్ నియంత్రణలో ఉంటాయి."
+  },
+  "Đã cho phép mọi người thêm video": {
+    "en": "Everyone can now add videos",
+    "te": "ఇప్పుడు అందరూ వీడియోలు జోడించవచ్చు"
+  },
+  "Đã tắt quyền thêm video của thành viên": {
+    "en": "Members can no longer add videos",
+    "te": "సభ్యులు ఇకపై వీడియోలు జోడించలేరు"
+  },
+  "Bạn có thể thêm video": {
+    "en": "You can add videos",
+    "te": "మీరు వీడియోలు జోడించవచ్చు"
+  },
+  "Chủ phòng giữ điều khiển. Bạn có thể thêm video vào hàng đợi.": {
+    "en": "The host controls playback. You can add videos to the queue.",
+    "te": "ప్లేబ్యాక్‌ను హోస్ట్ నియంత్రిస్తారు. మీరు క్యూ‌కు వీడియోలు జోడించవచ్చు."
+  },
+  "Bạn có thể thêm video ở mục Tìm video. Chủ phòng sắp xếp, xóa và chuyển bài.": {
+    "en": "Add videos from Find videos. The host reorders, removes and skips videos.",
+    "te": "వీడియోల శోధనలో వీడియోలు జోడించండి. క్రమం మార్చడం, తొలగించడం మరియు తదుపరి వీడియోకు వెళ్లడం హోస్ట్ నియంత్రణలో ఉంటాయి."
+  },
   "Chủ phòng đang khoá": {
     "en": "Host locked controls",
     "te": "హోస్ట్ నియంత్రణలను లాక్ చేశారు"
