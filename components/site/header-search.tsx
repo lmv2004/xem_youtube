@@ -7,6 +7,7 @@ import { extractYouTubeId } from "@/lib/youtube-url";
 import { useRecentSearches } from "@/hooks/use-recent-searches";
 import { cn } from "@/lib/utils";
 import { SearchBox } from "@/components/search-box";
+import { recordSearch } from "@/lib/search-tracking";
 
 export function HeaderSearch() {
   const t = useTranslations();
@@ -42,7 +43,10 @@ export function HeaderSearch() {
         onSearch={(term) => {
           if (!term) return;
           const id = extractYouTubeId(term);
-          if (!id) recent.add(term);
+          if (!id) {
+            recent.add(term);
+            recordSearch(term, t.locale);
+          }
           setExpanded(false);
           router.push(
             id ? `/watch/${id}` : `/?topic=${encodeURIComponent(term)}`,

@@ -115,6 +115,22 @@ model ViewHistory {
   @@index([userId, createdAt])
 }
 
+// Anonymous, short-lived search events used only for weekly public rankings.
+// No relationship to accounts, raw IP addresses, or playback history.
+model SearchEvent {
+  eventId           String   @id
+  dedupeKey         String   @unique
+  visitorId         String
+  normalizedKeyword String
+  displayKeyword    String
+  locale            String
+  createdAt         DateTime @default(now())
+
+  @@index([locale, createdAt])
+  @@index([visitorId, createdAt])
+  @@index([createdAt])
+}
+
 // ---------------------------------------------------------------------------
 // Watch party
 // ---------------------------------------------------------------------------

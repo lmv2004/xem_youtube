@@ -8,9 +8,10 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
-import { ArrowUpLeft, Clock, Search } from "lucide-react";
+import { ArrowUpLeft, Clock, Flame, Search } from "lucide-react";
 import { useTranslations } from "@/components/locale-provider";
 import { useRecentSearches } from "@/hooks/use-recent-searches";
+import { usePopularSearches } from "@/hooks/use-popular-searches";
 import { getSearchSuggestions } from "@/lib/search-suggestions";
 import { cn } from "@/lib/utils";
 
@@ -49,9 +50,16 @@ export function SearchBox({
   const compositionEnter = useRef(false);
   const [open, setOpen] = useState(false);
   const [activeTerm, setActiveTerm] = useState<string | null>(null);
+  const popular = usePopularSearches(t.locale, open);
   const listId = useId();
   const hintId = useId();
-  const suggestions = getSearchSuggestions(value, recent.items, t.locale);
+  const suggestions = getSearchSuggestions(
+    value,
+    recent.items,
+    t.locale,
+    6,
+    popular.items.map((item) => item.term),
+  );
   const expanded = open && suggestions.length > 0;
   const activeIndex = suggestions.findIndex((item) => item.term === activeTerm);
   const activeId =
@@ -186,12 +194,17 @@ export function SearchBox({
             aria-label={t("Gợi ý từ khóa")}
             className="max-h-[min(23rem,45dvh)] overflow-y-auto overscroll-contain p-1.5 sm:p-2"
           >
-            {(["recent", "suggested"] as const).map((source) => {
+            {(["recent", "popular", "suggested"] as const).map((source) => {
               const group = suggestions.filter(
                 (item) => item.source === source,
               );
               if (!group.length) return null;
-              const Icon = source === "recent" ? Clock : Search;
+              const Icon =
+                source === "recent"
+                  ? Clock
+                  : source === "popular"
+                    ? Flame
+                    : Search;
               return (
                 <div
                   key={source}
@@ -204,7 +217,9 @@ export function SearchBox({
                   >
                     {source === "recent"
                       ? t("Tìm kiếm gần đây")
-                      : t("Gợi ý từ khóa")}
+                      : source === "popular"
+                        ? t("Được tìm nhiều tuần này")
+                        : t("Gợi ý từ khóa")}
                   </p>
                   <ul role="presentation">
                     {group.map((item) => {

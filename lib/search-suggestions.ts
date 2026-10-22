@@ -3,7 +3,7 @@ import { extractYouTubeId } from "./youtube-url";
 
 export type SearchSuggestion = {
   term: string;
-  source: "recent" | "suggested";
+  source: "recent" | "popular" | "suggested";
 };
 
 // These are editorial starting points, not live popularity or search analytics.
@@ -101,6 +101,7 @@ export function getSearchSuggestions(
   recent: string[],
   locale: Locale,
   limit = 6,
+  popular: readonly string[] = [],
 ): SearchSuggestion[] {
   const count = Number.isFinite(limit)
     ? Math.max(0, Math.min(8, Math.floor(limit)))
@@ -136,14 +137,16 @@ export function getSearchSuggestions(
   }
 
   const previous = candidates(recent, "recent");
+  const trending = candidates(popular, "popular");
   const suggested = candidates(KEYWORDS[locale], "suggested");
-  if (queryKey) return [...previous, ...suggested].slice(0, count);
+  const discovery = [...trending, ...suggested];
+  if (queryKey) return [...previous, ...discovery].slice(0, count);
 
   // Keep discovery visible even when a user has a full recent-search history.
   const recentCount = Math.min(previous.length, Math.ceil(count / 2));
   const results = [
     ...previous.slice(0, recentCount),
-    ...suggested.slice(0, count - recentCount),
+    ...discovery.slice(0, count - recentCount),
   ];
   return [...results, ...previous.slice(recentCount)].slice(0, count);
 }

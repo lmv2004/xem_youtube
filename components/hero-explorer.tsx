@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchBox } from "@/components/search-box";
+import { PopularSearches } from "@/components/popular-searches";
+import { recordSearch } from "@/lib/search-tracking";
 import { FilterChips } from "@/components/filter-chips";
 import { VideoFiltersBar } from "@/components/video-filters";
 import {
@@ -185,6 +187,7 @@ export function HeroExplorer() {
   };
   const search = (value: string) => {
     const clean = value.trim();
+    setInput(clean);
     if (!clean) {
       navigate("", DEFAULT_FILTERS);
       return;
@@ -195,6 +198,7 @@ export function HeroExplorer() {
       return;
     }
     recent.add(clean);
+    recordSearch(clean, t.locale);
     navigate(clean, DEFAULT_FILTERS);
   };
   const changeView = (next: ViewMode) => {
@@ -289,6 +293,7 @@ export function HeroExplorer() {
             ))}
           </div>
         )}
+        <PopularSearches onSearch={search} />
       </section>
 
       <FilterChips

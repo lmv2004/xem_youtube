@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "buildCommand": "prisma generate && node scripts/ensure-room-queue.mjs && next build",
+  "buildCommand": "prisma generate && node scripts/ensure-room-queue.mjs && node scripts/ensure-search-analytics.mjs && next build",
   "installCommand": "npm ci",
   "regions": ["sin1"],
   "headers": [

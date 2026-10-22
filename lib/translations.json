@@ -2783,6 +2783,42 @@
     "en": "Suggested keywords",
     "te": "సూచించిన శోధన పదాలు"
   },
+  "Được tìm nhiều tuần này": {
+    "en": "Popular searches this week",
+    "te": "ఈ వారం ఎక్కువగా వెతికినవి"
+  },
+  "Trên XemPhim · 7 ngày gần nhất": {
+    "en": "On XemPhim · Last 7 days",
+    "te": "XemPhimలో · గత 7 రోజులు"
+  },
+  "Tìm {keyword}, hạng {rank}, {count} lượt tìm": {
+    "en": "Search {keyword}, rank {rank}, {count} searches",
+    "te": "{keyword} కోసం వెతకండి, స్థానం {rank}, {count} శోధనలు"
+  },
+  "{count} lượt tìm": {
+    "en": "{count} searches",
+    "te": "{count} శోధనలు"
+  },
+  "Vuốt để xem thêm từ khóa": {
+    "en": "Swipe to see more keywords",
+    "te": "మరిన్ని శోధన పదాల కోసం స్వైప్ చేయండి"
+  },
+  "Đang tải từ khóa phổ biến": {
+    "en": "Loading popular searches",
+    "te": "ప్రసిద్ధ శోధనలను లోడ్ చేస్తున్నాము"
+  },
+  "Chưa đủ lượt tìm kiếm chung. Từ khóa sẽ xuất hiện khi có ít nhất hai người cùng tìm.": {
+    "en": "Not enough shared searches yet. Keywords appear once at least two visitors search for them.",
+    "te": "ఇంకా తగినన్ని శోధనలు లేవు. కనీసం ఇద్దరు సందర్శకులు వెతికిన తర్వాత పదాలు కనిపిస్తాయి."
+  },
+  "Chưa cập nhật được bảng xếp hạng. Đang hiển thị dữ liệu đã tải.": {
+    "en": "Could not refresh the rankings. Showing the last loaded results.",
+    "te": "ర్యాంకింగ్‌ను నవీకరించలేకపోయాము. చివరిగా లోడ్ చేసిన ఫలితాలను చూపిస్తున్నాము."
+  },
+  "Chưa tải được từ khóa phổ biến.": {
+    "en": "Could not load popular searches.",
+    "te": "ప్రసిద్ధ శోధనలను లోడ్ చేయలేకపోయాము."
+  },
   "↑ ↓ để chọn · Enter để tìm · Esc để đóng": {
     "en": "↑ ↓ to choose · Enter to search · Esc to close",
     "te": "↑ ↓ ఎంచుకోండి · Enter శోధించండి · Esc మూసివేయండి"

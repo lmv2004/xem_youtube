@@ -2,6 +2,39 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { getSearchSuggestions } from "./search-suggestions";
 
+test("weekly popular keywords fill discovery rows before the editorial catalog", () => {
+  const results = getSearchSuggestions("", ["my recent search"], "vi", 6, [
+    "nhạc acoustic",
+    "nhạc lofi",
+  ]);
+  assert.deepEqual(results.slice(0, 3), [
+    { term: "my recent search", source: "recent" },
+    { term: "nhạc acoustic", source: "popular" },
+    { term: "nhạc lofi", source: "popular" },
+  ]);
+  assert.equal(results.filter((item) => item.term === "nhạc lofi").length, 1);
+  assert.ok(results.some((item) => item.source === "suggested"));
+});
+
+test("weekly keywords match accents and deduplicate against personal history", () => {
+  assert.deepEqual(
+    getSearchSuggestions("acoustic", ["Nhạc Acoustic"], "vi", 6, [
+      "nhạc acoustic",
+      "Acoustic covers",
+      "unrelated",
+    ]),
+    [
+      { term: "Nhạc Acoustic", source: "recent" },
+      { term: "Acoustic covers", source: "popular" },
+    ],
+  );
+  assert.ok(
+    getSearchSuggestions("am nhac", [], "vi", 6, ["Âm nhạc thư giãn"]).some(
+      (item) => item.source === "popular",
+    ),
+  );
+});
+
 test("empty input offers recent searches alongside localized discovery keywords", () => {
   const results = getSearchSuggestions(
     "  ",
