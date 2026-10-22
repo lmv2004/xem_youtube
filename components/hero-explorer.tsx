@@ -40,7 +40,7 @@ import {
   isDefaultFilters,
   type VideoFilters,
 } from "@/lib/filters";
-import { extractYouTubeId } from "@/lib/youtube-url";
+import { getSearchDestination } from "@/lib/search-query";
 import type { VideoItem, VideoSearchResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -139,6 +139,10 @@ export function HeroExplorer() {
           setNextPage(null);
           return;
         }
+        if (data.error?.code === "invalid-topic") {
+          setError(data.error.message);
+          return;
+        }
         if (!response.ok || data.error) throw new Error("fetch-failed");
         setItems((previous) =>
           page
@@ -192,14 +196,13 @@ export function HeroExplorer() {
       navigate("", DEFAULT_FILTERS);
       return;
     }
-    const id = extractYouTubeId(clean);
-    if (id) {
-      router.push(`/watch/${id}`);
-      return;
+    const destination = getSearchDestination(clean);
+    if (!destination) return;
+    if (destination.keyword) {
+      recent.add(destination.keyword);
+      recordSearch(destination.keyword, t.locale);
     }
-    recent.add(clean);
-    recordSearch(clean, t.locale);
-    navigate(clean, DEFAULT_FILTERS);
+    router.push(destination.href, { scroll: false });
   };
   const changeView = (next: ViewMode) => {
     setView(next);

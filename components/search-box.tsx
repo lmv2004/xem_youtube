@@ -13,6 +13,7 @@ import { useTranslations } from "@/components/locale-provider";
 import { useRecentSearches } from "@/hooks/use-recent-searches";
 import { usePopularSearches } from "@/hooks/use-popular-searches";
 import { getSearchSuggestions } from "@/lib/search-suggestions";
+import { SEARCH_MAX_LENGTH, SEARCH_MIN_LENGTH } from "@/lib/search-query";
 import { cn } from "@/lib/utils";
 
 /** Both search entry points share the same keyboard, history and suggestion behavior. */
@@ -123,8 +124,8 @@ export function SearchBox({
         role="combobox"
         autoComplete="off"
         spellCheck={false}
-        minLength={2}
-        maxLength={500}
+        minLength={SEARCH_MIN_LENGTH}
+        maxLength={SEARCH_MAX_LENGTH}
         aria-label={t("Tìm video hoặc dán liên kết YouTube")}
         aria-autocomplete="list"
         aria-expanded={expanded}

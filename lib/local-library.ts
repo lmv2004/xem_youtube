@@ -1,4 +1,5 @@
 import type { VideoItem } from "./types";
+import { SEARCH_MAX_LENGTH } from "./search-query";
 
 export const MAX_WATCH_LATER_ITEMS = 100;
 export const MAX_RECENT_SEARCHES = 8;
@@ -65,9 +66,10 @@ export function normalizeRecentSearches(value: unknown): string[] {
   const result: string[] = [];
   for (const candidate of value) {
     if (typeof candidate !== "string") continue;
-    const term = candidate.trim().slice(0, 200);
+    const term = candidate.trim();
     const key = term.toLocaleLowerCase();
-    if (term.length < 2 || seen.has(key)) continue;
+    if (term.length < 2 || term.length > SEARCH_MAX_LENGTH || seen.has(key))
+      continue;
     seen.add(key);
     result.push(term);
     if (result.length === MAX_RECENT_SEARCHES) break;

@@ -97,5 +97,9 @@ test("recent search repair trims, caps and deduplicates without changing display
     ).length,
     8,
   );
-  assert.equal(normalizeRecentSearches(["a".repeat(300)])[0].length, 200);
+  assert.equal(normalizeRecentSearches(["a".repeat(500)])[0].length, 500);
+  assert.deepEqual(normalizeRecentSearches(["a".repeat(501)]), []);
+  const prefix = "a long search title ".repeat(15);
+  const distinctTerms = [prefix + "original version", prefix + "live version"];
+  assert.deepEqual(normalizeRecentSearches(distinctTerms), distinctTerms);
 });

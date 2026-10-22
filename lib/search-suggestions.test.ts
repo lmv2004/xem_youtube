@@ -155,7 +155,7 @@ test("malformed or URL-like history is ignored without mutating caller data", ()
     "dQw4w9WgXcQ",
     "valid topic",
     "bad\u0000term",
-    "a".repeat(201),
+    "a".repeat(501),
   ] as unknown as string[];
   const original = [...recent];
   assert.deepEqual(
@@ -174,5 +174,13 @@ test("result limits are bounded and an empty history still fills the discovery l
   assert.equal(getSearchSuggestions("", [], "en", 2.9).length, 2);
   assert.equal(getSearchSuggestions("", [], "en", NaN).length, 6);
   assert.equal(getSearchSuggestions("", ["a topic"], "en", 4).length, 4);
-  assert.deepEqual(getSearchSuggestions("a".repeat(201), [], "en"), []);
+  assert.deepEqual(getSearchSuggestions("a".repeat(501), [], "en"), []);
+});
+
+test("long recent searches remain complete when offered as suggestions", () => {
+  const term = "A long tutorial search ".repeat(20).trim();
+  assert.ok(term.length > 200 && term.length < 500);
+  assert.deepEqual(getSearchSuggestions(term, [term], "en"), [
+    { term, source: "recent" },
+  ]);
 });

@@ -351,6 +351,14 @@
     "en": "Search videos",
     "te": "వీడియోలను వెతకండి"
   },
+  "Mở video YouTube": {
+    "en": "Open YouTube video",
+    "te": "YouTube వీడియోను తెరవండి"
+  },
+  "Nhập từ khóa từ 2 đến 500 ký tự; chọn tối đa 4 sở thích, mỗi sở thích tối đa 100 ký tự.": {
+    "en": "Enter a keyword of 2–500 characters; choose up to 4 interests of no more than 100 characters each.",
+    "te": "2–500 అక్షరాల కీవర్డ్‌ను నమోదు చేయండి; గరిష్ఠంగా 4 ఆసక్తులను ఎంచుకోండి, ప్రతి ఆసక్తి 100 అక్షరాలకు మించకూడదు."
+  },
   "Không thể gọi máy chủ.": {
     "en": "Could not reach the server.",
     "te": "సర్వర్‌ను చేరుకోలేకపోయాం."

@@ -1,5 +1,6 @@
 import type { Locale } from "./locale";
 import { extractYouTubeId } from "./youtube-url";
+import { SEARCH_MAX_LENGTH } from "./search-query";
 
 export type SearchSuggestion = {
   term: string;
@@ -57,7 +58,7 @@ function cleanTerm(value: unknown): string {
   const term = value.trim().replace(/\s+/gu, " ");
   if (
     term.length < 2 ||
-    term.length > 200 ||
+    term.length > SEARCH_MAX_LENGTH ||
     /[\u0000-\u001f\u007f]/u.test(term) ||
     !/[\p{L}\p{N}]/u.test(term)
   ) {
@@ -107,7 +108,8 @@ export function getSearchSuggestions(
     ? Math.max(0, Math.min(8, Math.floor(limit)))
     : 6;
   const cleanQuery = query.trim().replace(/\s+/gu, " ");
-  if (!count || cleanQuery.length > 200 || isVideoOrUrl(cleanQuery)) return [];
+  if (!count || cleanQuery.length > SEARCH_MAX_LENGTH || isVideoOrUrl(cleanQuery))
+    return [];
   const queryKey = matchKey(cleanQuery);
   const seen = new Set<string>();
 
