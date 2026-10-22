@@ -20,20 +20,24 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
+import { useStartPlaylist } from "@/hooks/use-start-playlist";
 
 type Props = {
   collectionId: string;
   collectionName: string;
   items: VideoItem[];
+  ownerId: string;
 };
 
 export function CollectionManager({
   collectionId,
   collectionName,
   items,
+  ownerId,
 }: Props) {
   const t = useTranslations();
   const router = useRouter();
+  const startPlaylist = useStartPlaylist(ownerId);
   const [renameOpen, setRenameOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [newName, setNewName] = useState(collectionName);
@@ -128,11 +132,9 @@ export function CollectionManager({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2 border-b pb-5">
         {filtered.length > 0 && (
-          <Button asChild>
-            <Link href={`/watch/${filtered[0].id}`}>
+          <Button onClick={() => startPlaylist(filtered, collectionName)}>
               <Play className="mr-2 h-4 w-4" />
               {t("Bắt đầu xem")}
-            </Link>
           </Button>
         )}
         <Button
@@ -212,6 +214,11 @@ export function CollectionManager({
             <li key={item.id} className="min-w-0">
               <Link
                 href={`/watch/${item.id}`}
+                onClick={(event) => {
+                  if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                  event.preventDefault();
+                  startPlaylist(filtered, collectionName, item.id);
+                }}
                 aria-label={t("Phát ") + item.title}
                 className="relative block aspect-video overflow-hidden rounded-xl bg-muted"
               >
@@ -235,6 +242,11 @@ export function CollectionManager({
               <div className="space-y-1 pt-3">
                 <Link
                   href={`/watch/${item.id}`}
+                  onClick={(event) => {
+                    if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                    event.preventDefault();
+                    startPlaylist(filtered, collectionName, item.id);
+                  }}
                   className="line-clamp-2 text-sm font-semibold leading-relaxed hover:text-primary"
                 >
                   {item.title}
