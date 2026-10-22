@@ -3,7 +3,7 @@ import { useTranslations } from "@/components/locale-provider";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
-import { extractYouTubeId } from "@/lib/youtube-url";
+import { getSearchDestination } from "@/lib/search-query";
 import { useRecentSearches } from "@/hooks/use-recent-searches";
 import { cn } from "@/lib/utils";
 import { SearchBox } from "@/components/search-box";
@@ -41,16 +41,14 @@ export function HeaderSearch() {
         placeholder={t("Tìm video hoặc dán link YouTube")}
         inputClassName="h-9 min-w-0 flex-1 bg-transparent px-3 text-sm outline-none"
         onSearch={(term) => {
-          if (!term) return;
-          const id = extractYouTubeId(term);
-          if (!id) {
-            recent.add(term);
-            recordSearch(term, t.locale);
+          const destination = getSearchDestination(term);
+          if (!destination) return;
+          if (destination.keyword) {
+            recent.add(destination.keyword);
+            recordSearch(destination.keyword, t.locale);
           }
           setExpanded(false);
-          router.push(
-            id ? `/watch/${id}` : `/?topic=${encodeURIComponent(term)}`,
-          );
+          router.push(destination.href);
         }}
         onEscape={() => {
           if (expanded) {

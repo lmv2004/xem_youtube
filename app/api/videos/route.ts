@@ -3,6 +3,8 @@ import { isStructuredError } from "@/lib/youtube";
 import { listTrendingPaged, searchVideosPaged } from "@/lib/youtube-search";
 import type { ErrorCode, VideoItem, VideoSearchResponse } from "@/lib/types";
 import { withRequestLog } from "@/lib/api-route";
+import { parseVideoSearchQuery, SEARCH_MIN_LENGTH } from "@/lib/search-query";
+import { getTranslator } from "@/lib/locale-server";
 import {
   parseDuration,
   parseSortOrder,
@@ -15,10 +17,6 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const TOPIC_MIN = 2;
-const TOPIC_MAX = 100;
-const MAX_INTERESTS = 4;
-const MAX_TOTAL = 24;
 const DEFAULT_REGION = "VN";
 
 // Duration buckets mirror YouTube's own definition of short/medium/long.
@@ -34,15 +32,6 @@ function jsonError(topic: string, code: ErrorCode, message: string, status: numb
     error: { code, message },
   };
   return NextResponse.json(body, { status });
-}
-
-function parseInterests(raw: string | null): string[] {
-  if (!raw) return [];
-  return raw
-    .split(",")
-    .map((s) => s.trim().slice(0, TOPIC_MAX))
-    .filter((s) => s.length >= TOPIC_MIN)
-    .slice(0, MAX_INTERESTS);
 }
 
 function personalize(items: VideoItem[], interests: string[]): VideoItem[] {
@@ -97,8 +86,19 @@ function applyFiltersInMemory(
 export const GET = withRequestLog("api:videos", async (request) => {
   const { searchParams } = new URL(request.url);
   const rawTopic = (searchParams.get("topic") ?? "").trim();
-  const topic = rawTopic.slice(0, TOPIC_MAX);
-  const interests = parseInterests(searchParams.get("interests"));
+  const parsed = parseVideoSearchQuery(rawTopic, searchParams.get("interests"));
+  if (!parsed) {
+    const t = await getTranslator();
+    return jsonError(
+      "",
+      "invalid-topic",
+      t(
+        "Nhập từ khóa từ 2 đến 500 ký tự; chọn tối đa 4 sở thích, mỗi sở thích tối đa 100 ký tự.",
+      ),
+      400,
+    );
+  }
+  const { topic, interests, query, label } = parsed;
   const mode = (searchParams.get("mode") ?? "").toLowerCase();
   const region = (searchParams.get("region") ?? DEFAULT_REGION).slice(0, 2);
   const pageToken = searchParams.get("pageToken");
@@ -109,7 +109,10 @@ export const GET = withRequestLog("api:videos", async (request) => {
 
   try {
     // Trending mode: no query required. Used as the default landing experience.
-    if (mode === "trending" || (topic.length < TOPIC_MIN && interests.length === 0)) {
+    if (
+      mode === "trending" ||
+      (topic.length < SEARCH_MIN_LENGTH && interests.length === 0)
+    ) {
       const page = await listTrendingPaged(region, { pageToken });
       const items = applyFiltersInMemory(page.items, duration, uploadDate);
 
@@ -137,9 +140,7 @@ export const GET = withRequestLog("api:videos", async (request) => {
       );
     }
 
-    const queryParts = interests.length > 0 ? [...interests] : [];
-    if (topic.length >= TOPIC_MIN) queryParts.push(topic);
-    if (queryParts.length === 0) {
+    if (!query) {
       return jsonError(
         topic,
         "invalid-topic",
@@ -148,7 +149,6 @@ export const GET = withRequestLog("api:videos", async (request) => {
       );
     }
 
-    const query = queryParts.join(" | ").slice(0, MAX_TOTAL);
     const page = await searchVideosPaged(query, {
       pageToken,
       order,
@@ -164,7 +164,7 @@ export const GET = withRequestLog("api:videos", async (request) => {
     if (items.length === 0 && !page.nextPageToken) {
       return NextResponse.json(
         {
-          topic: queryParts.join(", "),
+          topic: label,
           items: [],
           featuredId: null,
           nextPageToken: null,
@@ -176,7 +176,7 @@ export const GET = withRequestLog("api:videos", async (request) => {
 
     return NextResponse.json(
       {
-        topic: queryParts.join(", "),
+        topic: label,
         items,
         featuredId: items[0]?.id ?? null,
         nextPageToken: page.nextPageToken,
