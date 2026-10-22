@@ -94,7 +94,7 @@ export function PersonalPlaylistPanel({
           disabled={pending}
           onClick={controller.shuffle}
           aria-pressed={playlist.shuffled}
-          className={cn("min-h-11", playlist.shuffled && "bg-primary/10 text-primary")}
+          className={cn("min-h-11", playlist.shuffled && "bg-accent text-accent-foreground ring-1 ring-inset ring-border")}
         >
           <Shuffle />{t("Xáo trộn")}
         </Button>
@@ -104,7 +104,7 @@ export function PersonalPlaylistPanel({
           disabled={pending}
           onClick={controller.repeat}
           aria-pressed={playlist.repeat}
-          className={cn("min-h-11", playlist.repeat && "bg-primary/10 text-primary")}
+          className={cn("min-h-11", playlist.repeat && "bg-accent text-accent-foreground ring-1 ring-inset ring-border")}
         >
           <Repeat />{t("Lặp danh sách")}
         </Button>
@@ -139,7 +139,7 @@ export function PersonalPlaylistPanel({
                   aria-label={t("Phát {p0}", { p0: item.title })}
                   className={cn(
                     "flex min-h-14 w-full items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-60",
-                    id === videoId && "bg-primary/10 text-primary",
+                    id === videoId && "bg-accent text-accent-foreground ring-1 ring-inset ring-border",
                   )}
                 >
                   <span className="w-5 shrink-0 text-center text-xs tabular-nums">{itemIndex + 1}</span>
