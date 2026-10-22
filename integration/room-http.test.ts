@@ -21,7 +21,7 @@ test("HTTP viewers join, chat, contribute under host control and recover without
   const address = portServer.address();
   assert.ok(address && typeof address !== "string");
   await new Promise<void>((resolve) => portServer.close(() => resolve()));
-  const origin = `http://localhost:${address.port}`;
+  const origin = `http://127.0.0.1:${address.port}`;
   let output = "";
   const server = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "-p", String(address.port)], {
     windowsHide: true, stdio: ["ignore", "pipe", "pipe"],
@@ -84,6 +84,24 @@ test("HTTP viewers join, chat, contribute under host control and recover without
     const command = (host: boolean, data: unknown) => post("commands", { clientId: host ? hostId : guestId, command: data }, host);
     await sync(true, true);
     const joined = await sync(false, true);
+    // Host is preserved even when NextRequest normalizes its URL to localhost.
+    // None of these cross-origin writes may gain authority through forwarding headers.
+    const rejectedOrigins: Record<string, string>[] = [
+      {},
+      { Origin: "https://attacker.example", "x-forwarded-host": "attacker.example", "x-forwarded-proto": "https" },
+      { Origin: `http://localhost:${address.port}` },
+      { Origin: `http://127.0.0.1:${address.port === 65535 ? 65534 : address.port + 1}` },
+      { Origin: `https://127.0.0.1:${address.port}` },
+      { Origin: origin, "Sec-Fetch-Site": "cross-site" },
+    ];
+    for (const headers of rejectedOrigins) {
+      const rejected = await fetch(`${origin}/api/rooms/${code}/commands`, {
+        method: "POST", headers: { "Content-Type": "application/json", Cookie: hostCookie, ...headers },
+        body: JSON.stringify({ clientId: hostId, command: { type: "playback", requestId: "origin-denied", payload: { allowQueueAdds: true } } }),
+        signal: AbortSignal.timeout(15_000),
+      });
+      assert.equal(rejected.status, 403);
+    }
     assert.equal(joined.allowQueueAdds, false, "legacy locked permissions remain opt-in");
     assert.equal(joined.members.length, 2);
     assert.ok(joined.members.some((member) => member.clientId === hostId && member.isHost));
