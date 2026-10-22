@@ -1,24 +1,41 @@
 "use client";
 import { useTranslations } from "@/components/locale-provider";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   BookmarkPlus,
   Check,
   ChevronDown,
   ChevronUp,
   Clock,
-  ExternalLink,
+  Copy,
   Maximize2,
   Minimize2,
+  Keyboard,
+  RotateCcw,
   Share2,
   Users,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import type { VideoItem } from "@/lib/types";
 import { formatDuration, formatViews } from "@/lib/format";
-import { VideoEmbed } from "@/components/video-embed";
+import { WatchPlayer } from "@/components/watch-player";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  readWatchProgress,
+  removeWatchProgress,
+  saveWatchProgress,
+  timestampShareUrl,
+} from "@/lib/watch-progress";
+import type { WatchPlayerApi } from "@/lib/youtube-player-api";
 import { Button } from "@/components/ui/button";
 import { AddToCollectionDialog } from "@/components/add-to-collection-dialog";
 import { useCreateRoom } from "@/hooks/use-create-room";
@@ -27,15 +44,23 @@ import { useWatchLater } from "@/hooks/use-watch-later";
 import { cn } from "@/lib/utils";
 
 const AUTOPLAY_STORAGE_KEY = "xemphim:autoplay";
+const THEATER_STORAGE_KEY = "xemphim:default_theater";
 
 type Props = {
   video: VideoItem;
   relatedVideos: VideoItem[];
   loop?: boolean;
+  startTimestamp?: number | null;
 };
 
-export function WatchView({ video, relatedVideos, loop = false }: Props) {
+export function WatchView({
+  video,
+  relatedVideos,
+  loop = false,
+  startTimestamp = null,
+}: Props) {
   const t = useTranslations();
+  const router = useRouter();
   const { data: session } = useSession();
   const { toast } = useToast();
   const { createRoom, isCreating } = useCreateRoom();
@@ -47,19 +72,39 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
   const [autoplay, setAutoplay] = useState(false);
   const [preferencesReady, setPreferencesReady] = useState(false);
   const [showStickyMini, setShowStickyMini] = useState(false);
+  const [startSeconds, setStartSeconds] = useState(0);
+  const [resumeSeconds, setResumeSeconds] = useState(0);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [includeTimestamp, setIncludeTimestamp] = useState(true);
+  const [shareSeconds, setShareSeconds] = useState(0);
+  const [shareBase, setShareBase] = useState("");
 
   const playerRef = useRef<HTMLDivElement | null>(null);
+  const playerApi = useRef<WatchPlayerApi | null>(null);
 
-  // Load autoplay preference before mounting the player.
+  // Load autoplay + default-theater preferences before mounting the player.
   useEffect(() => {
     try {
       const storedAutoplay = localStorage.getItem(AUTOPLAY_STORAGE_KEY);
       setAutoplay(storedAutoplay === null || storedAutoplay === "1");
+      if (localStorage.getItem(THEATER_STORAGE_KEY) === "1") {
+        setTheaterMode(true);
+      }
     } catch {
       /* ignore */
     }
+    const explicitStart = startTimestamp;
+    const saved = readWatchProgress().find(
+      (entry) => entry.video.id === video.id,
+    );
+    setStartSeconds(explicitStart ?? saved?.positionSeconds ?? 0);
+    setResumeSeconds(
+      explicitStart === null ? (saved?.positionSeconds ?? 0) : 0,
+    );
+    if (explicitStart !== null) playerApi.current?.seekTo(explicitStart, true);
     setPreferencesReady(true);
-  }, [video.id]);
+  }, [video.id, startTimestamp]);
 
   // Record view history on mount
   useEffect(() => {
@@ -94,20 +139,101 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
     }
   };
 
-  const handleShare = async () => {
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share({
-          title: video.title,
-          url: window.location.href,
-        });
+  const onPlayerReady = useCallback((player: WatchPlayerApi | null) => {
+    playerApi.current = player;
+  }, []);
+  const onProgress = useCallback(
+    (seconds: number, duration: number) =>
+      saveWatchProgress(video, seconds, duration),
+    [video],
+  );
+
+  useEffect(() => {
+    const keydown = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.repeat ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.altKey
+      )
         return;
-      } catch (error) {
-        if (error instanceof Error && error.name === "AbortError") return;
+      const target = event.target;
+      if (
+        target instanceof Element &&
+        target.closest(
+          "input, textarea, select, button, a, [contenteditable]:not([contenteditable='false']), [role='textbox'], [role='dialog'], [role='menu']",
+        )
+      )
+        return;
+      if (
+        collectionOpen ||
+        shortcutsOpen ||
+        shareOpen ||
+        document.querySelector('[role="dialog"]')
+      )
+        return;
+      const key = event.key.toLowerCase();
+      if (key === "?") {
+        event.preventDefault();
+        setShortcutsOpen(true);
+        return;
       }
-    }
+      if (key === "t") {
+        event.preventDefault();
+        setTheaterMode((value) => !value);
+        return;
+      }
+      const player = playerApi.current;
+      if (!player) return;
+      if (["k", " ", "j", "l", "arrowleft", "arrowright", "m"].includes(key))
+        event.preventDefault();
+      if (key === "k" || key === " ") {
+        if (player.getPlayerState() === 1) player.pauseVideo();
+        else player.playVideo();
+      } else if (key === "j" || key === "arrowleft")
+        player.seekTo(
+          Math.max(0, player.getCurrentTime() - (key === "j" ? 10 : 5)),
+          true,
+        );
+      else if (key === "l" || key === "arrowright")
+        player.seekTo(
+          Math.min(
+            player.getDuration() || Infinity,
+            player.getCurrentTime() + (key === "l" ? 10 : 5),
+          ),
+          true,
+        );
+      else if (key === "m") {
+        if (player.isMuted()) player.unMute();
+        else player.mute();
+      }
+    };
+    window.addEventListener("keydown", keydown);
+    return () => window.removeEventListener("keydown", keydown);
+  }, [collectionOpen, shortcutsOpen, shareOpen]);
+
+  const handleShare = () => {
+    setShareSeconds(
+      Math.floor(playerApi.current?.getCurrentTime() ?? startSeconds),
+    );
+    setShareBase(window.location.href);
+    setShareOpen(true);
+  };
+  const shareUrl = shareBase
+    ? includeTimestamp
+      ? timestampShareUrl(shareBase, shareSeconds)
+      : (() => {
+          const url = new URL(shareBase);
+          url.searchParams.delete("t");
+          url.searchParams.delete("start");
+          url.hash = "";
+          return url.toString();
+        })()
+    : "";
+  const copyShare = async () => {
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      await navigator.clipboard.writeText(shareUrl);
       toast({
         title: t("Đã sao chép liên kết video"),
         description: video.title,
@@ -115,6 +241,7 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
     } catch {
       toast({
         title: t("Không thể sao chép liên kết"),
+        description: t("Bạn có thể chọn và sao chép liên kết bên trên."),
         variant: "destructive",
       });
     }
@@ -133,97 +260,67 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
   return (
     <div
       className={cn(
-        "mx-auto space-y-7",
-        theaterMode ? "max-w-7xl" : "max-w-6xl",
+        "mx-auto min-w-0 space-y-7",
+        theaterMode ? "max-w-[1440px]" : "max-w-7xl",
       )}
     >
       {/* Main Grid: Video Player + Suggestions Sidebar */}
-      <div className="grid grid-cols-1 gap-7 lg:grid-cols-12">
+      <div className="grid min-w-0 grid-cols-1 items-start gap-7 xl:grid-cols-12">
         {/* Left Column: Player Stage & Video Info */}
         <div
           className={cn(
-            theaterMode ? "lg:col-span-12" : "lg:col-span-8",
-            "space-y-5",
+            theaterMode ? "xl:col-span-12" : "xl:col-span-8",
+            "min-w-0 space-y-5",
           )}
         >
-          {/* Main Video Embed Player with Ambilight Effect */}
-          <div className="relative group/player">
-            {/* Radiant Ambilight Glow */}
-            <div
-              className="pointer-events-none absolute -inset-3 -z-10 rounded-[32px] bg-gradient-to-tr from-rose-600/35 via-purple-600/25 to-cyan-500/20 opacity-75 blur-3xl transition-opacity duration-700"
-              aria-hidden
-            />
-
+          <div className="relative">
             <div
               ref={playerRef}
-              className="relative overflow-hidden rounded-3xl bg-black shadow-2xl ring-1 ring-white/10"
+              className="relative overflow-hidden rounded-xl border border-border bg-black shadow-sm sm:rounded-2xl"
             >
               {preferencesReady ? (
-                <VideoEmbed
-                  item={video}
+                <WatchPlayer
+                  key={video.id}
+                  video={video}
                   autoPlay={autoplay}
                   loop={loop}
-                  className="aspect-video w-full"
+                  startSeconds={startSeconds}
+                  onReady={onPlayerReady}
+                  onProgress={onProgress}
                 />
               ) : (
                 <div
-                  className="aspect-video bg-muted"
+                  className="aspect-video min-h-[200px] animate-pulse bg-muted"
                   role="status"
                   aria-label={t("Đang chuẩn bị trình phát")}
                 />
               )}
-
-              {/* Theater Mode Toggle Button */}
-              <button
-                type="button"
-                onClick={() => setTheaterMode(!theaterMode)}
-                className="absolute right-4 top-4 hidden rounded-xl border border-white/20 bg-black/70 p-2 text-white/90 backdrop-blur-md transition hover:bg-black/95 hover:text-white sm:block shadow-lg"
-                title={
-                  theaterMode
-                    ? t("Thu nhỏ chế độ rạp chiếu")
-                    : t("Chế độ rạp chiếu phim")
-                }
-              >
-                {theaterMode ? (
-                  <Minimize2 className="h-4 w-4" />
-                ) : (
-                  <Maximize2 className="h-4 w-4" />
-                )}
-              </button>
             </div>
           </div>
 
-          {/* Embeddable Warning if applicable */}
-          {video.embeddable === false && (
-            <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-500">
-              <p className="font-semibold">
-                {t("Video này có thể bị hạn chế nhúng.")}{" "}
-              </p>
-              <p className="mt-0.5 text-xs opacity-90">
-                {t(
-                  "Chủ sở hữu video đã tắt chế độ phát trên các trang web bên thứ ba.",
-                )}{" "}
-              </p>
+          {resumeSeconds > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-muted/50 px-4 py-2 text-sm">
+              <span>
+                {t("Tiếp tục từ {p0}", { p0: formatDuration(resumeSeconds) })}
+              </span>
               <Button
-                asChild
+                variant="ghost"
                 size="sm"
-                variant="secondary"
-                className="mt-2.5 rounded-xl"
+                onClick={() => {
+                  setStartSeconds(0);
+                  setResumeSeconds(0);
+                  removeWatchProgress(video.id);
+                  playerApi.current?.seekTo(0, true);
+                }}
               >
-                <a
-                  href={video.watchUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <ExternalLink className="mr-1.5 h-3.5 w-3.5" />{" "}
-                  {t("Mở trực tiếp trên YouTube")}{" "}
-                </a>
+                <RotateCcw className="h-4 w-4" />
+                {t("Xem từ đầu")}
               </Button>
             </div>
           )}
 
           {/* Video Title */}
-          <h1 className="font-display text-xl font-bold leading-snug sm:text-2xl lg:text-3xl text-foreground">
+          <h1 className="text-xl font-bold leading-snug tracking-tight text-foreground sm:text-2xl">
             {video.title}
           </h1>
 
@@ -231,7 +328,7 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
           <div className="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
             {/* Channel Info */}
             <div className="flex items-center gap-3">
-              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-rose-500 to-purple-600 text-sm font-bold text-white ring-2 ring-white/10 shadow-md">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-bold text-primary">
                 {video.channel.slice(0, 1).toUpperCase()}
               </div>
               <div className="min-w-0">
@@ -263,15 +360,16 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
                       : t("Đã thêm vào Xem sau"),
                   });
                 }}
+                aria-pressed={isQueued}
                 className={cn(
-                  "rounded-xl border border-border gap-1.5",
-                  isQueued && "text-rose-400 border-rose-500/30",
+                  "min-h-11 rounded-full border border-border gap-1.5",
+                  isQueued && "border-primary/30 bg-primary/10 text-primary",
                 )}
                 title={t("Lưu vào danh sách xem sau")}
               >
                 {isQueued ? (
                   <>
-                    <Check className="h-4 w-4 text-rose-500" />
+                    <Check className="h-4 w-4" />
                     <span>{t("Đã lưu")}</span>
                   </>
                 ) : (
@@ -289,11 +387,11 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
                 size="sm"
                 disabled={isCreating}
                 onClick={() => void createRoom(video)}
-                className="rounded-xl border border-border gap-1.5 hover:border-purple-500/40 hover:text-purple-400"
+                className="min-h-11 rounded-full border border-border gap-1.5 hover:text-primary"
                 title={t("Tạo phòng xem chung cùng bạn bè")}
               >
                 <Users className="h-4 w-4" />
-                <span className="hidden sm:inline">{t("Xem cùng")}</span>
+                <span>{t("Xem cùng")}</span>
               </Button>
 
               {/* Add Collection */}
@@ -302,7 +400,7 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
                 variant="secondary"
                 size="sm"
                 onClick={() => setCollectionOpen(true)}
-                className="rounded-xl border border-border gap-1.5 hover:bg-muted"
+                className="min-h-11 rounded-full border border-border gap-1.5 hover:bg-muted"
                 title={t("Lưu vào thư viện")}
               >
                 <BookmarkPlus className="h-4 w-4" />
@@ -315,22 +413,46 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
                 variant="secondary"
                 size="sm"
                 onClick={handleShare}
-                className="rounded-xl border border-border gap-1.5 hover:bg-muted"
+                className="min-h-11 rounded-full border border-border gap-1.5 hover:bg-muted"
                 title={t("Chia sẻ video")}
               >
                 <Share2 className="h-4 w-4" />
-                <span className="hidden sm:inline">{t("Chia sẻ")}</span>
+                <span>{t("Chia sẻ")}</span>
               </Button>
             </div>
           </div>
 
+          <div className="flex flex-wrap justify-end gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShortcutsOpen(true)}
+              className="min-h-11 text-xs"
+            >
+              <Keyboard />
+              {t("Phím tắt")}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setTheaterMode((value) => !value)}
+              aria-pressed={theaterMode}
+              className="min-h-11 text-xs"
+            >
+              {theaterMode ? <Minimize2 /> : <Maximize2 />}
+              {theaterMode
+                ? t("Thu nhỏ chế độ rạp chiếu")
+                : t("Chế độ rạp chiếu phim")}
+            </Button>
+          </div>
+
           {/* Expandable Description */}
           {video.description && (
-            <div className="rounded-2xl border border-white/5 bg-card/60 p-4 transition-all duration-200">
+            <div className="rounded-xl bg-muted/60 p-4">
               <div
                 className={cn(
-                  "overflow-hidden text-xs sm:text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap break-words",
-                  !descExpanded && "max-h-24 mask-fade-b",
+                  "text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap break-words",
+                  !descExpanded && "line-clamp-3",
                 )}
               >
                 {video.description}
@@ -338,7 +460,8 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
               <button
                 type="button"
                 onClick={() => setDescExpanded(!descExpanded)}
-                className="mt-2.5 inline-flex items-center gap-1 text-xs font-semibold text-rose-400 hover:underline"
+                aria-expanded={descExpanded}
+                className="mt-2 inline-flex min-h-11 items-center gap-1 rounded-lg text-sm font-semibold hover:underline"
               >
                 {descExpanded ? (
                   <>
@@ -359,8 +482,8 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
         {/* Right Column: Suggested Next Videos */}
         <div
           className={cn(
-            theaterMode ? "lg:col-span-12" : "lg:col-span-4",
-            "space-y-4",
+            theaterMode ? "xl:col-span-12" : "xl:col-span-4",
+            "min-w-0 space-y-4",
           )}
         >
           <div className="flex items-center justify-between pb-1">
@@ -373,13 +496,13 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
               role="switch"
               aria-checked={autoplay}
               onClick={toggleAutoplay}
-              className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground"
+              className="flex min-h-11 items-center gap-2 rounded-lg text-xs text-muted-foreground hover:text-foreground"
             >
               <span>{t("Phát khi mở video")}</span>
               <span
                 className={cn(
                   "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
-                  autoplay ? "bg-rose-500" : "bg-muted",
+                  autoplay ? "bg-primary" : "bg-muted-foreground/30",
                 )}
               >
                 <span
@@ -393,7 +516,12 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
           </div>
 
           {/* Suggestions List */}
-          <div className="flex flex-col gap-3">
+          <div
+            className={cn(
+              "grid gap-4",
+              theaterMode && "sm:grid-cols-2 xl:grid-cols-3",
+            )}
+          >
             {!relatedVideos.length && (
               <p className="rounded-xl border border-border p-4 text-sm text-muted-foreground">
                 {t("Chưa có video gợi ý.")}{" "}
@@ -409,9 +537,9 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
               <Link
                 key={item.id}
                 href={`/watch/${item.id}`}
-                className="group flex gap-3 rounded-xl border border-border bg-card/60 p-2.5 transition hover:border-primary/40 hover:bg-muted/60"
+                className="group flex min-w-0 gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 focus-visible:ring-offset-background"
               >
-                <div className="relative aspect-video w-28 shrink-0 self-start overflow-hidden rounded-lg sm:w-32">
+                <div className="relative aspect-video w-[42%] max-w-44 shrink-0 self-start overflow-hidden rounded-lg bg-muted">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={item.thumbnail}
@@ -436,6 +564,20 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
                 </div>
               </Link>
             ))}
+
+            {/* Jump straight into a watch party with the first suggestion. */}
+            {relatedVideos.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  const next = relatedVideos[0];
+                  if (next) router.push(`/watch/${next.id}`);
+                }}
+                className="mt-1 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-muted/60 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
+              >
+                {t("Phát video đầu tiên trong danh sách")}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -444,7 +586,7 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
       {showStickyMini && (
         <aside
           aria-label={t("Quay lại video đang xem")}
-          className="fixed bottom-20 right-4 z-40 hidden w-80 animate-in-up overflow-hidden rounded-2xl border border-border bg-card/95 shadow-2xl backdrop-blur-2xl sm:block"
+          className="fixed bottom-24 right-4 z-40 hidden w-72 overflow-hidden rounded-xl border border-border bg-card shadow-xl sm:block"
         >
           <div className="flex items-center justify-between p-3">
             <p className="truncate text-xs font-semibold text-foreground pr-2">
@@ -454,7 +596,13 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
               size="sm"
               variant="secondary"
               onClick={() => {
-                playerRef.current?.scrollIntoView({ behavior: "smooth" });
+                playerRef.current?.scrollIntoView({
+                  behavior: window.matchMedia(
+                    "(prefers-reduced-motion: reduce)",
+                  ).matches
+                    ? "auto"
+                    : "smooth",
+                });
               }}
               className="h-7 px-2.5 text-xs rounded-lg"
             >
@@ -465,6 +613,94 @@ export function WatchView({ video, relatedVideos, loop = false }: Props) {
       )}
 
       {/* Collection Dialog */}
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("Chia sẻ video")}</DialogTitle>
+            <DialogDescription>
+              {t("Gửi liên kết để bạn bè xem đúng khoảnh khắc.")}
+            </DialogDescription>
+          </DialogHeader>
+          <label className="flex min-h-11 items-center gap-3 text-sm">
+            <input
+              type="checkbox"
+              checked={includeTimestamp}
+              onChange={(event) => setIncludeTimestamp(event.target.checked)}
+              className="h-4 w-4 accent-primary"
+            />
+            {t("Bắt đầu tại {p0}", {
+              p0: formatDuration(shareSeconds) || "0:00",
+            })}
+          </label>
+          <label className="space-y-2 text-sm font-medium">
+            <span>{t("Liên kết video")}</span>
+            <input
+              readOnly
+              value={shareUrl}
+              onFocus={(event) => event.currentTarget.select()}
+              className="h-11 w-full rounded-lg border border-input bg-muted px-3 text-sm font-normal"
+            />
+          </label>
+          <Button onClick={() => void copyShare()}>
+            <Copy />
+            {t("Sao chép liên kết")}
+          </Button>
+          {shareOpen &&
+            typeof navigator !== "undefined" &&
+            typeof navigator.share === "function" && (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  void navigator
+                    .share({ title: video.title, url: shareUrl })
+                    .catch((error: unknown) => {
+                      if (
+                        !(error instanceof Error && error.name === "AbortError")
+                      )
+                        void copyShare();
+                    });
+                }}
+              >
+                <Share2 />
+                {t("Chia sẻ")}
+              </Button>
+            )}
+        </DialogContent>
+      </Dialog>
+      <Dialog open={shortcutsOpen} onOpenChange={setShortcutsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("Phím tắt trình phát")}</DialogTitle>
+            <DialogDescription>
+              {t(
+                "Dùng khi không nhập văn bản. Khi đang ở trong video, phím tắt YouTube sẽ được áp dụng.",
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <dl className="divide-y divide-border text-sm">
+            {[
+              ["K / Space", "Phát / tạm dừng"],
+              ["J / L", "Lùi / tiến 10 giây"],
+              ["← / →", "Lùi / tiến 5 giây"],
+              ["M", "Bật / tắt tiếng"],
+              ["T", "Chế độ rạp chiếu phim"],
+              ["?", "Mở hướng dẫn phím tắt"],
+            ].map(([key, label]) => (
+              <div
+                key={key}
+                className="flex items-center justify-between gap-4 py-3"
+              >
+                <dt>{t(label)}</dt>
+                <dd>
+                  <kbd className="whitespace-nowrap rounded-md border border-border bg-muted px-2 py-1 font-mono text-xs">
+                    {key}
+                  </kbd>
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </DialogContent>
+      </Dialog>
       {collectionOpen && (
         <AddToCollectionDialog
           open={collectionOpen}

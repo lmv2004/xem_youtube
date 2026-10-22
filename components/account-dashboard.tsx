@@ -70,6 +70,10 @@ export function AccountDashboard({ user, stats }: Props) {
   const [isClearing, setIsClearing] = useState(false);
 
   useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
+  useEffect(() => {
     try {
       const stored = JSON.parse(
         localStorage.getItem(STORAGE_INTERESTS) ?? "[]",
@@ -132,12 +136,13 @@ export function AccountDashboard({ user, stats }: Props) {
   };
 
   const handleClearHistory = async () => {
+    if (!window.confirm(t("Bạn có chắc muốn xóa toàn bộ lịch sử xem?"))) return;
     setIsClearing(true);
     try {
       const res = await fetch("/api/history?all=true", { method: "DELETE" });
       if (res.ok) {
         toast({ title: t("Đã xóa toàn bộ lịch sử xem") });
-      }
+      } else throw new Error("History delete failed");
     } catch {
       toast({ title: t("Không thể xóa lịch sử"), variant: "destructive" });
     } finally {
@@ -157,12 +162,10 @@ export function AccountDashboard({ user, stats }: Props) {
   return (
     <div className="space-y-8 animate-in-up">
       {/* Account Header with Luxury Glass Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-r from-card/90 via-card/80 to-purple-950/20 p-6 sm:p-8 shadow-2xl backdrop-blur-2xl">
-        <div className="absolute right-0 top-0 -mr-12 -mt-12 h-56 w-56 rounded-full bg-rose-500/10 blur-3xl pointer-events-none" />
-
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 sm:p-8">
         <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-5">
           <div className="flex items-center gap-4">
-            <div className="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-rose-500 via-purple-600 to-cyan-500 p-0.5 shadow-xl">
+            <div className="grid h-16 w-16 place-items-center rounded-2xl bg-primary p-0.5 shadow-sm">
               <div className="h-full w-full rounded-2xl bg-card flex items-center justify-center overflow-hidden">
                 {user.image ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -183,8 +186,8 @@ export function AccountDashboard({ user, stats }: Props) {
                 <h1 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-foreground truncate">
                   {user.name ?? t("Thành viên XemPhim")}
                 </h1>
-                <span className="rounded-full border border-rose-500/30 bg-rose-500/15 px-2 py-0.5 text-[10px] font-bold text-rose-400">
-                  VIP
+                <span className="rounded-full border border-border bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+                  {t("Tài khoản")}
                 </span>
               </div>
               <p className="text-xs text-muted-foreground truncate mt-0.5">
@@ -200,15 +203,15 @@ export function AccountDashboard({ user, stats }: Props) {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex flex-wrap items-center gap-1.5 rounded-2xl border border-white/10 bg-card/75 p-1.5 backdrop-blur-2xl shadow-lg">
+      <div className="flex flex-wrap items-center gap-1.5 rounded-2xl border border-border bg-card p-1.5  shadow-lg">
         <button
           type="button"
           onClick={() => setActiveTab("profile")}
           className={cn(
             "flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all duration-200",
             activeTab === "profile"
-              ? "bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-[0_0_15px_rgba(255,42,84,0.4)]"
-              : "text-muted-foreground hover:text-foreground hover:bg-white/5",
+              ? "bg-primary text-white "
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
           )}
         >
           <User className="h-3.5 w-3.5" />
@@ -221,8 +224,8 @@ export function AccountDashboard({ user, stats }: Props) {
           className={cn(
             "flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all duration-200",
             activeTab === "preferences"
-              ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-[0_0_15px_rgba(139,92,246,0.4)]"
-              : "text-muted-foreground hover:text-foreground hover:bg-white/5",
+              ? "bg-primary text-white "
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
           )}
         >
           <Sparkles className="h-3.5 w-3.5" />
@@ -238,8 +241,8 @@ export function AccountDashboard({ user, stats }: Props) {
           className={cn(
             "flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all duration-200",
             activeTab === "settings"
-              ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)]"
-              : "text-muted-foreground hover:text-foreground hover:bg-white/5",
+              ? "bg-primary text-white "
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
           )}
         >
           <Sliders className="h-3.5 w-3.5" />
@@ -252,8 +255,8 @@ export function AccountDashboard({ user, stats }: Props) {
           className={cn(
             "flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all duration-200",
             activeTab === "privacy"
-              ? "bg-gradient-to-r from-amber-600 to-red-600 text-white shadow-[0_0_15px_rgba(245,158,11,0.4)]"
-              : "text-muted-foreground hover:text-foreground hover:bg-white/5",
+              ? "bg-primary text-white "
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
           )}
         >
           <Shield className="h-3.5 w-3.5" />
@@ -265,7 +268,7 @@ export function AccountDashboard({ user, stats }: Props) {
       {activeTab === "profile" && (
         <section className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-3">
-            <Card className="rounded-3xl border border-white/10 bg-card/75 shadow-xl backdrop-blur-2xl">
+            <Card className="rounded-3xl border border-border bg-card shadow-sm ">
               <CardContent className="p-5 space-y-1">
                 <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold">
                   <span>{t("Tổng video đã xem")}</span>
@@ -280,22 +283,24 @@ export function AccountDashboard({ user, stats }: Props) {
               </CardContent>
             </Card>
 
-            <Card className="rounded-3xl border border-white/10 bg-card/75 shadow-xl backdrop-blur-2xl">
+            <Card className="rounded-3xl border border-border bg-card shadow-sm ">
               <CardContent className="p-5 space-y-1">
                 <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold">
-                  <span>{t("Thời lượng thưởng thức")}</span>
+                  <span>{t("Thời lượng video đã lưu trong lịch sử")}</span>
                   <Clock className="h-4 w-4 text-purple-400" />
                 </div>
                 <p className="font-display text-2xl sm:text-3xl font-extrabold text-foreground pt-1">
                   {formatHours(stats.totalMinutes)}
                 </p>
                 <p className="text-[11px] text-muted-foreground">
-                  {t("Tổng thời gian xem trên nền tảng")}
+                  {t(
+                    "Tổng thời lượng video, không phải thời gian đã xem thực tế.",
+                  )}
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="rounded-3xl border border-white/10 bg-card/75 shadow-xl backdrop-blur-2xl">
+            <Card className="rounded-3xl border border-border bg-card shadow-sm ">
               <CardContent className="p-5 space-y-1">
                 <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold">
                   <span>{t("Video xem gần nhất")}</span>
@@ -310,7 +315,7 @@ export function AccountDashboard({ user, stats }: Props) {
 
           {/* Top Channels */}
           {stats.topChannels.length > 0 && (
-            <Card className="rounded-3xl border border-white/10 bg-card/75 p-6 shadow-xl backdrop-blur-2xl space-y-4">
+            <Card className="rounded-3xl border border-border bg-card p-6 shadow-sm  space-y-4">
               <div className="flex items-center gap-2 text-foreground font-bold text-sm">
                 <Trophy className="h-4 w-4 text-amber-400" />
                 <span>{t("Kênh bạn xem nhiều nhất")}</span>
@@ -342,7 +347,7 @@ export function AccountDashboard({ user, stats }: Props) {
 
       {/* Tab 2: Recommendation Preferences */}
       {activeTab === "preferences" && (
-        <section className="rounded-3xl border border-white/10 bg-card/75 p-6 sm:p-8 space-y-4 shadow-xl backdrop-blur-2xl">
+        <section className="rounded-3xl border border-border bg-card p-6 sm:p-8 space-y-4 shadow-sm ">
           <div>
             <h2 className="font-display text-lg font-bold text-foreground">
               {t("Chủ đề sở thích cá nhân")}
@@ -365,8 +370,8 @@ export function AccountDashboard({ user, stats }: Props) {
                   className={cn(
                     "flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition-all duration-200",
                     active
-                      ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-[0_0_15px_rgba(139,92,246,0.4)]"
-                      : "border border-white/10 bg-white/5 text-foreground/80 hover:border-white/25 hover:bg-white/10",
+                      ? "bg-primary text-white "
+                      : "border border-border bg-muted/50 text-foreground/80 hover:border-border hover:bg-muted",
                   )}
                 >
                   {active ? (
@@ -382,7 +387,7 @@ export function AccountDashboard({ user, stats }: Props) {
 
       {/* Tab 3: Settings */}
       {activeTab === "settings" && (
-        <section className="rounded-3xl border border-white/10 bg-card/75 p-6 sm:p-8 space-y-6 shadow-xl backdrop-blur-2xl">
+        <section className="rounded-3xl border border-border bg-card p-6 sm:p-8 space-y-6 shadow-sm ">
           {/* Theme Selector */}
           <div className="space-y-3">
             <h2 className="font-display text-base font-bold text-foreground">
@@ -401,8 +406,8 @@ export function AccountDashboard({ user, stats }: Props) {
                   className={cn(
                     "flex flex-col items-center gap-2 rounded-2xl border p-4 text-center text-xs font-semibold transition-all duration-200",
                     theme === id
-                      ? "border-rose-500 bg-rose-500/10 text-rose-400 shadow-[0_0_15px_rgba(255,42,84,0.3)]"
-                      : "border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground",
+                      ? "border-rose-500 bg-rose-500/10 text-rose-400 "
+                      : "border-border bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground",
                   )}
                 >
                   <Icon className="h-5 w-5" />
@@ -413,24 +418,29 @@ export function AccountDashboard({ user, stats }: Props) {
           </div>
 
           {/* Autoplay & Theater options */}
-          <div className="divide-y divide-white/10 pt-2">
+          <div className="divide-y divide-border pt-2">
             <div className="flex items-center justify-between py-4">
               <div>
                 <p className="text-sm font-semibold text-foreground">
-                  {t("Tự động phát video kế tiếp")}
+                  {t("Tự động phát khi mở video")}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {t("Tự chuyển sang video liên quan khi xem xong")}
+                  {t(
+                    "Bắt đầu phát khi bạn mở trang video, nếu trình duyệt cho phép.",
+                  )}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={handleAutoplayToggle}
+                role="switch"
+                aria-checked={autoplay}
+                aria-label={t("Tự động phát khi mở video")}
                 className={cn(
                   "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200",
                   autoplay
                     ? "bg-rose-500 shadow-[0_0_12px_rgba(255,42,84,0.4)]"
-                    : "bg-white/20",
+                    : "bg-muted-foreground/40",
                 )}
               >
                 <span
@@ -454,11 +464,14 @@ export function AccountDashboard({ user, stats }: Props) {
               <button
                 type="button"
                 onClick={handleTheaterToggle}
+                role="switch"
+                aria-checked={defaultTheater}
+                aria-label={t("Mặc định chế độ rạp chiếu phim")}
                 className={cn(
                   "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200",
                   defaultTheater
                     ? "bg-rose-500 shadow-[0_0_12px_rgba(255,42,84,0.4)]"
-                    : "bg-white/20",
+                    : "bg-muted-foreground/40",
                 )}
               >
                 <span
@@ -475,7 +488,7 @@ export function AccountDashboard({ user, stats }: Props) {
 
       {/* Tab 4: Privacy */}
       {activeTab === "privacy" && (
-        <section className="rounded-3xl border border-white/10 bg-card/75 p-6 sm:p-8 space-y-5 shadow-xl backdrop-blur-2xl">
+        <section className="rounded-3xl border border-border bg-card p-6 sm:p-8 space-y-5 shadow-sm ">
           <div>
             <h2 className="font-display text-lg font-bold text-foreground">
               {t("Quản lý quyền riêng tư & Dữ liệu")}

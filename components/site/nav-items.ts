@@ -1,10 +1,12 @@
 import {
   Compass,
+  Clock3,
   Heart,
   History,
   Library,
   Link2,
   Settings,
+  UserRound,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -29,19 +31,40 @@ export type NavItem = {
  */
 export const PRIMARY_NAV: NavItem[] = [
   { href: "/", label: "Khám phá", icon: Compass },
-  { href: "/rooms", label: "Phòng xem chung", shortLabel: "Phòng", icon: Users },
+  {
+    href: "/rooms",
+    label: "Phòng xem chung",
+    shortLabel: "Phòng",
+    icon: Users,
+  },
   { href: "/watch", label: "Xem nhanh", shortLabel: "Xem", icon: Link2 },
 ];
 
 export const LIBRARY_NAV: NavItem[] = [
+  { href: "/watch-later", label: "Xem sau", icon: Clock3 },
   { href: "/favorites", label: "Yêu thích", shortLabel: "Thích", icon: Heart },
   { href: "/history", label: "Lịch sử", shortLabel: "Lịch sử", icon: History },
-  { href: "/favorites?tab=collections", label: "Bộ sưu tập", shortLabel: "Bộ sưu tập", icon: Library },
+  {
+    href: "/favorites?tab=collections",
+    label: "Bộ sưu tập",
+    shortLabel: "Bộ sưu tập",
+    icon: Library,
+  },
 ];
 
 export const ACCOUNT_NAV: NavItem[] = [
-  { href: "/account", label: "Tài khoản", shortLabel: "Tài khoản", icon: Settings },
-  { href: "/account?tab=settings", label: "Cài đặt", shortLabel: "Cài đặt", icon: Settings },
+  {
+    href: "/account",
+    label: "Tài khoản",
+    shortLabel: "Tài khoản",
+    icon: UserRound,
+  },
+  {
+    href: "/account?tab=settings",
+    label: "Cài đặt",
+    shortLabel: "Cài đặt",
+    icon: Settings,
+  },
 ];
 
 /**
@@ -52,7 +75,7 @@ export const ACCOUNT_NAV: NavItem[] = [
 export const MOBILE_NAV: NavItem[] = [
   PRIMARY_NAV[0],
   PRIMARY_NAV[1],
-  PRIMARY_NAV[2],
   LIBRARY_NAV[0],
   LIBRARY_NAV[1],
+  LIBRARY_NAV[2],
 ];

@@ -72,6 +72,11 @@ export default async function RootLayout({
     <html lang={locale} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {/* Warm up connections to the YouTube hosts we always hit so the
+            first video page feels instant instead of paying DNS+TLS twice. */}
+        <link rel="preconnect" href="https://www.youtube.com" />
+        <link rel="preconnect" href="https://i.ytimg.com" />
+        <link rel="dns-prefetch" href="https://www.youtube-nocookie.com" />
       </head>
       <body
         className={`${sans.variable} ${display.variable} ${telugu.variable} min-h-screen bg-background font-sans antialiased text-foreground selection:bg-rose-500/30 selection:text-white`}

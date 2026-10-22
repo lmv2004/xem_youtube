@@ -55,8 +55,10 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
-    overflow-x: hidden;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1,
+      "ss01" 1;
   }
   ::selection {
     background: rgba(255, 42, 84, 0.35);
@@ -65,55 +67,23 @@
 }
 
 @layer utilities {
-  /* Ultra-modern Glassmorphism */
-  .glass {
-    background: linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.05) 0%,
-      rgba(255, 255, 255, 0.015) 100%
-    ),
-    hsl(var(--card) / 0.72);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .glass-card {
-    background: linear-gradient(
-      145deg,
-      hsl(var(--card) / 0.85) 0%,
-      hsl(var(--card) / 0.55) 100%
-    );
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  .glass-card:hover {
-    border-color: rgba(255, 42, 84, 0.35);
-    box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.6), 0 0 25px -4px rgba(255, 42, 84, 0.15);
-    transform: translateY(-2px);
-  }
-
+  /* Shared solid surfaces keep both color themes readable. */
+  .glass,
+  .glass-card,
   .glass-strong {
-    background: linear-gradient(
-      135deg,
-      hsl(var(--card) / 0.92) 0%,
-      hsl(var(--card) / 0.7) 100%
-    );
-    backdrop-filter: blur(28px) saturate(190%);
-    -webkit-backdrop-filter: blur(28px) saturate(190%);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
   }
-
+  .glass-card {
+    transition: border-color 150ms ease;
+  }
+  .glass-card:hover {
+    border-color: hsl(var(--primary) / 0.4);
+  }
   .glass-pill {
-    background: rgba(255, 255, 255, 0.06);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: hsl(var(--secondary));
+    border: 1px solid hsl(var(--border));
   }
-
   /* Vibrant Neon Glows */
   .glow-primary {
     box-shadow:
@@ -138,28 +108,28 @@
 
   /* Multi-stop Gradients */
   .text-gradient {
-    background: linear-gradient(125deg, #FF3366 0%, #C084FC 45%, #06B6D4 100%);
+    background: linear-gradient(125deg, #ff3366 0%, #c084fc 45%, #06b6d4 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
 
   .text-gradient-cinema {
-    background: linear-gradient(135deg, #FF416C 0%, #8A2387 50%, #E94057 100%);
+    background: linear-gradient(135deg, #ff416c 0%, #8a2387 50%, #e94057 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
 
   .text-gradient-amber {
-    background: linear-gradient(135deg, #F59E0B 0%, #EF4444 100%);
+    background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
 
   .text-gradient-cyan {
-    background: linear-gradient(135deg, #00F2FE 0%, #4FACFE 100%);
+    background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -174,7 +144,10 @@
   }
 
   .bg-dots {
-    background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+    background-image: radial-gradient(
+      rgba(255, 255, 255, 0.08) 1px,
+      transparent 1px
+    );
     background-size: 24px 24px;
   }
 
@@ -185,34 +158,74 @@
   }
   .mask-fade-radial {
     mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
-    -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
+    -webkit-mask-image: radial-gradient(
+      circle at center,
+      black 40%,
+      transparent 80%
+    );
   }
 
-  /* Micro animations */
+  /* Micro animations — giữ thời lượng ngắn, chỉ translate/opacity. */
   .animate-in-up {
-    animation: in-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: in-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+
+/* Tốn GPU & chống giật khi cuộn: lớp phủ animation nhỏ. */
+@layer base {
+  .mask-fade-r {
+    mask-image: linear-gradient(to right, black 82%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black 82%, transparent 100%);
+  }
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 }
 
 @keyframes mesh-pan {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(3%, -3%) scale(1.08); }
-  66% { transform: translate(-3%, 3%) scale(1.04); }
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(3%, -3%) scale(1.08);
+  }
+  66% {
+    transform: translate(-3%, 3%) scale(1.04);
+  }
 }
 
 @keyframes in-up {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 @keyframes float-slow {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-10px) rotate(1deg); }
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(1deg);
+  }
 }
 
 .animate-float {
@@ -247,7 +260,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
   }
@@ -255,15 +270,69 @@
 
 /* Shared interaction and surface rules for the discovery and watch flows. */
 @layer base {
-  :root { --primary: 347 78% 46%; --background: 220 20% 98%; --muted-foreground: 225 10% 40%; }
-  .dark { --background: 225 16% 7%; --card: 225 14% 10%; --muted-foreground: 220 10% 69%; --border: 225 12% 20%; }
-  :where(a, button, input, select, textarea):focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 3px; }
-  html { scroll-padding-top: 5rem; }
+  :root {
+    --primary: 347 78% 46%;
+    --background: 220 20% 98%;
+    --muted-foreground: 225 10% 40%;
+  }
+  .dark {
+    --background: 225 16% 7%;
+    --card: 225 14% 10%;
+    --muted-foreground: 220 10% 69%;
+    --border: 225 12% 20%;
+  }
+  :where(a, button, input, select, textarea):focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 3px;
+  }
+  html {
+    scroll-padding-top: 5rem;
+  }
 }
-.discovery-intro { background: linear-gradient(115deg, hsl(var(--card)), hsl(var(--primary) / 0.055)); }
+.discovery-intro {
+  background: hsl(var(--card));
+}
 
 /* Telugu glyphs need their own font; keep Latin branding and numeric fallbacks. */
 html[lang="te"] body,
 html[lang="te"] .font-display {
   font-family: var(--font-telugu), var(--font-sans), sans-serif;
+}
+
+/* Consistent keyboard and touch feedback across dense media surfaces. */
+@layer base {
+  :root {
+    --ring: 347 78% 46%;
+    --accent: 220 14% 94%;
+    --accent-foreground: 225 18% 12%;
+  }
+  .dark {
+    --background: 225 12% 6%;
+    --card: 225 10% 10%;
+    --accent: 225 10% 17%;
+    --accent-foreground: 220 15% 96%;
+  }
+  :where(button, a, input, select, textarea) {
+    -webkit-tap-highlight-color: transparent;
+  }
+  :where(input, textarea, select) {
+    font-size: max(16px, 1em);
+  }
+  :where(button, a) {
+    touch-action: manipulation;
+  }
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
 }

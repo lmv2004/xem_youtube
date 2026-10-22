@@ -1,60 +1,60 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
+import { normalizeRecentSearches } from "@/lib/local-library";
 
 const STORAGE_KEY = "xemphim:recentSearches";
-const MAX_ITEMS = 8;
+const SYNC_EVENT = "xemphim:recentSearches:change";
+let memoryItems: string[] = [];
+let hasUnpersistedChanges = false;
 
 function read(): string[] {
   if (typeof window === "undefined") return [];
+  if (hasUnpersistedChanges) return memoryItems;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((v): v is string => typeof v === "string" && v.length > 0);
+    memoryItems = normalizeRecentSearches(raw ? JSON.parse(raw) : []);
   } catch {
-    return [];
+    /* Storage restrictions must not break search. */
   }
+  return memoryItems;
 }
 
 function write(items: string[]) {
+  memoryItems = normalizeRecentSearches(items);
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, MAX_ITEMS)));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryItems));
+    hasUnpersistedChanges = false;
   } catch {
-    /* ignore */
+    hasUnpersistedChanges = true;
   }
+  window.dispatchEvent(new CustomEvent(SYNC_EVENT, { detail: memoryItems }));
+  return memoryItems;
 }
 
-/** Recently used search terms, most recent first. */
 export function useRecentSearches() {
   const [items, setItems] = useState<string[]>([]);
-
   useEffect(() => {
     setItems(read());
+    const sync = (event: Event) =>
+      setItems((event as CustomEvent<string[]>).detail);
+    const storage = (event: StorageEvent) => {
+      if (event.key === STORAGE_KEY || event.key === null) setItems(read());
+    };
+    window.addEventListener(SYNC_EVENT, sync);
+    window.addEventListener("storage", storage);
+    return () => {
+      window.removeEventListener(SYNC_EVENT, sync);
+      window.removeEventListener("storage", storage);
+    };
   }, []);
-
   const add = useCallback((term: string) => {
-    const value = term.trim();
-    if (value.length < 2) return;
-    // Case-insensitive de-dupe, but keep the casing the user just typed.
-    const next = [
-      value,
-      ...read().filter((v) => v.toLowerCase() !== value.toLowerCase()),
-    ].slice(0, MAX_ITEMS);
-    write(next);
-    setItems(next);
+    if (term.trim().length < 2) return;
+    setItems(write([term, ...read()]));
   }, []);
-
-  const remove = useCallback((term: string) => {
-    const next = read().filter((v) => v !== term);
-    write(next);
-    setItems(next);
-  }, []);
-
-  const clear = useCallback(() => {
-    write([]);
-    setItems([]);
-  }, []);
-
+  const remove = useCallback(
+    (term: string) => setItems(write(read().filter((value) => value !== term))),
+    [],
+  );
+  const clear = useCallback(() => setItems(write([])), []);
   return { items, add, remove, clear };
 }

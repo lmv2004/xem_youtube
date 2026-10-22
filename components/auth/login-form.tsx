@@ -16,14 +16,19 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { authReturnPath } from "@/lib/auth-navigation";
 
-export function LoginForm() {
+export function LoginForm({
+  googleEnabled = false,
+}: {
+  googleEnabled?: boolean;
+}) {
   const t = useTranslations();
   const router = useRouter();
   const search = useSearchParams();
-  const callbackUrl = search.get("callbackUrl") ?? "/";
-  const [email, setEmail] = useState("demo@xemphim.local");
-  const [password, setPassword] = useState("Demo1234!");
+  const callbackUrl = authReturnPath(search.get("callbackUrl"));
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,18 +36,24 @@ export function LoginForm() {
     e.preventDefault();
     setPending(true);
     setError(null);
-    const res = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
-    setPending(false);
-    if (!res || res.error) {
-      setError(t("Email hoặc mật khẩu không đúng."));
-      return;
+    try {
+      const res = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+      setPending(false);
+      if (!res || res.error) {
+        setError(t("Email hoặc mật khẩu không đúng."));
+        return;
+      }
+      router.push(callbackUrl);
+      router.refresh();
+    } catch {
+      setError(t("Không thể kết nối. Vui lòng thử lại."));
+    } finally {
+      setPending(false);
     }
-    router.push(callbackUrl);
-    router.refresh();
   }
 
   return (
@@ -78,29 +89,49 @@ export function LoginForm() {
             />
           </div>
           {error ? (
-            <p className="text-sm text-destructive">{t(error ?? "")}</p>
+            <p role="alert" className="text-sm text-destructive">
+              {t(error ?? "")}
+            </p>
           ) : null}
           <Button type="submit" className="w-full" disabled={pending}>
             {pending ? t("Đang đăng nhập...") : t("Đăng nhập")}
           </Button>
         </form>
-        <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
-          <Separator className="flex-1" />
-          <span>{t("hoặc")}</span>
-          <Separator className="flex-1" />
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={() => signIn("google", { callbackUrl })}
-        >
-          {t("Tiếp tục với Google")}{" "}
-        </Button>
+        {googleEnabled && (
+          <>
+            <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
+              <Separator className="flex-1" />
+              <span>{t("hoặc")}</span>
+              <Separator className="flex-1" />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              disabled={pending}
+              onClick={async () => {
+                setPending(true);
+                setError(null);
+                try {
+                  await signIn("google", { callbackUrl });
+                } catch {
+                  setError(t("Không thể kết nối. Vui lòng thử lại."));
+                } finally {
+                  setPending(false);
+                }
+              }}
+            >
+              {t("Tiếp tục với Google")}{" "}
+            </Button>
+          </>
+        )}
       </CardContent>
       <CardFooter className="justify-center text-sm text-muted-foreground">
         {t("Chưa có tài khoản?")}{" "}
-        <Link href="/register" className="ml-1 text-primary hover:underline">
+        <Link
+          href={`/register?callbackUrl=${encodeURIComponent(callbackUrl)}`}
+          className="ml-1 text-primary hover:underline"
+        >
           {t("Đăng ký")}{" "}
         </Link>
       </CardFooter>

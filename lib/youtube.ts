@@ -8,7 +8,7 @@ const API_BASE = "https://www.googleapis.com/youtube/v3";
 const SEARCH_ENDPOINT = `${API_BASE}/search`;
 const VIDEOS_ENDPOINT = `${API_BASE}/videos`;
 const DEFAULT_TIMEOUT_MS = 8000;
-const MAX_RESULTS = 12;
+const MAX_RESULTS = 20;
 
 type YouTubeError = { code: ErrorCode; message: string };
 
@@ -168,11 +168,13 @@ function isRegionAllowed(v: VideosListItem, region: string | undefined): Dropped
 function pickThumbnail(snip: SearchListItem["snippet"]): string {
   const thumbs = snip?.thumbnails;
   if (!thumbs) return "";
+  // Ưu tiên ảnh vừa (medium/high) cho lưới & danh sách để tải nhanh,
+  // tiết kiệm băng thông. Chỉ dùng maxres khi cần ảnh nền lớn.
   return (
-    thumbs.maxres?.url ||
-    thumbs.standard?.url ||
-    thumbs.high?.url ||
     thumbs.medium?.url ||
+    thumbs.high?.url ||
+    thumbs.standard?.url ||
+    thumbs.maxres?.url ||
     thumbs.default?.url ||
     ""
   );

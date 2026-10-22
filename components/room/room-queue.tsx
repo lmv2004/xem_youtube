@@ -31,7 +31,7 @@ export function RoomQueue({
   const t = useTranslations();
   return (
     <section
-      className="flex h-[420px] flex-col rounded-2xl border border-border bg-card lg:h-[560px]"
+      className="flex h-[min(580px,70dvh)] min-h-[360px] flex-col overflow-hidden rounded-2xl border border-border bg-card lg:h-[620px]"
       aria-label={t("Danh sách chờ")}
     >
       <div className="space-y-2 border-b border-border p-3">
@@ -52,7 +52,7 @@ export function RoomQueue({
           {t("Tự phát lần lượt khi video hiện tại kết thúc.")}
         </p>
       </div>
-      <div className="flex-1 overflow-y-auto p-3">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3">
         {!items.length ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
             <ListVideo className="h-9 w-9 text-muted-foreground" />
@@ -69,40 +69,43 @@ export function RoomQueue({
             {items.map((item, index) => (
               <li
                 key={item.id}
-                className="flex items-center gap-2 rounded-xl bg-foreground/5 p-2"
+                className="grid grid-cols-[20px_64px_minmax(0,1fr)] items-center gap-2 rounded-xl border border-border p-3 first:border-primary/30 first:bg-primary/5"
               >
                 <span className="w-5 shrink-0 text-center text-xs text-muted-foreground">
                   {index + 1}
                 </span>
-                {item.thumbnail /* eslint-disable-next-line @next/next/no-img-element */ && (
+                {item.thumbnail ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={item.thumbnail}
                     alt=""
                     loading="lazy"
                     className="aspect-video w-16 rounded-md object-cover"
                   />
+                ) : (
+                  <div className="aspect-video w-16 rounded-md bg-muted" />
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="line-clamp-2 text-xs font-medium">
+                  <p className="line-clamp-2 text-sm font-medium">
                     {item.title}
                   </p>
-                  <p className="truncate text-[11px] text-muted-foreground">
+                  <p className="truncate text-xs text-muted-foreground">
                     {item.channel}
                     {item.duration > 0
                       ? ` · ${formatDuration(item.duration)}`
                       : ""}
                   </p>
                   {index === 0 && (
-                    <span className="text-[11px] text-primary">
+                    <span className="text-xs text-primary">
                       {t("Sắp phát")}
                     </span>
                   )}
                 </div>
-                <div className="flex shrink-0 flex-col gap-1">
+                <div className="col-span-3 flex items-center justify-end gap-1 border-t border-border/60 pt-2">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-10 w-10"
                     aria-label={t("Đưa {p0} lên", { p0: item.title })}
                     disabled={disabled || pending || index === 0}
                     onClick={() => onMove(item.id, "up")}
@@ -112,24 +115,24 @@ export function RoomQueue({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-10 w-10"
                     aria-label={t("Đưa {p0} xuống", { p0: item.title })}
                     disabled={disabled || pending || index === items.length - 1}
                     onClick={() => onMove(item.id, "down")}
                   >
                     <ArrowDown className="h-4 w-4" />
                   </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 shrink-0 text-muted-foreground hover:text-destructive"
+                    aria-label={t("Xóa {p0} khỏi hàng đợi", { p0: item.title })}
+                    disabled={disabled || pending}
+                    onClick={() => onRemove(item.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 shrink-0"
-                  aria-label={t("Xóa {p0} khỏi hàng đợi", { p0: item.title })}
-                  disabled={disabled || pending}
-                  onClick={() => onRemove(item.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
               </li>
             ))}
           </ol>

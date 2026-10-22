@@ -6,12 +6,14 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowUpRight,
+  Clock,
   Compass,
   LayoutGrid,
   List,
   Loader2,
   Search,
   SlidersHorizontal,
+  Trash2,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,9 +25,11 @@ import {
   type ViewMode,
 } from "@/components/video-grid";
 import { WatchLaterPanel } from "@/components/watch-later-panel";
+import { ContinueWatchingRail } from "@/components/continue-watching";
 import { OnboardingModal } from "@/components/onboarding-modal";
 import { useWatchLater } from "@/hooks/use-watch-later";
 import { useRecentSearches } from "@/hooks/use-recent-searches";
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import {
   DEFAULT_FILTERS,
   filtersToSearchParams,
@@ -60,7 +64,9 @@ export function HeroExplorer() {
   const [view, setView] = useState<ViewMode>("grid");
   const [preferencesOpen, setPreferencesOpen] = useState(false);
   const [retry, setRetry] = useState(0);
+  const [suggestOpen, setSuggestOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const searchBoxRef = useRef<HTMLDivElement>(null);
   const requestRef = useRef<AbortController | null>(null);
   const watchLater = useWatchLater();
   const recent = useRecentSearches();
@@ -81,6 +87,20 @@ export function HeroExplorer() {
   useEffect(() => {
     setInput(topic);
   }, [topic]);
+
+  // Close the search suggestion dropdown on outside click.
+  useEffect(() => {
+    const onPointerDown = (event: PointerEvent) => {
+      if (
+        searchBoxRef.current &&
+        !searchBoxRef.current.contains(event.target as Node)
+      ) {
+        setSuggestOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, []);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
@@ -165,6 +185,14 @@ export function HeroExplorer() {
     return () => requestRef.current?.abort();
   }, [ready, load, retry]);
 
+  // Infinite scroll: fetch the next page as soon as the sentinel is visible.
+  const sentinelRef = useInfiniteScroll(
+    () => {
+      if (nextPage && !loading && !loadingMore && !error) void load(nextPage);
+    },
+    { enabled: Boolean(nextPage) && !loading },
+  );
+
   const navigate = (value: string, nextFilters = filters) => {
     const query = new URLSearchParams();
     if (value.trim()) query.set("topic", value.trim());
@@ -196,24 +224,19 @@ export function HeroExplorer() {
 
   return (
     <div className="space-y-7 sm:space-y-9">
-      <section className="discovery-intro rounded-3xl border border-border p-5 sm:p-8">
-        <div className="mb-6 flex items-start justify-between gap-4">
+      <section className="discovery-intro rounded-2xl border border-border p-4 sm:p-5">
+        <div className="mb-4 flex items-start justify-between gap-4">
           <div>
             {!topic && (
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-primary">
                 {t("Khám phá mỗi ngày")}{" "}
               </p>
             )}
-            <h1 className="font-display text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+            <h1 className="font-display text-2xl font-semibold leading-tight tracking-tight sm:text-3xl">
               {topic ? (
                 t("Tìm kiếm video")
               ) : (
-                <>
-                  {t("Một video hay.")} <br />
-                  <span className="text-muted-foreground">
-                    {t("Một khoảng nghỉ xứng đáng.")}{" "}
-                  </span>
-                </>
+                <>{t("Khám phá điều bạn thích")}</>
               )}
             </h1>
             {!topic && (
@@ -231,44 +254,91 @@ export function HeroExplorer() {
             {t("Xem cùng bạn bè")} <ArrowUpRight className="h-4 w-4" />
           </Link>
         </div>
-        <form
-          role="search"
-          onSubmit={(event) => {
-            event.preventDefault();
-            search(input);
-          }}
-          className="flex items-center gap-2 rounded-2xl border border-input bg-background p-2 shadow-sm focus-within:ring-2 focus-within:ring-ring"
-        >
-          <Search className="ml-2 hidden h-5 w-5 shrink-0 text-muted-foreground sm:block" />
-          <input
-            ref={inputRef}
-            minLength={2}
-            maxLength={500}
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            aria-label={t("Tìm video hoặc dán liên kết YouTube")}
-            placeholder={t("Từ khóa hoặc link YouTube")}
-            className="h-10 min-w-0 flex-1 bg-transparent px-2 text-sm outline-none"
-          />
-          {input && (
-            <button
-              type="button"
-              aria-label={t("Xóa từ khóa")}
-              onClick={() => {
-                setInput("");
-                inputRef.current?.focus();
+        <div ref={searchBoxRef} className="relative">
+          <form
+            role="search"
+            onSubmit={(event) => {
+              event.preventDefault();
+              setSuggestOpen(false);
+              search(input);
+            }}
+            className="flex items-center gap-2 rounded-2xl border border-input bg-background p-2 shadow-sm focus-within:ring-2 focus-within:ring-ring"
+          >
+            <Search className="ml-2 hidden h-5 w-5 shrink-0 text-muted-foreground sm:block" />
+            <input
+              ref={inputRef}
+              minLength={2}
+              maxLength={500}
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              onFocus={() => setSuggestOpen(true)}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  setSuggestOpen(false);
+                  inputRef.current?.blur();
+                }
               }}
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-muted"
-            >
-              <X className="h-4 w-4" />
-            </button>
+              aria-label={t("Tìm video hoặc dán liên kết YouTube")}
+              placeholder={t("Từ khóa hoặc link YouTube")}
+              className="h-10 min-w-0 flex-1 bg-transparent px-2 text-sm outline-none"
+            />
+            {input && (
+              <button
+                type="button"
+                aria-label={t("Xóa từ khóa")}
+                onClick={() => {
+                  setInput("");
+                  inputRef.current?.focus();
+                }}
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-muted"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+            <Button type="submit" className="h-10 rounded-xl px-3 sm:px-5">
+              <Search className="sm:hidden" />
+              <span className="hidden sm:inline">{t("Tìm kiếm")}</span>
+              <span className="sr-only sm:hidden">{t("Tìm kiếm")}</span>
+            </Button>
+          </form>
+
+          {suggestOpen && recent.items.length > 0 && (
+            <div className="absolute inset-x-0 top-full z-30 mt-2 rounded-2xl border border-border bg-popover shadow-xl">
+              <div className="flex items-center justify-between px-3 pt-3">
+                <p className="px-1 text-xs font-semibold text-muted-foreground">
+                  {t("Tìm kiếm gần đây")}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    recent.clear();
+                    setSuggestOpen(false);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> {t("Xóa lịch sử")}
+                </button>
+              </div>
+              <ul className="p-2">
+                {recent.items.map((term) => (
+                  <li key={term}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSuggestOpen(false);
+                        search(term);
+                      }}
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm hover:bg-muted"
+                    >
+                      <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="truncate">{term}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
-          <Button type="submit" className="h-10 rounded-xl px-3 sm:px-5">
-            <Search className="sm:hidden" />
-            <span className="hidden sm:inline">{t("Tìm kiếm")}</span>
-            <span className="sr-only sm:hidden">{t("Tìm kiếm")}</span>
-          </Button>
-        </form>
+        </div>
         {!topic && recent.items.length > 0 && (
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <span>{t("Gần đây")}</span>
@@ -290,6 +360,9 @@ export function HeroExplorer() {
         value={topic || null}
         onChange={(value) => navigate(value ?? "", DEFAULT_FILTERS)}
       />
+
+      {/* Rail "Xem tiếp" chỉ hiển thị ở trang chủ trống, giúp quay lại nhanh. */}
+      {!topic && <ContinueWatchingRail />}
       <section
         aria-labelledby="feed-heading"
         aria-busy={loading}
@@ -428,16 +501,19 @@ export function HeroExplorer() {
               isInWatchLater={watchLater.has}
             />
             {nextPage && !error && (
-              <div className="flex justify-center pt-4">
-                <Button
-                  variant="outline"
-                  className="min-w-44 rounded-xl"
-                  disabled={loadingMore}
-                  onClick={() => void load(nextPage)}
-                >
-                  {loadingMore && <Loader2 className="animate-spin" />}
-                  {loadingMore ? t("Đang tải…") : t("Xem thêm video")}
-                </Button>
+              <div className="space-y-4 pt-4">
+                <div ref={sentinelRef} aria-hidden />
+                <div className="flex justify-center">
+                  <Button
+                    variant="outline"
+                    className="min-w-44 rounded-xl"
+                    disabled={loadingMore}
+                    onClick={() => void load(nextPage)}
+                  >
+                    {loadingMore && <Loader2 className="animate-spin" />}
+                    {loadingMore ? t("Đang tải…") : t("Xem thêm video")}
+                  </Button>
+                </div>
               </div>
             )}
           </>

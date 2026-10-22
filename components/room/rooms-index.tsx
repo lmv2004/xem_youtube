@@ -49,6 +49,8 @@ export function RoomsIndex() {
   const [code, setCode] = useState("");
   const [rooms, setRooms] = useState<RoomListItem[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [roomsError, setRoomsError] = useState(false);
+  const [reload, setReload] = useState(0);
 
   // Create room modal state
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -57,19 +59,23 @@ export function RoomsIndex() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    if (status === "loading") return;
     if (status !== "authenticated") {
       setLoaded(true);
+      setRooms([]);
       return;
     }
     let cancelled = false;
+    setLoaded(false);
+    setRoomsError(false);
     void (async () => {
       try {
         const res = await fetch("/api/rooms", { cache: "no-store" });
-        if (!res.ok) return;
+        if (!res.ok) throw new Error("Room list unavailable");
         const json = (await res.json()) as { items?: RoomListItem[] };
         if (!cancelled) setRooms(json.items ?? []);
       } catch {
-        /* ignore */
+        if (!cancelled) setRoomsError(true);
       } finally {
         if (!cancelled) setLoaded(true);
       }
@@ -77,7 +83,7 @@ export function RoomsIndex() {
     return () => {
       cancelled = true;
     };
-  }, [status]);
+  }, [status, reload]);
 
   const join = (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,12 +136,9 @@ export function RoomsIndex() {
       }
 
       const json = (await res.json()) as { code: string };
-      confetti({
-        particleCount: 50,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ["#8B5CF6", "#FF3366", "#06B6D4"],
-      });
+      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        confetti({ particleCount: 35, spread: 60, origin: { y: 0.6 } });
+      }
       toast({
         title: t("Tạo phòng thành công!"),
         description: t("Mã phòng của bạn: {p0}", { p0: json.code }),
@@ -156,19 +159,18 @@ export function RoomsIndex() {
 
   return (
     <div className="space-y-8 animate-in-up">
-      {/* Hero Banner with Neon Glow */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-r from-purple-950/40 via-card/90 to-card/80 p-6 sm:p-8 shadow-2xl backdrop-blur-2xl">
-        <div className="absolute right-0 top-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-purple-600/15 blur-3xl pointer-events-none" />
+      {/* A clear starting point for creating or joining a room. */}
+      <div className="rounded-2xl border border-border bg-card p-6 sm:p-8">
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1 text-xs font-bold text-purple-400">
-              <Radio className="h-3 w-3 animate-pulse text-purple-400" />
-              {t("WATCH PARTY THEATER")}{" "}
+            <span className="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">
+              <Radio className="h-3 w-3" />
+              {t("Phòng xem chung")}{" "}
             </span>
             <h1 className="font-display text-2xl sm:text-4xl font-bold tracking-tight text-foreground">
-              {t("Xem chung Realtime cùng bạn bè")}{" "}
+              {t("Cùng xem, cùng trò chuyện")}{" "}
             </h1>
-            <p className="max-w-xl text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            <p className="max-w-xl text-sm text-muted-foreground leading-relaxed">
               {t(
                 "Tạo phòng riêng hoặc chia sẻ mã phòng để cùng nhau xem video YouTube đồng bộ từng giây và trò chuyện trực tiếp.",
               )}{" "}
@@ -184,7 +186,7 @@ export function RoomsIndex() {
               }
             }}
             size="lg"
-            className="rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-rose-600 font-bold text-white shadow-[0_0_25px_rgba(139,92,246,0.45)] hover:brightness-110 gap-2 shrink-0 self-start sm:self-auto"
+            className="gap-2 self-start rounded-xl font-semibold sm:self-auto"
           >
             <Plus className="h-4 w-4" />
             <span>{t("Tạo phòng mới")}</span>
@@ -194,9 +196,9 @@ export function RoomsIndex() {
 
       {/* Grid: Join with code + How it works */}
       <div className="grid gap-6 md:grid-cols-12">
-        <div className="md:col-span-7 space-y-4 p-6 rounded-3xl border border-white/10 bg-card/75 shadow-xl backdrop-blur-2xl">
+        <div className="space-y-4 rounded-2xl border border-border bg-card p-6 md:col-span-7">
           <div className="flex items-center gap-2">
-            <Radio className="h-4 w-4 text-purple-400" />
+            <Radio className="h-4 w-4 text-primary" />
             <h2 className="font-display text-base font-bold text-foreground">
               {t("Tham gia bằng mã phòng")}
             </h2>
@@ -209,14 +211,18 @@ export function RoomsIndex() {
               placeholder={
                 t("Nhập mã phòng (") + "A".repeat(ROOM_CODE_LENGTH) + ")"
               }
+              aria-label={t("Tham gia bằng mã phòng")}
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck={false}
               maxLength={ROOM_CODE_LENGTH}
-              className="h-12 font-mono uppercase tracking-[0.25em] text-center sm:text-left rounded-xl border-white/10 bg-white/5 focus:border-purple-500/50"
+              className="h-12 rounded-xl border-border bg-background text-center font-mono uppercase tracking-[0.25em] sm:text-left"
             />
             <Button
               type="submit"
               size="lg"
               disabled={code.trim().length < 4}
-              className="gap-2 shrink-0 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold shadow-[0_0_15px_rgba(139,92,246,0.3)]"
+              className="shrink-0 gap-2 rounded-xl font-semibold"
             >
               <span>{t("Vào phòng")}</span>
               <ArrowRight className="h-4 w-4" />
@@ -230,12 +236,12 @@ export function RoomsIndex() {
           </p>
         </div>
 
-        <div className="md:col-span-5 rounded-3xl border border-white/10 bg-card/50 p-6 space-y-3 backdrop-blur-2xl">
-          <div className="flex items-center gap-2 text-purple-400 font-bold text-sm">
+        <div className="space-y-3 rounded-2xl border border-border bg-card p-6 md:col-span-5">
+          <div className="flex items-center gap-2 text-primary font-bold text-sm">
             <Sparkles className="h-4 w-4" />
             <span>{t("Đồng bộ phát video thông minh")}</span>
           </div>
-          <ul className="space-y-2.5 text-xs text-muted-foreground leading-relaxed">
+          <ul className="space-y-3 text-sm text-muted-foreground leading-relaxed">
             <li>
               {t(
                 "• Khi chủ phòng tạm dừng, tua hoặc đổi video, tất cả thành viên trong phòng đều được đồng bộ tự động.",
@@ -248,7 +254,7 @@ export function RoomsIndex() {
             </li>
             <li>
               {t(
-                "• Hoàn toàn miễn phí, không gián đoạn, chia sẻ liên kết dễ dàng.",
+                "Mời bạn bè bằng mã phòng hoặc liên kết. Video tiếp tục khi mạng tạm gián đoạn.",
               )}
             </li>
           </ul>
@@ -257,7 +263,7 @@ export function RoomsIndex() {
 
       {/* My Created Rooms Section */}
       <section className="space-y-4">
-        <div className="flex items-center justify-between border-b border-white/10 pb-3">
+        <div className="flex items-center justify-between border-b border-border pb-3">
           <h2 className="font-display text-base font-bold text-foreground">
             {t("Phòng của bạn")}
           </h2>
@@ -266,12 +272,16 @@ export function RoomsIndex() {
           </span>
         </div>
 
-        {status !== "authenticated" ? (
-          <div className="p-8 text-center text-xs sm:text-sm text-muted-foreground rounded-3xl border border-white/10 bg-card/50 backdrop-blur-2xl">
+        {status === "loading" ? (
+          <p role="status" className="py-8 text-sm text-muted-foreground">
+            {t("Đang tải danh sách phòng...")}
+          </p>
+        ) : status !== "authenticated" ? (
+          <div className="rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
             <p>
               <Link
                 href="/login?callbackUrl=/rooms"
-                className="font-bold text-purple-400 hover:underline"
+                className="font-bold text-primary hover:underline"
               >
                 {t("Đăng nhập")}{" "}
               </Link>{" "}
@@ -280,11 +290,26 @@ export function RoomsIndex() {
           </div>
         ) : !loaded ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground py-6">
-            <Loader2 className="h-4 w-4 animate-spin text-purple-500" />
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
             <span>{t("Đang tải danh sách phòng...")}</span>
           </div>
+        ) : roomsError ? (
+          <div
+            role="alert"
+            className="space-y-3 rounded-2xl border border-border bg-card p-8 text-center"
+          >
+            <p className="text-sm text-muted-foreground">
+              {t("Không tải được danh sách phòng. Hãy thử lại.")}
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => setReload((value) => value + 1)}
+            >
+              {t("Thử lại")}
+            </Button>
+          </div>
         ) : rooms.length === 0 ? (
-          <div className="p-10 text-center rounded-3xl border border-white/10 bg-card/50 backdrop-blur-2xl space-y-2">
+          <div className="space-y-2 rounded-2xl border border-border bg-card p-10 text-center">
             <Users className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
             <p className="font-display font-bold text-foreground">
               {t("Bạn chưa tạo phòng nào.")}
@@ -311,20 +336,23 @@ export function RoomsIndex() {
                     <img
                       src={r.thumbnail}
                       alt=""
-                      className="aspect-video w-24 shrink-0 rounded-xl object-cover ring-1 ring-white/10 transition-transform duration-300 group-hover:scale-105"
+                      className="aspect-video w-24 shrink-0 rounded-xl object-cover ring-1 ring-border"
                     />
                   ) : (
-                    <div className="aspect-video w-24 shrink-0 rounded-xl bg-black/60 flex items-center justify-center text-xs">
+                    <div className="aspect-video w-24 shrink-0 rounded-xl bg-muted flex items-center justify-center text-xs">
                       <Video className="h-5 w-5 text-muted-foreground" />
                     </div>
                   )}
                   <div className="min-w-0 flex-1 flex flex-col justify-between py-0.5">
                     <div>
-                      <div className="inline-flex items-center gap-1.5 rounded-md bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 text-[10px] font-mono font-bold text-purple-400">
-                        <Radio className="h-2.5 w-2.5 animate-pulse" />
+                      <div className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-mono font-bold text-primary">
+                        <Radio className="h-2.5 w-2.5 " />
                         <span>{r.code}</span>
                       </div>
-                      <p className="line-clamp-2 text-xs font-semibold text-foreground group-hover:text-purple-400 transition-colors mt-1.5">
+                      <p className="line-clamp-2 text-sm font-semibold text-foreground group-hover:text-primary transition-colors mt-1.5">
+                        {r.title}
+                      </p>
+                      <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
                         {r.videoTitle}
                       </p>
                     </div>
@@ -335,7 +363,7 @@ export function RoomsIndex() {
                 </Link>
                 <div className="mt-3 flex items-center justify-between gap-2 border-t pt-2">
                   <span className="truncate text-xs text-muted-foreground">
-                    {r.title}
+                    {t("Mã")} {r.code}
                   </span>
                   <DeleteRoomButton
                     code={r.code}
@@ -355,7 +383,7 @@ export function RoomsIndex() {
 
       {/* Create Room Modal */}
       <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
-        <DialogContent className="sm:max-w-md rounded-3xl border-white/10 bg-card/95 shadow-2xl backdrop-blur-2xl p-6">
+        <DialogContent className="sm:max-w-md rounded-2xl border-border bg-card p-6">
           <DialogHeader>
             <DialogTitle className="font-display text-xl font-bold">
               {t("Tạo phòng xem chung")}
@@ -369,30 +397,38 @@ export function RoomsIndex() {
 
           <form onSubmit={handleCreateRoom} className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">
+              <label
+                htmlFor="create-room-title"
+                className="text-sm font-medium text-foreground"
+              >
                 {t("Tên phòng")}
               </label>
               <Input
+                id="create-room-title"
                 value={roomTitle}
                 onChange={(e) => setRoomTitle(e.target.value)}
                 placeholder={t("VD: Xem phim cuối tuần, Chill cùng tôi...")}
                 maxLength={60}
-                className="h-10 rounded-xl border-white/10 bg-white/5"
+                className="h-11 rounded-xl border-border bg-background"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">
+              <label
+                htmlFor="create-room-video"
+                className="text-sm font-medium text-foreground"
+              >
                 {t("Link YouTube hoặc ID video")}{" "}
               </label>
               <div className="relative">
                 <Link2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
+                  id="create-room-video"
                   value={videoInput}
                   onChange={(e) => setVideoInput(e.target.value)}
                   placeholder="https://www.youtube.com/watch?v=..."
                   required
-                  className="h-10 pl-9 rounded-xl border-white/10 bg-white/5"
+                  className="h-11 rounded-xl border-border bg-background pl-9"
                 />
               </div>
             </div>
@@ -409,7 +445,7 @@ export function RoomsIndex() {
               <Button
                 type="submit"
                 disabled={isSubmitting || !videoInput.trim()}
-                className="rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 font-semibold text-white shadow-[0_0_20px_rgba(139,92,246,0.4)]"
+                className="rounded-xl font-semibold"
               >
                 {isSubmitting ? (
                   <>

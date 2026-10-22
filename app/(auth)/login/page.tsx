@@ -1,6 +1,7 @@
 import { getTranslator } from "@/lib/locale-server";
 import { Suspense } from "react";
 import { LoginForm } from "@/components/auth/login-form";
+import { AuthShell } from "@/components/auth/auth-shell";
 
 export async function generateMetadata() {
   const t = await getTranslator();
@@ -9,10 +10,14 @@ export async function generateMetadata() {
 
 export default function LoginPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4">
+    <AuthShell>
       <Suspense fallback={null}>
-        <LoginForm />
+        <LoginForm
+          googleEnabled={Boolean(
+            process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET,
+          )}
+        />
       </Suspense>
-    </main>
+    </AuthShell>
   );
 }
