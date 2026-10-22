@@ -15,6 +15,7 @@ import {
   Radio,
   Search,
   ListVideo,
+  ListPlus,
   Unlock,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +36,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   DRIFT_TOLERANCE_SECONDS,
   canControlPlayback,
+  canAddToQueue,
   describeAction,
   effectivePosition,
   type RoomDto,
@@ -61,6 +63,7 @@ export function RoomClient({ code }: { code: string }) {
   const [joining, setJoining] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [lockPending, setLockPending] = useState(false);
+  const [queuePermissionPending, setQueuePermissionPending] = useState(false);
   const [copied, setCopied] = useState(false);
   const [tab, setTab] = useState<"chat" | "search" | "queue">("chat");
   const [queuePending, setQueuePending] = useState(false);
@@ -111,6 +114,10 @@ export function RoomClient({ code }: { code: string }) {
     ? sync.hostOnlyControl
     : (room?.hostOnlyControl ?? false);
   const canControl = canControlPlayback({ hostOnlyControl, isHost });
+  const allowQueueAdds = sync.serverTime
+    ? sync.allowQueueAdds
+    : (room?.allowQueueAdds ?? false);
+  const canEnqueue = canAddToQueue({ hostOnlyControl, allowQueueAdds, isHost });
 
   // Player callbacks may be bound once, so read the live value from a ref.
   const canControlRef = useRef(canControl);
@@ -148,7 +155,7 @@ export function RoomClient({ code }: { code: string }) {
         payload.action === "remove"
       ) {
         if (
-          !canControl ||
+          !(payload.action === "add" ? canEnqueue : canControl) ||
           sync.isOffline ||
           (payload.action === "add" && sync.queue.length >= 50) ||
           sync.queueEdits.length >= 20
@@ -165,6 +172,8 @@ export function RoomClient({ code }: { code: string }) {
         );
         return true;
       }
+      if (sync.isOffline || (payload.action !== "ended" && !canControl))
+        return false;
       setQueuePending(true);
       try {
         applyPlayback(
@@ -188,6 +197,7 @@ export function RoomClient({ code }: { code: string }) {
       applyPlayback,
       editQueue,
       canControl,
+      canEnqueue,
       sync.isOffline,
       sync.queue.length,
       sync.queueEdits.length,
@@ -432,6 +442,29 @@ export function RoomClient({ code }: { code: string }) {
     }
   };
 
+  const toggleQueueContributions = async () => {
+    if (!isHost || lockPending || queuePermissionPending || sync.isOffline) return;
+    setQueuePermissionPending(true);
+    try {
+      const update = (await sendCommand({
+        type: "playback",
+        payload: { allowQueueAdds: !allowQueueAdds },
+      })) as RoomPlaybackUpdate;
+      applyPlayback(update);
+      toast({
+        title: update.allowQueueAdds
+          ? t("Đã cho phép mọi người thêm video")
+          : t("Đã tắt quyền thêm video của thành viên"),
+      });
+    } catch (error) {
+      toast({
+        title: error instanceof Error ? t(error.message) : t("Không gọi được máy chủ"),
+      });
+    } finally {
+      setQueuePermissionPending(false);
+    }
+  };
+
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -500,6 +533,7 @@ export function RoomClient({ code }: { code: string }) {
         onJoin={handleJoin}
         joining={joining}
         hostOnlyControl={room.hostOnlyControl}
+        allowQueueAdds={room.allowQueueAdds}
       />
     );
   }
@@ -570,7 +604,7 @@ export function RoomClient({ code }: { code: string }) {
               type="button"
               size="sm"
               variant={hostOnlyControl ? "default" : "outline"}
-              disabled={lockPending || sync.isOffline}
+              disabled={lockPending || queuePermissionPending || sync.isOffline}
               onClick={() => void toggleLock()}
               title={
                 hostOnlyControl
@@ -592,6 +626,35 @@ export function RoomClient({ code }: { code: string }) {
               <Lock className="mr-1 h-3 w-3" /> {t("Chủ phòng đang khoá")}{" "}
             </Badge>
           ) : null}
+
+          {hostOnlyControl &&
+            (isHost ? (
+              <Button
+                type="button"
+                size="sm"
+                variant={allowQueueAdds ? "secondary" : "outline"}
+                aria-pressed={allowQueueAdds}
+                aria-busy={queuePermissionPending}
+                disabled={lockPending || queuePermissionPending || sync.isOffline}
+                onClick={() => void toggleQueueContributions()}
+                title={t(
+                  "Thành viên chỉ được thêm video; chủ phòng giữ quyền điều khiển và quản lý hàng đợi.",
+                )}
+              >
+                {queuePermissionPending ? (
+                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                ) : (
+                  <ListPlus className="mr-1 h-4 w-4" />
+                )}
+                {t("Cho mọi người thêm video")}
+                {allowQueueAdds && <Check className="ml-1 h-4 w-4" />}
+              </Button>
+            ) : allowQueueAdds ? (
+              <Badge variant="secondary">
+                <ListPlus className="mr-1 h-3 w-3" />
+                {t("Bạn có thể thêm video")}
+              </Badge>
+            ) : null)}
 
           {isHost && (
             <DeleteRoomButton
@@ -806,6 +869,7 @@ export function RoomClient({ code }: { code: string }) {
               }}
               activeVideoId={video.videoId}
               disabled={!canControl || sync.isOffline}
+              enqueueDisabled={!canEnqueue || sync.isOffline}
               locked={!canControl}
             />
           </TabsContent>
@@ -813,6 +877,7 @@ export function RoomClient({ code }: { code: string }) {
             <RoomQueue
               items={sync.queue}
               disabled={!canControl || sync.isOffline}
+              canContribute={canEnqueue && !sync.isOffline}
               pending={queuePending}
               onMove={(id, direction) =>
                 void changeQueue({ action: "move", id, direction }).then(

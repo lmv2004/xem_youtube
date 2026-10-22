@@ -61,7 +61,7 @@ git push -u origin main
 
 ## 4. Migrate database production
 
-Build tự bổ sung hai cột hàng đợi vào bảng Room hiện có, không xóa dữ liệu.
+Build tự bổ sung các cột hàng đợi và `allowQueueAdds` vào bảng Room hiện có, không xóa dữ liệu. Quyền thêm video khi khóa điều khiển mặc định tắt để giữ quyền của các phòng đang hoạt động. Chủ phòng có thể bật “Cho mọi người thêm video” trong phòng; thành viên chỉ được thêm vào hàng đợi, không được phát/dừng/tua, đổi video, xóa, sắp xếp hoặc bỏ qua video. Không cần thêm biến môi trường hay chạy migration thủ công.
 
 Tính năng từ khóa phổ biến tự tạo bảng `SearchEvent` và các index bằng `scripts/ensure-search-analytics.mjs`. Không cần thêm biến môi trường hoặc chạy `db push` trên database production hiện có; dùng lại `DATABASE_URL` và `AUTH_SECRET`. Bảng xếp hạng bắt đầu thu thập từ lúc triển khai, chỉ hiển thị từ khóa có ít nhất hai trình duyệt khác nhau cùng tìm trong 7 ngày gần nhất. Xem [quy tắc thống kê và cache](search-analytics.md).
 

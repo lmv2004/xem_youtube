@@ -15,6 +15,7 @@ type Props = {
   onJoin: () => void;
   joining: boolean;
   hostOnlyControl?: boolean;
+  allowQueueAdds?: boolean;
 };
 
 /**
@@ -31,6 +32,7 @@ export function JoinGate({
   onJoin,
   joining,
   hostOnlyControl = false,
+  allowQueueAdds = false,
 }: Props) {
   const t = useTranslations();
   return (
@@ -81,7 +83,9 @@ export function JoinGate({
           <Users className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           {hostOnlyControl
             ? t(
-                "Chủ phòng đang khoá điều khiển. Bạn vẫn xem được đề xuất nhưng chưa đổi được video.",
+                allowQueueAdds
+                  ? "Chủ phòng giữ điều khiển. Bạn có thể thêm video vào hàng đợi."
+                  : "Chủ phòng đang khoá điều khiển. Bạn vẫn xem được đề xuất nhưng chưa đổi được video.",
               )
             : t(
                 "Ai trong phòng cũng phát, tạm dừng, tua và đổi video được. Muốn chat thì cần đăng nhập.",

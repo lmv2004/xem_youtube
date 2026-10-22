@@ -97,6 +97,8 @@ export type RoomDto = {
   playback: RoomPlayback;
   /** When true, only the host may drive playback. */
   hostOnlyControl: boolean;
+  /** Allow members to add queue entries while playback is host-only. */
+  allowQueueAdds: boolean;
   createdAt: string;
 };
 
@@ -118,6 +120,7 @@ export type RoomSyncResponse = {
   messages: RoomMessageDto[];
   members: RoomMemberDto[];
   hostOnlyControl: boolean;
+  allowQueueAdds: boolean;
   /** Pass back as `after` on the next poll. */
   cursor: string | null;
   serverTime: string;
@@ -131,6 +134,7 @@ export type RoomPlaybackUpdate = Pick<
   | "playback"
   | "video"
   | "hostOnlyControl"
+  | "allowQueueAdds"
   | "serverTime"
   | "revision"
   | "queue"
@@ -147,6 +151,15 @@ export function canControlPlayback(opts: {
   isHost: boolean;
 }): boolean {
   return !opts.hostOnlyControl || opts.isHost;
+}
+
+/** Contributing a video never grants permission to reorder, remove or skip. */
+export function canAddToQueue(opts: {
+  hostOnlyControl: boolean;
+  allowQueueAdds: boolean;
+  isHost: boolean;
+}): boolean {
+  return canControlPlayback(opts) || opts.allowQueueAdds;
 }
 
 /**

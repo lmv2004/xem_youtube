@@ -8,7 +8,7 @@ import { generateRoomCode, type RoomSyncResponse } from "../lib/rooms";
 
 after(async () => { await prisma.$disconnect(); });
 
-test("HTTP viewers join, chat, control, reorder and recover presence without sockets", {
+test("HTTP viewers join, chat, contribute under host control and recover without sockets", {
   skip: process.env.ROOM_HTTP_INTEGRATION !== "1", timeout: 120_000,
 }, async () => {
   const email = `room-http-${crypto.randomUUID()}@example.invalid`;
@@ -21,7 +21,7 @@ test("HTTP viewers join, chat, control, reorder and recover presence without soc
   const address = portServer.address();
   assert.ok(address && typeof address !== "string");
   await new Promise<void>((resolve) => portServer.close(() => resolve()));
-  const origin = `http://localhost:${address.port}`;
+  const origin = `http://127.0.0.1:${address.port}`;
   let output = "";
   const server = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "-p", String(address.port)], {
     windowsHide: true, stdio: ["ignore", "pipe", "pipe"],
@@ -84,6 +84,25 @@ test("HTTP viewers join, chat, control, reorder and recover presence without soc
     const command = (host: boolean, data: unknown) => post("commands", { clientId: host ? hostId : guestId, command: data }, host);
     await sync(true, true);
     const joined = await sync(false, true);
+    // Host is preserved even when NextRequest normalizes its URL to localhost.
+    // None of these cross-origin writes may gain authority through forwarding headers.
+    const rejectedOrigins: Record<string, string>[] = [
+      {},
+      { Origin: "https://attacker.example", "x-forwarded-host": "attacker.example", "x-forwarded-proto": "https" },
+      { Origin: `http://localhost:${address.port}` },
+      { Origin: `http://127.0.0.1:${address.port === 65535 ? 65534 : address.port + 1}` },
+      { Origin: `https://127.0.0.1:${address.port}` },
+      { Origin: origin, "Sec-Fetch-Site": "cross-site" },
+    ];
+    for (const headers of rejectedOrigins) {
+      const rejected = await fetch(`${origin}/api/rooms/${code}/commands`, {
+        method: "POST", headers: { "Content-Type": "application/json", Cookie: hostCookie, ...headers },
+        body: JSON.stringify({ clientId: hostId, command: { type: "playback", requestId: "origin-denied", payload: { allowQueueAdds: true } } }),
+        signal: AbortSignal.timeout(15_000),
+      });
+      assert.equal(rejected.status, 403);
+    }
+    assert.equal(joined.allowQueueAdds, false, "legacy locked permissions remain opt-in");
     assert.equal(joined.members.length, 2);
     assert.ok(joined.members.some((member) => member.clientId === hostId && member.isHost));
     assert.equal((await command(false, { type: "chat", requestId: "guest-chat", body: "no account" })).status, 401);
@@ -102,6 +121,46 @@ test("HTTP viewers join, chat, control, reorder and recover presence without soc
     assert.equal((await sync(false)).roomTitle, "Renamed HTTP room");
     const video = { videoId: "dQw4w9WgXcQ", title: "Queued", channel: "", thumbnail: "",
       embedUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", watchUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", duration: 200 };
+    const playbackAnchor = (row: typeof room) => ({
+      isPlaying: row.isPlaying, positionSeconds: row.positionSeconds,
+      lastSyncAt: row.lastSyncAt.toISOString(), playbackGeneration: row.playbackGeneration,
+      videoId: row.videoId, lastActionById: row.lastActionById, lastActionKind: row.lastActionKind,
+    });
+    const beforePolicy = await prisma.room.findUniqueOrThrow({ where: { id: room.id } });
+    const contributedId = crypto.randomUUID();
+    const addContribution = { type: "queue", requestId: "guest-add", payload: { action: "add", id: contributedId, video } };
+    assert.equal((await command(false, addContribution)).status, 403);
+    assert.equal((await command(false, { type: "playback", requestId: "forge-policy", payload: { allowQueueAdds: true } })).status, 403);
+    assert.equal((await command(true, { type: "playback", requestId: "allow-contributions", payload: { allowQueueAdds: true } })).status, 200);
+    const contributionSnapshot = await sync(false);
+    assert.equal(contributionSnapshot.hostOnlyControl, true);
+    assert.equal(contributionSnapshot.allowQueueAdds, true);
+    const detail = await fetch(`${origin}/api/rooms/${code}`);
+    assert.equal((await detail.json()).room.allowQueueAdds, true);
+    assert.deepEqual(playbackAnchor(await prisma.room.findUniqueOrThrow({ where: { id: room.id } })), playbackAnchor(beforePolicy));
+    // An unjoined client cannot bypass presence checks, even if contributions are allowed.
+    assert.equal((await post("commands", { clientId: crypto.randomUUID(), command: addContribution })).status, 403);
+    // A guest cannot borrow the authenticated host's connection identity.
+    assert.equal((await post("commands", { clientId: hostId, command: addContribution })).status, 403);
+    assert.equal((await command(false, addContribution)).status, 200);
+    assert.equal((await command(false, addContribution)).status, 200);
+    assert.deepEqual((await sync(false)).queue.map((entry) => entry.id), [contributedId]);
+    for (const payload of [
+      { action: "remove", id: contributedId },
+      { action: "move", id: contributedId, direction: "up" },
+      { action: "next", generation: contributionSnapshot.playbackGeneration },
+    ]) assert.equal((await command(false, { type: "queue", requestId: crypto.randomUUID(), payload })).status, 403);
+    for (const payload of [
+      { isPlaying: false }, { positionSeconds: 0 }, { video },
+      { hostOnlyControl: false }, { allowQueueAdds: false },
+    ]) assert.equal((await command(false, { type: "playback", requestId: crypto.randomUUID(), payload })).status, 403);
+    await prisma.roomPresence.update({ where: { roomId_clientId: { roomId: room.id, clientId: guestId } }, data: { lastSeenAt: new Date(Date.now() - 61_000) } });
+    assert.equal((await command(false, { ...addContribution, requestId: "expired-contribution", payload: { ...addContribution.payload, id: crypto.randomUUID() } })).status, 403);
+    await sync(false, true);
+    assert.equal((await command(true, { type: "playback", requestId: "stop-contributions", payload: { allowQueueAdds: false } })).status, 200);
+    assert.equal((await command(false, { ...addContribution, requestId: "denied-after-revoke", payload: { ...addContribution.payload, id: crypto.randomUUID() } })).status, 403);
+    assert.deepEqual(playbackAnchor(await prisma.room.findUniqueOrThrow({ where: { id: room.id } })), playbackAnchor(beforePolicy));
+    assert.equal((await command(true, { type: "queue", requestId: "remove-contribution", payload: { action: "remove", id: contributedId } })).status, 200);
     const firstId = crypto.randomUUID(), secondId = crypto.randomUUID();
     for (const id of [firstId, secondId])
       assert.equal((await command(true, { type: "queue", requestId: crypto.randomUUID(), payload: { action: "add", id, video } })).status, 200);
@@ -125,6 +184,17 @@ test("HTTP viewers join, chat, control, reorder and recover presence without soc
     assert.equal(firstPage.messages[0].body, "missed-0");
     const secondPage = await sync(false, false, firstPage.cursor);
     assert.deepEqual(secondPage.messages.map((message) => message.body), ["missed-50"]);
+    // Playback lock and queue contribution settings never block genuine completion.
+    const generation = (await sync(false)).playbackGeneration;
+    const ended = { type: "queue", requestId: "guest-ended", payload: { action: "ended", generation, duration: 200 } };
+    assert.equal((await command(false, ended)).status, 200);
+    assert.deepEqual((await sync(false)).queue.map((entry) => entry.id), [secondId, firstId], "premature end reports cannot skip");
+    assert.equal((await command(true, { type: "playback", requestId: "seek-end", payload: { positionSeconds: 200 } })).status, 200);
+    assert.equal((await command(false, ended)).status, 200);
+    assert.equal((await command(false, ended)).status, 200);
+    const advanced = await sync(false);
+    assert.deepEqual(advanced.queue.map((entry) => entry.id), [firstId]);
+    assert.equal(advanced.playbackGeneration, generation + 1, "duplicate reports only advance once");
     const deleted = await fetch(`${origin}/api/rooms/${code}`, { method: "DELETE", headers: { Cookie: hostCookie, Origin: origin } });
     assert.equal(deleted.status, 200);
     assert.equal((await post("sync", { clientId: guestId, displayName: "Guest", heartbeat: false })).status, 404);

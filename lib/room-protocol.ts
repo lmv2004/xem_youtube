@@ -4,6 +4,7 @@ export const playbackInput = z.object({
   isPlaying: z.boolean().optional(),
   positionSeconds: z.number().min(0).max(86_400).optional(),
   hostOnlyControl: z.boolean().optional(),
+  allowQueueAdds: z.boolean().optional(),
   video: z
     .object({
       videoId: z.string().regex(/^[A-Za-z0-9_-]{11}$/),

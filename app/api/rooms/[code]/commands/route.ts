@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { roomCommand } from "@/lib/room-protocol";
 import { normalizeRoomCode } from "@/lib/rooms";
+import { isSameOriginRequest } from "@/lib/request-origin";
 import {
   renameRoom,
   postRoomMessage,
@@ -17,7 +18,7 @@ export async function POST(
   request: Request,
   context: { params: Promise<{ code: string }> },
 ) {
-  if (request.headers.get("origin") !== new URL(request.url).origin) {
+  if (!isSameOriginRequest(request)) {
     return Response.json(
       { message: "Nguồn gửi không hợp lệ." },
       { status: 403 },
