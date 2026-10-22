@@ -13,7 +13,7 @@ GitHub Actions (.github/workflows/ci.yml)
    │  typecheck + build + lint
    ▼
 Vercel (auto import qua GitHub App)
-   │  build = "prisma generate && node scripts/ensure-room-queue.mjs && next build"
+   │  build = "prisma generate && node scripts/ensure-room-queue.mjs && node scripts/ensure-search-analytics.mjs && next build"
    ▼
 Vercel Functions
    │
@@ -56,12 +56,16 @@ git push -u origin main
    | `AUTH_GOOGLE_ID`    | (tuỳ chọn)                                           | Production + Preview |
    | `AUTH_GOOGLE_SECRET` | (tuỳ chọn)                                           | Production + Preview |
 
-4. **Deploy**. Vercel sẽ chạy `prisma generate && node scripts/ensure-room-queue.mjs && next build` theo `vercel.json`.
+4. **Deploy**. Vercel sẽ generate Prisma client, bổ sung schema hàng đợi và thống kê tìm kiếm, rồi build Next.js theo `vercel.json`.
 5. Sau khi deploy xong, vào **Project Settings → Functions → DATABASE_URL** đã set chưa.
 
 ## 4. Migrate database production
 
-Build tự bổ sung hai cột hàng đợi vào bảng Room hiện có, không xóa dữ liệu. Với database mới, vẫn cần khởi tạo toàn bộ schema trước. Cách 1 (khuyến nghị):
+Build tự bổ sung hai cột hàng đợi vào bảng Room hiện có, không xóa dữ liệu.
+
+Tính năng từ khóa phổ biến tự tạo bảng `SearchEvent` và các index bằng `scripts/ensure-search-analytics.mjs`. Không cần thêm biến môi trường hoặc chạy `db push` trên database production hiện có; dùng lại `DATABASE_URL` và `AUTH_SECRET`. Bảng xếp hạng bắt đầu thu thập từ lúc triển khai, chỉ hiển thị từ khóa có ít nhất hai trình duyệt khác nhau cùng tìm trong 7 ngày gần nhất. Xem [quy tắc thống kê và cache](search-analytics.md).
+
+Với database hoàn toàn mới, vẫn cần khởi tạo schema trước bằng quy trình dưới đây:
 
 ```bash
 # Lấy DATABASE_URL production từ Vercel dashboard, paste vào terminal

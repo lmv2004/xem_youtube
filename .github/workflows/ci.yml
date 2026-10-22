@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+    branches: [main, 'codex/**']
 
 jobs:
   build:
@@ -59,6 +59,11 @@ jobs:
       - name: Verify additive queue upgrade on existing schema
         run: node scripts/ensure-room-queue.mjs
 
+      - name: Verify additive search analytics upgrade
+        run: |
+          node scripts/ensure-search-analytics.mjs
+          node scripts/ensure-search-analytics.mjs
+
       - name: Build
         run: npm run build
 
@@ -66,3 +71,8 @@ jobs:
         run: node --import tsx --test integration/room-http.test.ts
         env:
           ROOM_HTTP_INTEGRATION: "1"
+
+      - name: Weekly search analytics integration
+        run: node --import tsx --test integration/search-analytics.test.ts
+        env:
+          SEARCH_ANALYTICS_INTEGRATION: "1"
