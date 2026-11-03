@@ -86,13 +86,14 @@ export type SyncPlayerHandle = {
 
 type Props = {
   videoId: string;
+  fillHeight?: boolean;
   /** Fired when the local viewer presses play/pause on the player itself. */
   onStateChange?: (playing: boolean, currentTime: number) => void;
   onReady?: (handle: SyncPlayerHandle) => void;
   onEnded?: (videoId: string, duration: number) => void;
 };
 
-export function SyncPlayer({ videoId, onStateChange, onReady, onEnded }: Props) {
+export function SyncPlayer({ videoId, onStateChange, onReady, onEnded, fillHeight = false }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<YTPlayer | null>(null);
 
@@ -157,7 +158,7 @@ export function SyncPlayer({ videoId, onStateChange, onReady, onEnded }: Props) 
   }, []);
 
   return (
-    <div className="aspect-video w-full overflow-hidden rounded-2xl bg-black">
+    <div className={`aspect-video w-full overflow-hidden rounded-2xl bg-black ${fillHeight ? "lg:h-full lg:aspect-auto" : ""}`}>
       <div ref={containerRef} className="h-full w-full [&_iframe]:h-full [&_iframe]:w-full" />
     </div>
   );

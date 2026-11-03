@@ -561,7 +561,7 @@ export function RoomClient({ code }: { code: string }) {
   const activity = describeAction(playback, t);
 
   return (
-    <div className={focused ? "fixed inset-0 z-50 overflow-y-auto bg-background p-3 sm:p-5" : "space-y-5"}>
+    <div className={focused ? "fixed inset-0 z-50 overflow-y-auto bg-background p-3 sm:p-5 lg:flex lg:flex-col lg:gap-3" : "space-y-5"}>
       <Glass
         intensity="strong"
         className={focused ? "hidden" : "flex flex-wrap items-center gap-3 p-4 sm:p-5"}
@@ -742,9 +742,10 @@ export function RoomClient({ code }: { code: string }) {
         </p>
       ) : null}
 
-      <div className="relative grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className={focused ? "min-w-0" : "min-w-0 space-y-3"}>
+      <div className={`relative grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_360px] ${focused ? "lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(0,1fr)]" : ""}`}>
+        <div className={focused ? "min-w-0 lg:h-full lg:min-h-0" : "min-w-0 space-y-3"}>
           <SyncPlayer
+            fillHeight={focused}
             videoId={room.video.videoId}
             onReady={(handle) => {
               handleRef.current = handle;
