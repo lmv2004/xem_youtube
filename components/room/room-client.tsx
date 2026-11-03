@@ -8,6 +8,8 @@ import {
   Check,
   Maximize2,
   Minimize2,
+  PanelRightClose,
+  PanelRightOpen,
   Copy,
   ExternalLink,
   Loader2,
@@ -68,6 +70,7 @@ export function RoomClient({ code }: { code: string }) {
   const [lockPending, setLockPending] = useState(false);
   const [queuePermissionPending, setQueuePermissionPending] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [panelCollapsed, setPanelCollapsed] = useState(false);
   useEffect(() => {
     if (!focused) return;
     const previous = document.body.style.overflow;
@@ -742,7 +745,7 @@ export function RoomClient({ code }: { code: string }) {
         </p>
       ) : null}
 
-      <div className={`relative grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_360px] ${focused ? "lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(0,1fr)]" : ""}`}>
+      <div className={`relative grid items-start gap-5 ${focused && panelCollapsed ? "lg:grid-cols-1" : "lg:grid-cols-[minmax(0,1fr)_360px]"} ${focused ? "lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(0,1fr)]" : ""}`}>
         <div className={focused ? "min-w-0 lg:h-full lg:min-h-0" : "min-w-0 space-y-3"}>
           <SyncPlayer
             fillHeight={focused}
@@ -785,7 +788,7 @@ export function RoomClient({ code }: { code: string }) {
           </div>
 
           <div className={focused
-            ? "absolute bottom-0 right-0 z-[60]"
+            ? "absolute bottom-0 right-0 z-[60] flex items-center gap-2"
             : "flex items-center justify-between gap-3"}>
           {!focused && <div className="min-w-0 flex-1 space-y-1">
             <p className="text-sm text-muted-foreground">{video.channel}</p>
@@ -810,24 +813,43 @@ export function RoomClient({ code }: { code: string }) {
               </span>
             </p>
           )}</div>}
+            {focused && (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-11 w-11 shrink-0 bg-background shadow-sm hover:bg-muted"
+                aria-label={t(panelCollapsed ? "Hiện khung hoạt động" : "Thu gọn khung hoạt động")}
+                title={t(panelCollapsed ? "Hiện khung hoạt động" : "Thu gọn khung hoạt động")}
+                aria-expanded={!panelCollapsed}
+                aria-controls="room-activity-panel"
+                onClick={() => setPanelCollapsed(value => !value)}
+              >
+                {panelCollapsed ? <PanelRightOpen aria-hidden="true" className="h-4 w-4" /> : <PanelRightClose aria-hidden="true" className="h-4 w-4" />}
+              </Button>
+            )}
             <Button
               type="button"
               variant="outline"
-              className="min-h-11 shrink-0 bg-background shadow-sm hover:bg-muted"
+              size={focused && panelCollapsed ? "icon" : "default"}
+              aria-label={t(focused ? "Thoát giản lược" : "Giản lược")}
+              title={t(focused ? "Thoát giản lược" : "Giản lược")}
+              className={"min-h-11 shrink-0 bg-background shadow-sm hover:bg-muted " + (focused && panelCollapsed ? "h-11 w-11 p-0" : "")}
               onClick={() => setFocused(value => !value)}
               aria-pressed={focused}
             >
-              {focused ? <Minimize2 className="mr-2 h-4 w-4" /> : <Maximize2 className="mr-2 h-4 w-4" />}
-              {t(focused ? "Thoát giản lược" : "Giản lược")}
+              {focused ? <Minimize2 aria-hidden="true" className={panelCollapsed ? "h-4 w-4" : "mr-2 h-4 w-4"} /> : <Maximize2 aria-hidden="true" className="mr-2 h-4 w-4" />}
+              {!(focused && panelCollapsed) && t(focused ? "Thoát giản lược" : "Giản lược")}
             </Button>
           </div>
           {!focused && <RoomRelatedVideos code={code} videoId={video.videoId} onPick={changeVideo} disabled={!canControl || sync.isOffline} />}
         </div>
 
         <Tabs
+          id="room-activity-panel"
           value={tab}
           onValueChange={(value) => setTab(value as typeof tab)}
-          className="min-w-0 space-y-2"
+          className={focused && panelCollapsed ? "hidden" : "min-w-0 space-y-2"}
         >
           <TabsList
             className="grid h-12 w-full grid-cols-3 rounded-xl p-1"

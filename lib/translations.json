@@ -2958,5 +2958,13 @@
   "Video liên quan": {
     "en": "Related videos",
     "te": "సంబంధిత వీడియోలు"
+  },
+  "Hiện khung hoạt động": {
+    "en": "Show activity panel",
+    "te": "కార్యాచరణ ప్యానెల్ చూపించు"
+  },
+  "Thu gọn khung hoạt động": {
+    "en": "Collapse activity panel",
+    "te": "కార్యాచరణ ప్యానెల్ కుదించు"
   }
 }
