@@ -293,11 +293,20 @@ export async function postRoomMessage(
         },
         include: { user: { select: { id: true, name: true, image: true } } },
       }));
+    const presence = await tx.roomPresence.findFirst({
+      where: { roomId: room.id, userId: row.userId },
+      orderBy: { lastSeenAt: "desc" },
+      select: { name: true, image: true },
+    });
     return {
       id: row.id,
       body: row.body,
       createdAt: row.createdAt.toISOString(),
-      author: roomPublicAuthor(row.userId, (await tx.roomPresence.findFirst({ where: { roomId: room.id, userId: row.userId }, orderBy: { lastSeenAt: "desc" }, select: { name: true } }))?.name),
+      author: roomPublicAuthor(
+        row.userId,
+        presence?.name ?? row.user?.name,
+        presence?.image ?? row.user?.image,
+      ),
     };
   });
 }
