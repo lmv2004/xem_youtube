@@ -45,6 +45,9 @@ export function useCreateRoom() {
           return null;
         }
 
+        try {
+          window.localStorage.setItem(`xemphim:room:joined:${json.code}`, "true");
+        } catch {}
         router.push("/rooms/" + json.code);
         return json.code;
       } catch {
