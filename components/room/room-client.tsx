@@ -561,13 +561,7 @@ export function RoomClient({ code }: { code: string }) {
   const activity = describeAction(playback, t);
 
   return (
-    <div className={focused ? "fixed inset-0 z-50 overflow-y-auto bg-background p-3 sm:p-5" : "space-y-5"}>
-      <div className="sticky top-0 z-10 flex justify-end bg-background py-2">
-        <Button variant="outline" onClick={() => setFocused(value => !value)} aria-pressed={focused}>
-          {focused ? <Minimize2 className="mr-2 h-4 w-4" /> : <Maximize2 className="mr-2 h-4 w-4" />}
-          {t(focused ? "Thoát giản lược" : "Giản lược")}
-        </Button>
-      </div>
+    <div className={focused ? "fixed inset-0 z-50 overflow-y-auto bg-background p-3 pb-24 sm:p-5 sm:pb-24" : "space-y-5"}>
       <Glass
         intensity="strong"
         className={focused ? "hidden" : "flex flex-wrap items-center gap-3 p-4 sm:p-5"}
@@ -813,6 +807,22 @@ export function RoomClient({ code }: { code: string }) {
               </span>
             </p>
           ))}
+          <div
+            className={focused
+              ? "fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-[60]"
+              : "flex justify-end"}
+          >
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-11 bg-background shadow-sm hover:bg-muted"
+              onClick={() => setFocused(value => !value)}
+              aria-pressed={focused}
+            >
+              {focused ? <Minimize2 className="mr-2 h-4 w-4" /> : <Maximize2 className="mr-2 h-4 w-4" />}
+              {t(focused ? "Thoát giản lược" : "Giản lược")}
+            </Button>
+          </div>
           {!focused && <RoomRelatedVideos code={code} videoId={video.videoId} onPick={changeVideo} disabled={!canControl || sync.isOffline} />}
         </div>
 
