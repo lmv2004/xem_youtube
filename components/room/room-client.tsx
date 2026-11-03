@@ -742,7 +742,7 @@ export function RoomClient({ code }: { code: string }) {
         </p>
       ) : null}
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="relative grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className={focused ? "min-w-0" : "min-w-0 space-y-3"}>
           <SyncPlayer
             videoId={room.video.videoId}
@@ -781,15 +781,14 @@ export function RoomClient({ code }: { code: string }) {
             <h2 className="text-base font-semibold leading-snug sm:text-lg">
               {video.title}
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {video.channel}
-            </p>
           </div>
 
           <div className={focused
-            ? "fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-[60]"
+            ? "absolute bottom-0 right-0 z-[60]"
             : "flex items-center justify-between gap-3"}>
-          {!focused && <div className="min-w-0 flex-1">{canControl ? (
+          {!focused && <div className="min-w-0 flex-1 space-y-1">
+            <p className="text-sm text-muted-foreground">{video.channel}</p>
+            {canControl ? (
             <p className="text-xs text-muted-foreground">
               {activity
                 ? activity
