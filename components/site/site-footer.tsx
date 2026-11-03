@@ -5,7 +5,7 @@ import Link from "next/link";
 export function SiteFooter() {
   const t = useTranslations();
   return (
-    <footer className="container mt-12 border-t border-border py-7 text-xs leading-6 text-muted-foreground">
+    <footer className="w-full px-4 sm:px-6 mt-12 border-t border-border py-7 text-xs leading-6 text-muted-foreground">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p>
           © {new Date().getFullYear()}{" "}

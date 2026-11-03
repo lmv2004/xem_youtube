@@ -20,7 +20,7 @@ import { HeaderSearch } from "./header-search";
 import { Wordmark } from "./logo";
 import { LanguageSelector } from "./language-selector";
 
-export function SiteHeader() {
+export function SiteHeader({ wide = true }: { wide?: boolean }) {
   const t = useTranslations();
   // Header search luôn hiển thị, trang chủ vẫn giữ ô tìm kiếm lớn ở hero.
   const { data: session, status } = useSession();
@@ -29,7 +29,7 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
-      <div className="container max-w-7xl mx-auto">
+      <div className={wide ? "w-full px-4 sm:px-6" : "container max-w-7xl mx-auto"}>
         <div className="relative flex h-16 items-center justify-between gap-2 sm:gap-5">
           {/* Brand Logo */}
           <Link
@@ -132,11 +132,11 @@ export function SiteHeader() {
                   asChild
                   variant="ghost"
                   size="sm"
-                  className="rounded-xl text-muted-foreground hover:text-foreground"
+                  className="h-11 w-11 rounded-xl p-0 text-muted-foreground hover:text-foreground sm:w-auto sm:px-3"
                 >
                   <Link href="/login">
-                    <LogIn className="mr-1.5 h-3.5 w-3.5" />{" "}
-                    {t("Đăng nhập")}{" "}
+                    <LogIn aria-hidden="true" className="h-4 w-4" />
+                    <span className="sr-only sm:not-sr-only">{t("Đăng nhập")}</span>
                   </Link>
                 </Button>
               </div>

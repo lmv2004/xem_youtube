@@ -168,13 +168,12 @@ function isRegionAllowed(v: VideosListItem, region: string | undefined): Dropped
 function pickThumbnail(snip: SearchListItem["snippet"]): string {
   const thumbs = snip?.thumbnails;
   if (!thumbs) return "";
-  // Ưu tiên ảnh vừa (medium/high) cho lưới & danh sách để tải nhanh,
-  // tiết kiệm băng thông. Chỉ dùng maxres khi cần ảnh nền lớn.
+  // Use the best available source; responsive image components resize for display.
   return (
-    thumbs.medium?.url ||
-    thumbs.high?.url ||
-    thumbs.standard?.url ||
     thumbs.maxres?.url ||
+    thumbs.standard?.url ||
+    thumbs.high?.url ||
+    thumbs.medium?.url ||
     thumbs.default?.url ||
     ""
   );
@@ -399,7 +398,7 @@ export async function listTrending(regionCode: string, maxResults = MAX_RESULTS)
 
 // Fetch suggested/related videos for watch page
 export async function getRelatedVideos(video: VideoItem, maxResults = 10): Promise<VideoItem[]> {
-  const cacheKey = `related:${video.id}`;
+  const cacheKey = `related:${video.id}:${maxResults}`;
   const cached = getFromCache<VideoItem[]>(cacheKey);
   if (cached) return cached;
 

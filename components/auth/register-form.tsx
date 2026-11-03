@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -13,7 +14,6 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { authReturnPath } from "@/lib/auth-navigation";
@@ -90,7 +90,7 @@ export function RegisterForm({
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>{t("Tạo tài khoản")}</CardTitle>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("Tạo tài khoản")}</h1>
         <CardDescription>
           {t("Miễn phí, không cần thẻ tín dụng.")}
         </CardDescription>
@@ -121,7 +121,7 @@ export function RegisterForm({
             <Label htmlFor="password">
               {t("Mật khẩu (tối thiểu 6 ký tự)")}
             </Label>
-            <Input
+            <PasswordInput
               id="password"
               type="password"
               autoComplete="new-password"

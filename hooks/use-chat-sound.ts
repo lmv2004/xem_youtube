@@ -1,0 +1,80 @@
+"use client";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createChatSoundGate, normalizeChatVolume, playChatTone } from "@/lib/chat-sound";
+const VOLUME_KEY = "xemphim:chat-sound-volume";
+const STORAGE_KEY = "xemphim:chat-sound";
+
+export function useChatSound(unread: number) {
+  const [enabled, setEnabled] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [volume, setVolume] = useState(70);
+  const volumeRef = useRef(70);
+  const enabledRef = useRef(false);
+  const contextRef = useRef<AudioContext | null>(null);
+  const gate = useRef(createChatSoundGate());
+  const activate = useCallback((preview = false) => {
+    try {
+      const context = contextRef.current ?? new AudioContext();
+      contextRef.current = context;
+      void context.resume().then(() => {
+        if (contextRef.current !== context || !enabledRef.current) return;
+        setFailed(context.state !== "running");
+        if (preview && context.state === "running") playChatTone(context, volumeRef.current);
+      }).catch(() => { if (contextRef.current === context) setFailed(true); });
+    } catch { setFailed(true); }
+  }, []);
+  useEffect(() => {
+    try {
+      const savedVolume = localStorage.getItem(VOLUME_KEY);
+      volumeRef.current = savedVolume === null ? 70 : normalizeChatVolume(Number(savedVolume));
+      setVolume(volumeRef.current);
+      const saved = localStorage.getItem(STORAGE_KEY) === "true";
+      enabledRef.current = saved;
+      setEnabled(saved);
+    } catch { /* Storage is optional. */ }
+    const unlock = () => {
+      if (enabledRef.current && contextRef.current?.state !== "running") activate();
+    };
+    const storage = (event: StorageEvent) => {
+      if (event.key === VOLUME_KEY) {
+        volumeRef.current = event.newValue === null ? 70 : normalizeChatVolume(Number(event.newValue));
+        setVolume(volumeRef.current);
+        return;
+      }
+      if (event.key !== STORAGE_KEY) return;
+      enabledRef.current = event.newValue === "true";
+      setEnabled(enabledRef.current);
+    };
+    window.addEventListener("pointerdown", unlock);
+    window.addEventListener("keydown", unlock);
+    window.addEventListener("storage", storage);
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+      window.removeEventListener("storage", storage);
+      const context = contextRef.current;
+      contextRef.current = null;
+      if (context) void context.close().catch(() => {});
+    };
+  }, [activate]);
+  useEffect(() => {
+    const context = contextRef.current;
+    if (!gate.current(unread, enabled && context?.state === "running", performance.now())) return;
+    try { if (context) playChatTone(context, volumeRef.current); } catch { setFailed(true); }
+  }, [unread, enabled]);
+  const toggle = () => {
+    const next = !enabledRef.current;
+    enabledRef.current = next;
+    setEnabled(next);
+    setFailed(false);
+    try { localStorage.setItem(STORAGE_KEY, String(next)); } catch { /* Optional. */ }
+    if (next) activate(true);
+  };
+  const changeVolume = (value: number) => {
+    const next = normalizeChatVolume(value);
+    volumeRef.current = next;
+    setVolume(next);
+    try { localStorage.setItem(VOLUME_KEY, String(next)); } catch { /* Optional. */ }
+  };
+  return { enabled, failed, toggle, volume, changeVolume, preview: () => activate(true) };
+}

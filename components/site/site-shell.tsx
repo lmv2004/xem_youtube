@@ -4,6 +4,7 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { AppSidebar } from "@/components/site/app-sidebar";
 import { MobileNav } from "@/components/site/mobile-nav";
 import { BackToTop } from "@/components/back-to-top";
+import { SkipLink } from "@/components/site/skip-link";
 import { CommandPalette } from "@/components/command-palette";
 
 /**
@@ -14,12 +15,13 @@ import { CommandPalette } from "@/components/command-palette";
  *   footer is never hidden behind it)
  * - lg+: sidebar rail beside the content, no bottom bar
  */
-export function SiteShell({ children }: { children: React.ReactNode }) {
+export function SiteShell({ children, wide = true }: { children: React.ReactNode; wide?: boolean }) {
   return (
     <div className="flex min-h-screen flex-col pb-20 lg:pb-0">
-      <SiteHeader />
+      <SkipLink />
+      <SiteHeader wide={wide} />
 
-      <div className="container flex flex-1 items-start gap-6 py-5 sm:py-6 xl:gap-8">
+      <div className={`${wide ? "w-full px-4 sm:px-6" : "container"} flex flex-1 items-start gap-6 py-5 sm:py-6 xl:gap-8`}>
         <Suspense
           fallback={<aside className="hidden w-56 shrink-0 lg:block" />}
         >

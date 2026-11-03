@@ -98,7 +98,7 @@ export function VideoCard({
       <article
         className={cn(
           // Giảm nháy layout khi hover: chỉ đổi màu viền/thumbnail.
-          "group min-w-0 rounded-2xl border border-transparent transition-colors hover:border-border",
+          "media-card group min-w-0 rounded-2xl border border-transparent transition-colors hover:border-border",
           view === "list" &&
             "flex gap-3 rounded-2xl border-border bg-card p-3 sm:gap-5",
           active && "ring-2 ring-primary ring-offset-4 ring-offset-background",
@@ -125,7 +125,7 @@ export function VideoCard({
                   : "(max-width: 520px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 30vw, 24vw"
               }
               onError={() => setImageFailed(true)}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-[1.025]"
             />
           ) : (
             <div className="grid h-full place-items-center text-muted-foreground">

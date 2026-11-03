@@ -16,3 +16,17 @@ export function createPlayerEventGuard() {
     },
   };
 }
+
+/** Visibility transitions are local lifecycle events, not shared playback intent. */
+export function createPlayerVisibilityGuard(initiallyHidden = false) {
+  let hidden = initiallyHidden;
+  let quietUntil = 0;
+  return {
+    change(nextHidden: boolean, now = Date.now()) {
+      if (hidden === nextHidden) return;
+      hidden = nextHidden;
+      if (!hidden) quietUntil = now + 1500;
+    },
+    allows(now = Date.now()) { return !hidden && now >= quietUntil; },
+  };
+}

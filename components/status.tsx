@@ -72,12 +72,8 @@ export function StatusPanel({ status, onRetry }: Props) {
         role="alert"
         className="rounded-lg border border-primary/40 bg-primary/10 px-4 py-3 text-sm"
       >
-        {t("Máy chủ chưa được cấu hình")}{" "}
-        <code className="font-mono">YOUTUBE_API_KEY</code>
-        {t(". Tạo file")} <code className="font-mono">.env.local</code>{" "}
-        {t("với khoá YouTube Data API v3 rồi khởi động lại")}{" "}
-        <code className="font-mono">npm run dev</code>
-        {t(". Xem hướng dẫn trong README.")}{" "}
+        <p>{t("Tạm thời chưa thể tải video. Vui lòng thử lại sau.")}</p>
+        <button type="button" onClick={onRetry} className="mt-3 min-h-11 rounded-xl border border-border px-4 font-medium hover:bg-muted">{t("Thử lại")}</button>
       </div>
     );
   }

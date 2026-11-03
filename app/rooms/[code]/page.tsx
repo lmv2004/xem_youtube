@@ -27,7 +27,7 @@ export default async function RoomPage({
 }) {
   const { code } = await params;
   return (
-    <SiteShell>
+    <SiteShell wide>
       <RoomClient key={code} code={normalizeRoomCode(code)} />
     </SiteShell>
   );
