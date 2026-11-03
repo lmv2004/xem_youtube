@@ -930,7 +930,7 @@ export function RoomClient({ code }: { code: string }) {
               canChat={Boolean(currentUserId)}
               connectionReady={!sync.isOffline}
               currentUserId={currentUserId}
-              currentUser={{ name: identity.name, image: null }}
+              currentUser={{ name: identity.name, image: session?.user?.image ?? null }}
               onSend={onSend}
             />
           </TabsContent>

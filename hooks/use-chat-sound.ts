@@ -5,12 +5,12 @@ const VOLUME_KEY = "xemphim:chat-sound-volume";
 const STORAGE_KEY = "xemphim:chat-sound";
 
 export function useChatSound(unread: number) {
-  const [enabled, setEnabled] = useState(false);
+  const [enabled, setEnabled] = useState(true);
   const [failed, setFailed] = useState(false);
   const [ready, setReady] = useState(false);
   const [volume, setVolume] = useState(70);
   const volumeRef = useRef(70);
-  const enabledRef = useRef(false);
+  const enabledRef = useRef(true);
   const contextRef = useRef<AudioContext | null>(null);
   const gate = useRef(createChatSoundGate());
   const activate = useCallback((preview = false) => {
@@ -34,10 +34,11 @@ export function useChatSound(unread: number) {
       const savedVolume = localStorage.getItem(VOLUME_KEY);
       volumeRef.current = savedVolume === null ? 70 : normalizeChatVolume(Number(savedVolume));
       setVolume(volumeRef.current);
-      const saved = localStorage.getItem(STORAGE_KEY) === "true";
-      enabledRef.current = saved;
-      setEnabled(saved);
-      if (saved) activate();
+      const saved = localStorage.getItem(STORAGE_KEY);
+      const initialEnabled = saved === null ? true : saved === "true";
+      enabledRef.current = initialEnabled;
+      setEnabled(initialEnabled);
+      if (initialEnabled) activate();
     } catch { /* Storage is optional. */ }
     const unlock = () => {
       if (enabledRef.current && contextRef.current?.state !== "running") activate();
