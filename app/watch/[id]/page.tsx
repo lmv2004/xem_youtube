@@ -96,7 +96,7 @@ export default async function WatchPage({ params, searchParams }: Params) {
       <main
         id="main-content"
         tabIndex={-1}
-        className="container flex-1 py-6 sm:py-8"
+        className="w-full flex-1 px-4 sm:px-6 py-6 sm:py-8"
       >
         {metadataUnavailable && (
           <p

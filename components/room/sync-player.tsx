@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { createPlayerEventGuard } from "@/lib/player-event-guard";
+import { createPlayerEventGuard, createPlayerVisibilityGuard } from "@/lib/player-event-guard";
 
 /**
  * Minimal typings for the YouTube IFrame API.
@@ -87,7 +87,7 @@ export type SyncPlayerHandle = {
 type Props = {
   videoId: string;
   fillHeight?: boolean;
-  /** Fired when the local viewer presses play/pause on the player itself. */
+  /** Visible player state changes after scripted/lifecycle events are filtered. */
   onStateChange?: (playing: boolean, currentTime: number) => void;
   onReady?: (handle: SyncPlayerHandle) => void;
   onEnded?: (videoId: string, duration: number) => void;
@@ -108,6 +108,14 @@ export function SyncPlayer({ videoId, onStateChange, onReady, onEnded, fillHeigh
 
   useEffect(() => {
     let cancelled = false;
+    const visibility = createPlayerVisibilityGuard(document.hidden);
+    let pendingPause: ReturnType<typeof setTimeout> | undefined;
+    const clearPause = () => { clearTimeout(pendingPause); pendingPause = undefined; };
+    const visibilityChanged = () => {
+      clearPause();
+      visibility.change(document.hidden);
+    };
+    document.addEventListener("visibilitychange", visibilityChanged);
 
     void loadYouTubeApi().then((YT) => {
       if (cancelled || !containerRef.current || playerRef.current) return;
@@ -131,14 +139,20 @@ export function SyncPlayer({ videoId, onStateChange, onReady, onEnded, fillHeigh
             });
           },
           onStateChange: (event) => {
+            clearPause();
             if (event.data === YT.PlayerState.PLAYING) {
-              if (events.consume(true)) return;
+              if (events.consume(true) || document.hidden || !visibility.allows()) return;
               onStateChangeRef.current?.(true, player.getCurrentTime());
             } else if (event.data === YT.PlayerState.ENDED) {
               endedRef.current?.(new URL(player.getVideoUrl()).searchParams.get("v") ?? "", player.getDuration());
             } else if (event.data === YT.PlayerState.PAUSED) {
-              if (events.consume(false)) return;
-              onStateChangeRef.current?.(false, player.getCurrentTime());
+              if (events.consume(false) || document.hidden || !visibility.allows()) return;
+              // A lifecycle pause can arrive just before visibilitychange.
+              // Briefly defer only pause; never publish it after hiding/restoring.
+              pendingPause = setTimeout(() => {
+                if (cancelled || document.hidden || !visibility.allows() || player.getPlayerState() !== YT.PlayerState.PAUSED) return;
+                onStateChangeRef.current?.(false, player.getCurrentTime());
+              }, 150);
             }
           },
         },
@@ -149,6 +163,8 @@ export function SyncPlayer({ videoId, onStateChange, onReady, onEnded, fillHeigh
 
     return () => {
       cancelled = true;
+      clearPause();
+      document.removeEventListener("visibilitychange", visibilityChanged);
       playerRef.current?.destroy();
       playerRef.current = null;
     };

@@ -4,16 +4,23 @@ import { useTranslations } from "@/components/locale-provider";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Send, Smile } from "lucide-react";
+import { ArrowDown, Send, Smile, Volume2, VolumeX } from "lucide-react";
 import confetti from "canvas-confetti";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MAX_MESSAGE_LENGTH, type RoomMessageDto } from "@/lib/rooms";
 import { createRoomOutbox, type OutboxMessage } from "@/lib/room-outbox";
+import { createRoomUnreadTracker } from "@/lib/room-unread";
+import { useChatAttention } from "@/hooks/use-chat-attention";
+import { useChatSound } from "@/hooks/use-chat-sound";
 import { cn } from "@/lib/utils";
 
 type Props = {
+  fillHeight?: boolean;
+  active?: boolean;
+  historyReady?: boolean;
+  onUnreadChange?: (count: number) => void;
   messages: RoomMessageDto[];
   canChat: boolean;
   connectionReady?: boolean;
@@ -33,6 +40,10 @@ function timeOf(iso: string, locale: string) {
 }
 
 export function RoomChat({
+  fillHeight = false,
+  active = true,
+  historyReady = true,
+  onUnreadChange,
   messages,
   canChat,
   connectionReady = true,
@@ -68,17 +79,41 @@ export function RoomChat({
   };
   const listRef = useRef<HTMLDivElement | null>(null);
   const pinnedRef = useRef(true);
+  const [atBottom, setAtBottom] = useState(true);
+  const attentive = useChatAttention();
+  const [inViewport, setInViewport] = useState(false);
+  const [unread, setUnread] = useState(0);
+  const sound = useChatSound(unread);
+  const tracker = useRef(createRoomUnreadTracker());
+  useEffect(() => {
+    const observer = new IntersectionObserver(entries => setInViewport(entries[0]?.isIntersecting ?? false));
+    if (listRef.current) observer.observe(listRef.current);
+    return () => { observer.disconnect(); };
+  }, []);
+  useEffect(() => {
+    const count = tracker.current.update(messages, historyReady, currentUserId, active && attentive && inViewport && atBottom);
+    setUnread(count);
+    onUnreadChange?.(count);
+  }, [messages, historyReady, currentUserId, active, attentive, inViewport, atBottom, onUnreadChange]);
+  const jumpToLatest = () => {
+    const el = listRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+    pinnedRef.current = true;
+    setAtBottom(true);
+  };
 
   useEffect(() => {
     const el = listRef.current;
-    if (!el || !pinnedRef.current) return;
+    if (!el || !active || !pinnedRef.current) return;
     el.scrollTop = el.scrollHeight;
-  }, [messages, pending]);
+  }, [messages, pending, active]);
 
   const onScroll = () => {
     const el = listRef.current;
-    if (!el) return;
+    if (!el || !active || !el.clientHeight) return;
     pinnedRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+    setAtBottom(pinnedRef.current);
   };
 
   const submit = (e: React.FormEvent) => {
@@ -87,6 +122,7 @@ export function RoomChat({
     if (outboxRef.current?.enqueue(draftRef.current)) {
       updateDraft("");
       pinnedRef.current = true;
+      setAtBottom(true);
     }
   };
 
@@ -126,9 +162,9 @@ export function RoomChat({
     return items.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   }, [messages, pending, currentUserId, currentUser?.name, currentUser?.image]);
   return (
-    <div className="flex h-[min(580px,70dvh)] min-h-[360px] flex-col overflow-hidden rounded-2xl border border-border bg-card lg:h-[620px]">
+    <div className={cn("flex h-[min(580px,70dvh)] min-h-[360px] flex-col overflow-hidden rounded-2xl border border-border bg-card lg:h-[620px]", fillHeight && "lg:h-full lg:min-h-0")}>
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+      <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
         <div>
           <h2 className="text-sm font-semibold text-foreground">
             {t("Trò chuyện trực tiếp")}
@@ -139,6 +175,10 @@ export function RoomChat({
               : t("Phòng đang sẵn sàng")}
           </p>
         </div>
+        <div className="flex items-center gap-1">
+        <Button type="button" variant="ghost" size="icon" aria-pressed={sound.enabled} aria-label={t(sound.enabled ? "Tắt âm báo tin nhắn" : "Bật âm báo tin nhắn")} title={t(sound.enabled ? "Tắt âm báo tin nhắn" : "Bật âm báo tin nhắn")} onClick={sound.toggle}>
+          {sound.enabled ? <Volume2 aria-hidden="true" /> : <VolumeX aria-hidden="true" />}
+        </Button>
         <span
           className="flex items-center gap-1.5 text-xs text-muted-foreground"
           role="status"
@@ -151,8 +191,18 @@ export function RoomChat({
           />
           {connectionReady ? t("Đã đồng bộ") : t("Đang đồng bộ lại")}
         </span>
+        </div>
       </div>
 
+      {sound.enabled && <details className="shrink-0 border-b border-border px-4 py-2 text-xs">
+        <summary className="cursor-pointer text-muted-foreground focus-visible:outline focus-visible:outline-2">{t("Âm lượng âm báo")} · {sound.volume}%</summary>
+        <div className="flex items-center gap-3 pt-2">
+          <input type="range" min="10" max="100" step="10" value={sound.volume} onChange={event => sound.changeVolume(Number(event.target.value))} aria-label={t("Âm lượng âm báo")} aria-valuetext={`${sound.volume}%`} className="h-11 min-w-0 flex-1 accent-primary" />
+          <Button type="button" size="sm" variant="outline" onClick={sound.preview}>{t("Nghe thử")}</Button>
+        </div>
+      </details>}
+      {sound.enabled && !sound.ready && !sound.failed && <Button type="button" variant="ghost" className="shrink-0 whitespace-normal text-xs" onClick={sound.preview}>{t("Nhấn để kích hoạt âm báo")}</Button>}
+      {sound.failed && <p role="status" className="px-4 py-2 text-xs text-muted-foreground">{t("Chưa phát được âm báo. Hãy thử bật lại âm báo.")}</p>}
       {/* Messages Scroll Area */}
       <div
         ref={listRef}
@@ -234,8 +284,15 @@ export function RoomChat({
         )}
       </div>
 
+      {unread > 0 && (
+        <div className="shrink-0 border-t border-border px-3 py-2">
+          <Button type="button" variant="secondary" className="w-full" onClick={jumpToLatest}>
+            <ArrowDown aria-hidden="true" />{t("{count} tin nhắn mới", { count: unread })}
+          </Button>
+        </div>
+      )}
       {/* Footer Reaction Bar & Input */}
-      <div className="space-y-2 border-t border-border bg-card p-3">
+      <div className="shrink-0 space-y-2 border-t border-border bg-card p-3">
         {canChat ? (
           <>
             <div className="flex items-center gap-1 overflow-x-auto text-base">

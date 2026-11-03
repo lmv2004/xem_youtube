@@ -336,3 +336,30 @@ html[lang="te"] .font-display {
     scroll-behavior: auto !important;
   }
 }
+
+/* Motion uses existing Radix state attributes; no animation runtime required. */
+@keyframes surface-enter { from { opacity: 0; scale: .98; } to { opacity: 1; scale: 1; } }
+@keyframes surface-leave { from { opacity: 1; } to { opacity: 0; } }
+@media (prefers-reduced-motion: no-preference) {
+  .menu-motion[data-state="open"], .dialog-motion[data-state="open"] {
+    animation: surface-enter 160ms ease-out;
+  }
+  .menu-motion[data-state="closed"], .dialog-motion[data-state="closed"], .overlay-motion[data-state="closed"] {
+    animation: surface-leave 120ms ease-in;
+  }
+  .overlay-motion[data-state="open"] { animation: surface-leave 160ms ease-out reverse; }
+}
+.menu-motion { transform-origin: var(--radix-dropdown-menu-content-transform-origin); }
+@media (hover: hover) {
+  .media-card:hover { background-color: hsl(var(--card)); }
+}
+@media (pointer: coarse) {
+  [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"] { min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+    animation-delay: 0ms !important;
+  }
+}

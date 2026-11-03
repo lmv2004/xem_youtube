@@ -9,6 +9,7 @@ import type { VideoItem, VideoSearchResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type Props = {
+  fillHeight?: boolean;
   onPick: (item: VideoItem) => Promise<void> | void;
   onEnqueue: (item: VideoItem) => Promise<void> | void;
   activeVideoId?: string | null;
@@ -25,6 +26,7 @@ type Props = {
  * suggestion feed.
  */
 export function RoomSearch({
+  fillHeight = false,
   onPick,
   onEnqueue,
   activeVideoId,
@@ -90,13 +92,13 @@ export function RoomSearch({
   };
 
   return (
-    <div className="flex h-[min(580px,70dvh)] min-h-[360px] flex-col overflow-hidden rounded-2xl border border-border bg-card lg:h-[620px]">
+    <div className={cn("flex h-[min(580px,70dvh)] min-h-[360px] flex-col overflow-hidden rounded-2xl border border-border bg-card lg:h-[620px]", fillHeight && "lg:h-full lg:min-h-0")}>
       <form
         onSubmit={(e) => {
           e.preventDefault();
           void run(query);
         }}
-        className="flex gap-2 border-b border-border p-3"
+        className="flex shrink-0 gap-2 border-b border-border p-3"
       >
         <Input
           value={query}
@@ -121,7 +123,7 @@ export function RoomSearch({
       </form>
 
       {locked ? (
-        <p className="flex items-start gap-1.5 border-b border-border bg-amber-500/10 px-3 py-2 text-xs text-muted-foreground">
+        <p className="flex shrink-0 items-start gap-1.5 border-b border-border bg-amber-500/10 px-3 py-2 text-xs text-muted-foreground">
           <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           {t(
             enqueueDisabled
@@ -131,7 +133,7 @@ export function RoomSearch({
         </p>
       ) : null}
 
-      <div className="flex items-center gap-1.5 px-3 pt-2 text-xs text-muted-foreground">
+      <div className="flex shrink-0 items-center gap-1.5 px-3 pt-2 text-xs text-muted-foreground">
         <Sparkles className="h-3.5 w-3.5" />
         {heading}
       </div>

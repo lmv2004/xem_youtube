@@ -31,8 +31,8 @@ export function VideoGrid({
     <div
       className={cn(
         view === "grid"
-          // Desktop >=1280: 4 cards, laptop 3, tablet 2, mobile 1-2
-          ? "grid grid-cols-1 gap-x-4 gap-y-6 min-[520px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          // Size columns from available space, including the collapsed sidebar.
+          ? "grid grid-cols-[repeat(auto-fill,minmax(min(100%,240px),1fr))] gap-x-4 gap-y-6"
           : "flex flex-col gap-3",
         className,
       )}
@@ -66,7 +66,7 @@ export function VideoGridSkeleton({
       aria-hidden
       className={cn(
         view === "grid"
-          ? "grid grid-cols-1 gap-x-4 gap-y-6 min-[520px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          ? "grid grid-cols-[repeat(auto-fill,minmax(min(100%,240px),1fr))] gap-x-4 gap-y-6"
           : "flex flex-col gap-3",
         className,
       )}

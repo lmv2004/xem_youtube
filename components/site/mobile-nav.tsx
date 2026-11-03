@@ -18,7 +18,7 @@ export function MobileNav() {
   return (
     <nav
       aria-label={t("Điều hướng chính di động")}
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/85 backdrop-blur-2xl lg:hidden shadow-2xl"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-md lg:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <ul className="mx-auto flex max-w-lg items-stretch">
@@ -30,7 +30,7 @@ export function MobileNav() {
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex min-h-[58px] flex-col items-center justify-center gap-1 px-1 py-2 text-[11px] font-semibold transition-all",
+                  "flex min-h-[58px] flex-col items-center justify-center gap-1 px-1 py-2 text-[11px] font-semibold transition-colors",
                   active
                     ? "text-rose-500"
                     : "text-muted-foreground hover:text-foreground",
@@ -38,13 +38,13 @@ export function MobileNav() {
               >
                 <span
                   className={cn(
-                    "grid h-7 w-12 place-items-center rounded-full transition-all duration-200",
+                    "grid h-7 w-12 place-items-center rounded-full transition-colors duration-200",
                     active && "bg-rose-500/15 text-rose-500 ",
                   )}
                 >
                   <Icon className="h-[18px] w-[18px]" />
                 </span>
-                <span className="truncate leading-none">
+                <span className="text-center leading-snug">
                   {t(shortLabel ?? label)}
                 </span>
               </Link>

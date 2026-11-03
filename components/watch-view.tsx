@@ -267,8 +267,7 @@ export function WatchView({
   return (
     <div
       className={cn(
-        "mx-auto min-w-0 space-y-7",
-        theaterMode ? "max-w-[1440px]" : "max-w-7xl",
+        "w-full min-w-0 space-y-7",
       )}
     >
       {/* Main Grid: Video Player + Suggestions Sidebar */}

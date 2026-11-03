@@ -5,7 +5,7 @@ export default async function WatchLoading() {
   const t = await getTranslator();
   return (
     <main
-      className="container py-8"
+      className="w-full px-4 sm:px-6 py-8"
       aria-busy="true"
       aria-label={t("Đang mở video")}
     >

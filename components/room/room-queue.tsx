@@ -8,10 +8,12 @@ import {
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { formatDuration } from "@/lib/format";
 import type { RoomQueueItem } from "@/lib/rooms";
 
 export function RoomQueue({
+  fillHeight = false,
   items,
   disabled,
   canContribute,
@@ -21,6 +23,7 @@ export function RoomQueue({
   onNext,
   onSearch,
 }: {
+  fillHeight?: boolean;
   items: RoomQueueItem[];
   disabled: boolean;
   canContribute: boolean;
@@ -33,10 +36,10 @@ export function RoomQueue({
   const t = useTranslations();
   return (
     <section
-      className="flex h-[min(580px,70dvh)] min-h-[360px] flex-col overflow-hidden rounded-2xl border border-border bg-card lg:h-[620px]"
+      className={cn("flex h-[min(580px,70dvh)] min-h-[360px] flex-col overflow-hidden rounded-2xl border border-border bg-card lg:h-[620px]", fillHeight && "lg:h-full lg:min-h-0")}
       aria-label={t("Danh sách chờ")}
     >
-      <div className="space-y-2 border-b border-border p-3">
+      <div className="shrink-0 space-y-2 border-b border-border p-3">
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-sm font-semibold">
             {t("Tiếp theo ·")} {items.length}/50
@@ -141,7 +144,7 @@ export function RoomQueue({
         )}
       </div>
       {disabled && (
-        <p className="border-t border-border p-3 text-xs text-muted-foreground">
+        <p className="shrink-0 border-t border-border p-3 text-xs text-muted-foreground">
           {t(
             canContribute
               ? "Bạn có thể thêm video ở mục Tìm video. Chủ phòng sắp xếp, xóa và chuyển bài."

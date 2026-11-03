@@ -2966,5 +2966,65 @@
   "Thu gọn khung hoạt động": {
     "en": "Collapse activity panel",
     "te": "కార్యాచరణ ప్యానెల్ కుదించు"
+  },
+  "Hàng đợi": {
+    "en": "Queue",
+    "te": "క్యూ"
+  },
+  "Tùy chọn phòng": {
+    "en": "Room options",
+    "te": "గది ఎంపికలు"
+  },
+  "Tải thêm video": {
+    "en": "Load more videos",
+    "te": "మరిన్ని వీడియోలను లోడ్ చేయండి"
+  },
+  "Đến nội dung chính": {
+    "en": "Skip to main content",
+    "te": "ప్రధాన కంటెంట్‌కు వెళ్లండి"
+  },
+  "Đang tải nội dung…": {
+    "en": "Loading content…",
+    "te": "కంటెంట్ లోడ్ అవుతోంది…"
+  },
+  "Tạm thời chưa thể tải video. Vui lòng thử lại sau.": {
+    "en": "Videos are temporarily unavailable. Please try again later.",
+    "te": "వీడియోలు తాత్కాలికంగా అందుబాటులో లేవు. దయచేసి తర్వాత మళ్లీ ప్రయత్నించండి."
+  },
+  "Ẩn mật khẩu": {
+    "en": "Hide password",
+    "te": "పాస్‌వర్డ్‌ను దాచు"
+  },
+  "Hiện mật khẩu": {
+    "en": "Show password",
+    "te": "పాస్‌వర్డ్‌ను చూపించు"
+  },
+  "{count} tin nhắn mới": {
+    "en": "{count} new messages",
+    "te": "{count} కొత్త సందేశాలు"
+  },
+  "Tắt âm báo tin nhắn": {
+    "en": "Mute message sounds",
+    "te": "సందేశ శబ్దాలను ఆపివేయండి"
+  },
+  "Bật âm báo tin nhắn": {
+    "en": "Enable message sounds",
+    "te": "సందేశ శబ్దాలను ప్రారంభించండి"
+  },
+  "Chưa phát được âm báo. Hãy thử bật lại âm báo.": {
+    "en": "Sound could not play. Try enabling message sounds again.",
+    "te": "శబ్దం ప్లే కాలేదు. సందేశ శబ్దాలను మళ్లీ ప్రారంభించండి."
+  },
+  "Âm lượng âm báo": {
+    "en": "Notification volume",
+    "te": "నోటిఫికేషన్ శబ్ద స్థాయి"
+  },
+  "Nghe thử": {
+    "en": "Preview sound",
+    "te": "శబ్దాన్ని వినండి"
+  },
+  "Nhấn để kích hoạt âm báo": {
+    "en": "Tap to activate notification sounds",
+    "te": "నోటిఫికేషన్ శబ్దాలను ప్రారంభించడానికి నొక్కండి"
   }
 }

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -13,7 +14,6 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { authReturnPath } from "@/lib/auth-navigation";
@@ -59,7 +59,7 @@ export function LoginForm({
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>{t("Đăng nhập")}</CardTitle>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("Đăng nhập")}</h1>
         <CardDescription>
           {t("Đăng nhập để lưu video yêu thích và xem lịch sử.")}
         </CardDescription>
@@ -79,7 +79,7 @@ export function LoginForm({
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">{t("Mật khẩu")}</Label>
-            <Input
+            <PasswordInput
               id="password"
               type="password"
               autoComplete="current-password"

@@ -73,7 +73,7 @@ function NavLink({
           active ? "text-rose-500" : "group-hover:text-foreground",
         )}
       />
-      {collapsed ? null : <span className="truncate">{t(label)}</span>}
+      {collapsed ? null : <span className="whitespace-normal leading-5">{t(label)}</span>}
       {active && !collapsed && (
         <span className="ml-auto h-1.5 w-1.5 rounded-full bg-rose-500 " />
       )}
