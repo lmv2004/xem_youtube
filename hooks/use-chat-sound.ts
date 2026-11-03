@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createChatSoundGate, normalizeChatVolume, playChatTone } from "@/lib/chat-sound";
+import { createChatSoundGate, normalizeChatVolume, loadChatSound, playChatTone } from "@/lib/chat-sound";
 const VOLUME_KEY = "xemphim:chat-sound-volume";
 const STORAGE_KEY = "xemphim:chat-sound";
 
@@ -21,11 +21,11 @@ export function useChatSound(unread: number) {
         if (contextRef.current === context) setReady(context.state === "running");
       };
       setReady(context.state === "running");
-      void context.resume().then(() => {
+      void Promise.all([context.resume(), loadChatSound(context)]).then(async () => {
         if (contextRef.current !== context || !enabledRef.current) return;
         setReady(context.state === "running");
         setFailed(context.state !== "running");
-        if (preview && context.state === "running") playChatTone(context, volumeRef.current);
+        if (preview && context.state === "running") await playChatTone(context, volumeRef.current, () => contextRef.current === context && enabledRef.current);
       }).catch(() => { if (contextRef.current === context) setFailed(true); });
     } catch { setFailed(true); }
   }, []);
@@ -67,7 +67,8 @@ export function useChatSound(unread: number) {
   useEffect(() => {
     const context = contextRef.current;
     if (!gate.current(unread, enabled && context?.state === "running", performance.now())) return;
-    try { if (context) playChatTone(context, volumeRef.current); } catch { setFailed(true); }
+    if (context) void playChatTone(context, volumeRef.current, () => contextRef.current === context && enabledRef.current)
+      .catch(() => { if (contextRef.current === context) setFailed(true); });
   }, [unread, enabled]);
   const toggle = () => {
     const next = !enabledRef.current;

@@ -15,19 +15,39 @@ export function normalizeChatVolume(value: number) {
   return Number.isFinite(value) ? Math.min(100, Math.max(10, Math.round(value))) : 70;
 }
 
-export function playChatTone(context: AudioContext, volume = 70) {
-  const oscillator = context.createOscillator();
+const buffers = new WeakMap<AudioContext, Promise<AudioBuffer>>();
+const sources = new WeakMap<AudioContext, AudioBufferSourceNode>();
+
+export function loadChatSound(context: AudioContext): Promise<AudioBuffer> {
+  const cached = buffers.get(context);
+  if (cached) return cached;
+  const request = fetch("/sounds/room-notification.mp3")
+    .then(response => {
+      if (!response.ok) throw new Error("Notification sound unavailable");
+      return response.arrayBuffer();
+    })
+    .then(data => context.decodeAudioData(data))
+    .catch(error => { buffers.delete(context); throw error; });
+  buffers.set(context, request);
+  return request;
+}
+
+export async function playChatTone(context: AudioContext, volume = 70, shouldPlay = () => true) {
+  const buffer = await loadChatSound(context);
+  if (context.state !== "running" || !shouldPlay()) return;
+  // Repeated previews replace the previous cue instead of stacking sounds.
+  sources.get(context)?.stop();
+  const source = context.createBufferSource();
   const gain = context.createGain();
-  const start = context.currentTime;
-  oscillator.type = "sine";
-  oscillator.frequency.setValueAtTime(1046, start);
-  oscillator.frequency.exponentialRampToValueAtTime(784, start + .24);
-  gain.gain.setValueAtTime(0, start);
-  gain.gain.linearRampToValueAtTime(.32 * normalizeChatVolume(volume) / 100, start + .015);
-  gain.gain.exponentialRampToValueAtTime(.001, start + .35);
-  oscillator.connect(gain);
+  source.buffer = buffer;
+  gain.gain.value = normalizeChatVolume(volume) / 100;
+  source.connect(gain);
   gain.connect(context.destination);
-  oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
-  oscillator.start(start);
-  oscillator.stop(start + .38);
+  sources.set(context, source);
+  source.onended = () => {
+    source.disconnect();
+    gain.disconnect();
+    if (sources.get(context) === source) sources.delete(context);
+  };
+  source.start();
 }
