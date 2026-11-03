@@ -6,7 +6,7 @@ import {
   sanitizeDisplayName,
 } from "@/lib/rooms";
 
-const NAME_KEY = "xemphim:room:name";
+const NAME_KEY = "xemphim:room:nickname:v2";
 
 /**
  * Identity used inside rooms.
@@ -15,7 +15,7 @@ const NAME_KEY = "xemphim:room:name";
  * mounted room keeps its own `clientId`, which also lets a client recognise its
  * own playback actions when they come back through polling.
  */
-export function useRoomIdentity(preferredName?: string | null) {
+export function useRoomIdentity() {
   const [clientId, setClientId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [hydrated, setHydrated] = useState(false);
@@ -26,17 +26,17 @@ export function useRoomIdentity(preferredName?: string | null) {
     let stored: string | null = null;
     try { stored = window.localStorage.getItem(NAME_KEY); } catch { /* Private mode. */ }
     setName(
-      sanitizeDisplayName(stored || preferredName || "") || guestDisplayName(),
+      sanitizeDisplayName(stored || "") || guestDisplayName(),
     );
     setHydrated(true);
-  }, [preferredName]);
+  }, []);
 
   const rename = useCallback((value: string) => {
     setName(value);
   }, []);
 
   const persistName = useCallback((value: string) => {
-    const clean = sanitizeDisplayName(value) || guestDisplayName();
+    const clean = value.includes("@") ? guestDisplayName() : sanitizeDisplayName(value) || guestDisplayName();
     try { window.localStorage.setItem(NAME_KEY, clean); } catch { /* Private mode. */ }
     setName(clean);
     return clean;

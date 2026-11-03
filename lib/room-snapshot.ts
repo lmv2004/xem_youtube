@@ -1,3 +1,4 @@
+import { roomPublicAuthor } from "./room-public-author";
 import type { Room } from "@prisma/client";
 import { prisma } from "./db";
 import { playbackDto } from "./room-commands";
@@ -18,7 +19,7 @@ export async function readRoomSnapshot(room: Room, after?: string | null): Promi
       },
       orderBy: [{ createdAt: cursor ? "asc" : "desc" }, { id: cursor ? "asc" : "desc" }],
       take: MESSAGE_PAGE_SIZE,
-      include: { user: { select: { id: true, name: true, image: true } } },
+      include: { user: { select: { id: true } } },
     }),
     prisma.roomPresence.findMany({
       where: { roomId: room.id, lastSeenAt: { gte: new Date(Date.now() - PRESENCE_TIMEOUT_MS) } },
@@ -28,7 +29,7 @@ export async function readRoomSnapshot(room: Room, after?: string | null): Promi
   ]);
   const ordered = cursor ? rows : [...rows].reverse();
   const messages = ordered.map((row) => ({
-    id: row.id, body: row.body, createdAt: row.createdAt.toISOString(), author: row.user,
+    id: row.id, body: row.body, createdAt: row.createdAt.toISOString(), author: roomPublicAuthor(row.userId, presences.find(p => p.userId === row.userId)?.name),
   }));
   return {
     ...playbackDto(room),

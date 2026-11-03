@@ -1,3 +1,4 @@
+import { roomPublicAuthor } from "./room-public-author";
 import { Prisma, type Room } from "@prisma/client";
 import { prisma } from "./db";
 import { placeQueueItem } from "./room-queue-placement";
@@ -296,7 +297,7 @@ export async function postRoomMessage(
       id: row.id,
       body: row.body,
       createdAt: row.createdAt.toISOString(),
-      author: row.user,
+      author: roomPublicAuthor(row.userId, (await tx.roomPresence.findFirst({ where: { roomId: room.id, userId: row.userId }, orderBy: { lastSeenAt: "desc" }, select: { name: true } }))?.name),
     };
   });
 }

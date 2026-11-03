@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
   Check,
+  Maximize2,
+  Minimize2,
   Copy,
   ExternalLink,
   Loader2,
@@ -26,6 +28,7 @@ import { SyncPlayer, type SyncPlayerHandle } from "./sync-player";
 import { RoomChat } from "./room-chat";
 import { RoomMembers } from "./room-members";
 import { RoomSearch } from "./room-search";
+import { RoomRelatedVideos } from "./room-related-videos";
 import { RoomQueue } from "./room-queue";
 import { RenameRoomButton } from "./rename-room-button";
 import { DeleteRoomButton } from "./delete-room-button";
@@ -55,7 +58,7 @@ export function RoomClient({ code }: { code: string }) {
   const router = useRouter();
   const { data: session, status: sessionStatus } = useSession();
   const { toast } = useToast();
-  const identity = useRoomIdentity(session?.user?.name ?? null);
+  const identity = useRoomIdentity();
 
   const [room, setRoom] = useState<RoomDto | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -64,6 +67,20 @@ export function RoomClient({ code }: { code: string }) {
   const [leaving, setLeaving] = useState(false);
   const [lockPending, setLockPending] = useState(false);
   const [queuePermissionPending, setQueuePermissionPending] = useState(false);
+  const [focused, setFocused] = useState(false);
+  useEffect(() => {
+    if (!focused) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setFocused(false);
+    };
+    window.addEventListener("keydown", escape);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", escape);
+    };
+  }, [focused]);
   const [copied, setCopied] = useState(false);
   const [tab, setTab] = useState<"chat" | "search" | "queue">("chat");
   const [queuePending, setQueuePending] = useState(false);
@@ -544,10 +561,16 @@ export function RoomClient({ code }: { code: string }) {
   const activity = describeAction(playback, t);
 
   return (
-    <div className="space-y-5">
+    <div className={focused ? "fixed inset-0 z-50 overflow-y-auto bg-background p-3 sm:p-5" : "space-y-5"}>
+      <div className="sticky top-0 z-10 flex justify-end bg-background py-2">
+        <Button variant="outline" onClick={() => setFocused(value => !value)} aria-pressed={focused}>
+          {focused ? <Minimize2 className="mr-2 h-4 w-4" /> : <Maximize2 className="mr-2 h-4 w-4" />}
+          {t(focused ? "Thoát giản lược" : "Giản lược")}
+        </Button>
+      </div>
       <Glass
         intensity="strong"
-        className="flex flex-wrap items-center gap-3 p-4 sm:p-5"
+        className={focused ? "hidden" : "flex flex-wrap items-center gap-3 p-4 sm:p-5"}
       >
         <Button
           type="button"
@@ -760,7 +783,7 @@ export function RoomClient({ code }: { code: string }) {
             }}
           />
 
-          <div>
+          <div className={focused ? "hidden" : undefined}>
             <h2 className="text-base font-semibold leading-snug sm:text-lg">
               {video.title}
             </h2>
@@ -769,7 +792,7 @@ export function RoomClient({ code }: { code: string }) {
             </p>
           </div>
 
-          {canControl ? (
+          {!focused && (canControl ? (
             <p className="text-xs text-muted-foreground">
               {activity
                 ? activity
@@ -789,7 +812,8 @@ export function RoomClient({ code }: { code: string }) {
                 {activity ? " " + activity + "." : ""}
               </span>
             </p>
-          )}
+          ))}
+          {!focused && <RoomRelatedVideos code={code} videoId={video.videoId} onPick={changeVideo} disabled={!canControl || sync.isOffline} />}
         </div>
 
         <Tabs
@@ -841,7 +865,7 @@ export function RoomClient({ code }: { code: string }) {
               canChat={Boolean(currentUserId)}
               connectionReady={!sync.isOffline}
               currentUserId={currentUserId}
-              currentUser={session?.user}
+              currentUser={{ name: identity.name, image: null }}
               onSend={onSend}
             />
           </TabsContent>
