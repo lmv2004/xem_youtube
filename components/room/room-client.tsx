@@ -319,7 +319,6 @@ export function RoomClient({ code }: { code: string }) {
     const playback = sync.playback;
     const video = sync.video;
     if (
-      document.hidden ||
       !handle ||
       !playback ||
       !video ||
@@ -332,6 +331,8 @@ export function RoomClient({ code }: { code: string }) {
 
     // A video swap wins over any seek: correcting the position of a player
     // that is about to load a different video is pointless.
+    // Video swaps MUST proceed even when the tab is hidden so that the next
+    // queued video loads in background tabs; otherwise the player stalls.
     if (
       currentVideoRef.current &&
       (video.videoId !== currentVideoRef.current ||
@@ -353,6 +354,12 @@ export function RoomClient({ code }: { code: string }) {
     }
     if (!currentVideoRef.current) currentVideoRef.current = video.videoId;
     currentGenerationRef.current = sync.playbackGeneration;
+
+    // Seek / play / pause corrections are pointless while the tab is hidden:
+    // the browser throttles media anyway, and echoing state changes back would
+    // fight other clients. Only video swaps (above) proceed in background tabs.
+    if (document.hidden) return;
+
     if (Date.now() < suppressUntilRef.current) return;
     // Let a buffering player finish its current load. Repeated seeks on the
     // one-second clock can keep restarting that load on a slow connection.
