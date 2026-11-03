@@ -49,3 +49,9 @@ Additional checks: full vi/en/te language switching and keyboard skip link passe
 - Hidden/background player state changes no longer become room play/pause commands. A 150ms pause delay handles pause-before-hide ordering; a 1.5s restoration window rejects delayed lifecycle events. Manual pause/play passed the isolated browser test with a simulated YouTube player.
 - Final production build, lint/type checking and all 110 library tests passed. Temporary browser harness routes were removed.
 - Real-device background playback and concurrent live users still require field validation; the browser lifecycle test uses simulated YouTube events.
+
+## Notification attention follow-up
+
+Chat counts as read only when its panel is active/in view, at the latest messages, the document is visible and focused, and there has been interaction within 60 seconds. This is a heuristic, not gaze detection. Programmatic chat scrolling does not reset the inactivity timer. Saved sound preferences now attempt AudioContext initialization on mount; blocked/suspended audio exposes an explicit activation control.
+
+An isolated browser harness verified focus/blur, hidden/visible transitions, a 61-second idle period, keyboard reactivation and ignoring programmatic scrolling. With an allowed AudioContext mock, saved sound initialized and a new unread cue played without an extra click. Actual OS background audio restrictions remain browser-dependent. Harness routes were removed after the check.

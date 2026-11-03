@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MAX_MESSAGE_LENGTH, type RoomMessageDto } from "@/lib/rooms";
 import { createRoomOutbox, type OutboxMessage } from "@/lib/room-outbox";
 import { createRoomUnreadTracker } from "@/lib/room-unread";
+import { useChatAttention } from "@/hooks/use-chat-attention";
 import { useChatSound } from "@/hooks/use-chat-sound";
 import { cn } from "@/lib/utils";
 
@@ -79,24 +80,21 @@ export function RoomChat({
   const listRef = useRef<HTMLDivElement | null>(null);
   const pinnedRef = useRef(true);
   const [atBottom, setAtBottom] = useState(true);
-  const [pageVisible, setPageVisible] = useState(false);
+  const attentive = useChatAttention();
   const [inViewport, setInViewport] = useState(false);
   const [unread, setUnread] = useState(0);
   const sound = useChatSound(unread);
   const tracker = useRef(createRoomUnreadTracker());
   useEffect(() => {
-    const update = () => setPageVisible(document.visibilityState === "visible");
-    update();
-    document.addEventListener("visibilitychange", update);
     const observer = new IntersectionObserver(entries => setInViewport(entries[0]?.isIntersecting ?? false));
     if (listRef.current) observer.observe(listRef.current);
-    return () => { document.removeEventListener("visibilitychange", update); observer.disconnect(); };
+    return () => { observer.disconnect(); };
   }, []);
   useEffect(() => {
-    const count = tracker.current.update(messages, historyReady, currentUserId, active && pageVisible && inViewport && atBottom);
+    const count = tracker.current.update(messages, historyReady, currentUserId, active && attentive && inViewport && atBottom);
     setUnread(count);
     onUnreadChange?.(count);
-  }, [messages, historyReady, currentUserId, active, pageVisible, inViewport, atBottom, onUnreadChange]);
+  }, [messages, historyReady, currentUserId, active, attentive, inViewport, atBottom, onUnreadChange]);
   const jumpToLatest = () => {
     const el = listRef.current;
     if (!el) return;
@@ -203,6 +201,7 @@ export function RoomChat({
           <Button type="button" size="sm" variant="outline" onClick={sound.preview}>{t("Nghe thử")}</Button>
         </div>
       </details>}
+      {sound.enabled && !sound.ready && !sound.failed && <Button type="button" variant="ghost" className="shrink-0 whitespace-normal text-xs" onClick={sound.preview}>{t("Nhấn để kích hoạt âm báo")}</Button>}
       {sound.failed && <p role="status" className="px-4 py-2 text-xs text-muted-foreground">{t("Chưa phát được âm báo. Hãy thử bật lại âm báo.")}</p>}
       {/* Messages Scroll Area */}
       <div

@@ -7,6 +7,7 @@ const STORAGE_KEY = "xemphim:chat-sound";
 export function useChatSound(unread: number) {
   const [enabled, setEnabled] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [ready, setReady] = useState(false);
   const [volume, setVolume] = useState(70);
   const volumeRef = useRef(70);
   const enabledRef = useRef(false);
@@ -16,8 +17,13 @@ export function useChatSound(unread: number) {
     try {
       const context = contextRef.current ?? new AudioContext();
       contextRef.current = context;
+      context.onstatechange = () => {
+        if (contextRef.current === context) setReady(context.state === "running");
+      };
+      setReady(context.state === "running");
       void context.resume().then(() => {
         if (contextRef.current !== context || !enabledRef.current) return;
+        setReady(context.state === "running");
         setFailed(context.state !== "running");
         if (preview && context.state === "running") playChatTone(context, volumeRef.current);
       }).catch(() => { if (contextRef.current === context) setFailed(true); });
@@ -31,6 +37,7 @@ export function useChatSound(unread: number) {
       const saved = localStorage.getItem(STORAGE_KEY) === "true";
       enabledRef.current = saved;
       setEnabled(saved);
+      if (saved) activate();
     } catch { /* Storage is optional. */ }
     const unlock = () => {
       if (enabledRef.current && contextRef.current?.state !== "running") activate();
@@ -54,7 +61,7 @@ export function useChatSound(unread: number) {
       window.removeEventListener("storage", storage);
       const context = contextRef.current;
       contextRef.current = null;
-      if (context) void context.close().catch(() => {});
+      if (context) { context.onstatechange = null; void context.close().catch(() => {}); }
     };
   }, [activate]);
   useEffect(() => {
@@ -76,5 +83,5 @@ export function useChatSound(unread: number) {
     setVolume(next);
     try { localStorage.setItem(VOLUME_KEY, String(next)); } catch { /* Optional. */ }
   };
-  return { enabled, failed, toggle, volume, changeVolume, preview: () => activate(true) };
+  return { enabled, failed, ready, toggle, volume, changeVolume, preview: () => activate(true) };
 }
