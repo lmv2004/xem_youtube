@@ -561,7 +561,7 @@ export function RoomClient({ code }: { code: string }) {
   const activity = describeAction(playback, t);
 
   return (
-    <div className={focused ? "fixed inset-0 z-50 overflow-y-auto bg-background p-3 pb-24 sm:p-5 sm:pb-24" : "space-y-5"}>
+    <div className={focused ? "fixed inset-0 z-50 overflow-y-auto bg-background p-3 sm:p-5" : "space-y-5"}>
       <Glass
         intensity="strong"
         className={focused ? "hidden" : "flex flex-wrap items-center gap-3 p-4 sm:p-5"}
@@ -743,7 +743,7 @@ export function RoomClient({ code }: { code: string }) {
       ) : null}
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="min-w-0 space-y-3">
+        <div className={focused ? "min-w-0" : "min-w-0 space-y-3"}>
           <SyncPlayer
             videoId={room.video.videoId}
             onReady={(handle) => {
@@ -786,7 +786,10 @@ export function RoomClient({ code }: { code: string }) {
             </p>
           </div>
 
-          {!focused && (canControl ? (
+          <div className={focused
+            ? "fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-[60]"
+            : "flex items-center justify-between gap-3"}>
+          {!focused && <div className="min-w-0 flex-1">{canControl ? (
             <p className="text-xs text-muted-foreground">
               {activity
                 ? activity
@@ -806,16 +809,11 @@ export function RoomClient({ code }: { code: string }) {
                 {activity ? " " + activity + "." : ""}
               </span>
             </p>
-          ))}
-          <div
-            className={focused
-              ? "fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-[60]"
-              : "flex justify-end"}
-          >
+          )}</div>}
             <Button
               type="button"
               variant="outline"
-              className="min-h-11 bg-background shadow-sm hover:bg-muted"
+              className="min-h-11 shrink-0 bg-background shadow-sm hover:bg-muted"
               onClick={() => setFocused(value => !value)}
               aria-pressed={focused}
             >
