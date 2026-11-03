@@ -6,6 +6,10 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
   Check,
+  Maximize2,
+  Minimize2,
+  PanelRightClose,
+  PanelRightOpen,
   Copy,
   ExternalLink,
   Loader2,
@@ -26,6 +30,7 @@ import { SyncPlayer, type SyncPlayerHandle } from "./sync-player";
 import { RoomChat } from "./room-chat";
 import { RoomMembers } from "./room-members";
 import { RoomSearch } from "./room-search";
+import { RoomRelatedVideos } from "./room-related-videos";
 import { RoomQueue } from "./room-queue";
 import { RenameRoomButton } from "./rename-room-button";
 import { DeleteRoomButton } from "./delete-room-button";
@@ -55,7 +60,7 @@ export function RoomClient({ code }: { code: string }) {
   const router = useRouter();
   const { data: session, status: sessionStatus } = useSession();
   const { toast } = useToast();
-  const identity = useRoomIdentity(session?.user?.name ?? null);
+  const identity = useRoomIdentity();
 
   const [room, setRoom] = useState<RoomDto | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -64,6 +69,21 @@ export function RoomClient({ code }: { code: string }) {
   const [leaving, setLeaving] = useState(false);
   const [lockPending, setLockPending] = useState(false);
   const [queuePermissionPending, setQueuePermissionPending] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [panelCollapsed, setPanelCollapsed] = useState(false);
+  useEffect(() => {
+    if (!focused) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setFocused(false);
+    };
+    window.addEventListener("keydown", escape);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", escape);
+    };
+  }, [focused]);
   const [copied, setCopied] = useState(false);
   const [tab, setTab] = useState<"chat" | "search" | "queue">("chat");
   const [queuePending, setQueuePending] = useState(false);
@@ -544,10 +564,10 @@ export function RoomClient({ code }: { code: string }) {
   const activity = describeAction(playback, t);
 
   return (
-    <div className="space-y-5">
+    <div className={focused ? "fixed inset-0 z-50 overflow-y-auto bg-background p-3 sm:p-5 lg:flex lg:flex-col lg:gap-3" : "space-y-5"}>
       <Glass
         intensity="strong"
-        className="flex flex-wrap items-center gap-3 p-4 sm:p-5"
+        className={focused ? "hidden" : "flex flex-wrap items-center gap-3 p-4 sm:p-5"}
       >
         <Button
           type="button"
@@ -725,9 +745,10 @@ export function RoomClient({ code }: { code: string }) {
         </p>
       ) : null}
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="min-w-0 space-y-3">
+      <div className={`relative grid items-start gap-5 ${focused && panelCollapsed ? "lg:grid-cols-1" : "lg:grid-cols-[minmax(0,1fr)_360px]"} ${focused ? "lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(0,1fr)]" : ""}`}>
+        <div className={focused ? "min-w-0 lg:h-full lg:min-h-0" : "min-w-0 space-y-3"}>
           <SyncPlayer
+            fillHeight={focused}
             videoId={room.video.videoId}
             onReady={(handle) => {
               handleRef.current = handle;
@@ -760,16 +781,18 @@ export function RoomClient({ code }: { code: string }) {
             }}
           />
 
-          <div>
+          <div className={focused ? "hidden" : undefined}>
             <h2 className="text-base font-semibold leading-snug sm:text-lg">
               {video.title}
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {video.channel}
-            </p>
           </div>
 
-          {canControl ? (
+          <div className={focused
+            ? "absolute bottom-0 right-0 z-[60] flex items-center gap-2"
+            : "flex items-center justify-between gap-3"}>
+          {!focused && <div className="min-w-0 flex-1 space-y-1">
+            <p className="text-sm text-muted-foreground">{video.channel}</p>
+            {canControl ? (
             <p className="text-xs text-muted-foreground">
               {activity
                 ? activity
@@ -789,13 +812,44 @@ export function RoomClient({ code }: { code: string }) {
                 {activity ? " " + activity + "." : ""}
               </span>
             </p>
-          )}
+          )}</div>}
+            {focused && (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-11 w-11 shrink-0 bg-background shadow-sm hover:bg-muted"
+                aria-label={t(panelCollapsed ? "Hiện khung hoạt động" : "Thu gọn khung hoạt động")}
+                title={t(panelCollapsed ? "Hiện khung hoạt động" : "Thu gọn khung hoạt động")}
+                aria-expanded={!panelCollapsed}
+                aria-controls="room-activity-panel"
+                onClick={() => setPanelCollapsed(value => !value)}
+              >
+                {panelCollapsed ? <PanelRightOpen aria-hidden="true" className="h-4 w-4" /> : <PanelRightClose aria-hidden="true" className="h-4 w-4" />}
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              size={focused && panelCollapsed ? "icon" : "default"}
+              aria-label={t(focused ? "Thoát giản lược" : "Giản lược")}
+              title={t(focused ? "Thoát giản lược" : "Giản lược")}
+              className={"min-h-11 shrink-0 bg-background shadow-sm hover:bg-muted " + (focused && panelCollapsed ? "h-11 w-11 p-0" : "")}
+              onClick={() => setFocused(value => !value)}
+              aria-pressed={focused}
+            >
+              {focused ? <Minimize2 aria-hidden="true" className={panelCollapsed ? "h-4 w-4" : "mr-2 h-4 w-4"} /> : <Maximize2 aria-hidden="true" className="mr-2 h-4 w-4" />}
+              {!(focused && panelCollapsed) && t(focused ? "Thoát giản lược" : "Giản lược")}
+            </Button>
+          </div>
+          {!focused && <RoomRelatedVideos code={code} videoId={video.videoId} onPick={changeVideo} disabled={!canControl || sync.isOffline} />}
         </div>
 
         <Tabs
+          id="room-activity-panel"
           value={tab}
           onValueChange={(value) => setTab(value as typeof tab)}
-          className="min-w-0 space-y-2"
+          className={focused && panelCollapsed ? "hidden" : "min-w-0 space-y-2"}
         >
           <TabsList
             className="grid h-12 w-full grid-cols-3 rounded-xl p-1"
@@ -841,7 +895,7 @@ export function RoomClient({ code }: { code: string }) {
               canChat={Boolean(currentUserId)}
               connectionReady={!sync.isOffline}
               currentUserId={currentUserId}
-              currentUser={session?.user}
+              currentUser={{ name: identity.name, image: null }}
               onSend={onSend}
             />
           </TabsContent>

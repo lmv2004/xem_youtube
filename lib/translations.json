@@ -2946,5 +2946,25 @@
   "Phát": {
     "en": "Play",
     "te": "ప్లే"
+  },
+  "Giản lược": {
+    "en": "Focus view",
+    "te": "ఫోకస్ వీక్షణ"
+  },
+  "Thoát giản lược": {
+    "en": "Exit focus view",
+    "te": "ఫోకస్ వీక్షణ నుండి నిష్క్రమించండి"
+  },
+  "Video liên quan": {
+    "en": "Related videos",
+    "te": "సంబంధిత వీడియోలు"
+  },
+  "Hiện khung hoạt động": {
+    "en": "Show activity panel",
+    "te": "కార్యాచరణ ప్యానెల్ చూపించు"
+  },
+  "Thu gọn khung hoạt động": {
+    "en": "Collapse activity panel",
+    "te": "కార్యాచరణ ప్యానెల్ కుదించు"
   }
 }
