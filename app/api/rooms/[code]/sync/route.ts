@@ -1,3 +1,6 @@
+import { cookies } from "next/headers";
+import { randomUUID } from "node:crypto";
+import { roomClientToken } from "@/lib/room-client-token";
 import { readRoomSnapshot } from "@/lib/room-snapshot";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -47,6 +50,12 @@ export const POST = withRequestLog(SCOPE, async (request, context) => {
     return NextResponse.json({ message: "Phòng không tồn tại." }, { status: 404 });
   }
 
+  const cookieStore = await cookies();
+  const proposedOwner = request.headers.get("x-room-owner") ?? "";
+  const ownerKey = cookieStore.get("xem_room_owner")?.value || (/^[a-zA-Z0-9-]{32,64}$/.test(proposedOwner) ? proposedOwner : randomUUID());
+  const existing = await prisma.$queryRaw<{ ownerKey: string | null }[]>`SELECT "ownerKey" FROM "RoomPresence" WHERE "roomId" = ${room.id} AND "clientId" = ${clientId}`;
+  if (existing[0]?.ownerKey && existing[0].ownerKey !== ownerKey)
+    return NextResponse.json({ message: "Mã phiên phòng đã được sử dụng ở cửa sổ khác." }, { status: 409 });
   const now = new Date();
   if (parsed.data.heartbeat) {
     const session = await auth();
@@ -79,6 +88,7 @@ export const POST = withRequestLog(SCOPE, async (request, context) => {
       throw error;
     }
 
+    await prisma.$executeRaw`UPDATE "RoomPresence" SET "ownerKey" = COALESCE("ownerKey", ${ownerKey}) WHERE "roomId" = ${room.id} AND "clientId" = ${clientId}`;
     await prisma.roomPresence.deleteMany({
       where: {
         roomId: room.id,
@@ -90,7 +100,9 @@ export const POST = withRequestLog(SCOPE, async (request, context) => {
 
   const payload = await readRoomSnapshot(room, after);
 
-  return NextResponse.json(payload, {
+  const response = NextResponse.json({ ...payload, ...(parsed.data.heartbeat ? { clientToken: roomClientToken(room.id, clientId, ownerKey) } : {}) }, {
     headers: { "Cache-Control": "no-store" },
   });
+  if (!cookieStore.get("xem_room_owner")) response.cookies.set("xem_room_owner", ownerKey, { httpOnly: true, sameSite: "lax", secure: new URL(request.url).protocol === "https:", path: "/", maxAge: 31536000 });
+  return response;
 }, { authenticate: false });

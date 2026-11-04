@@ -1,3 +1,4 @@
+import { ownsRoomPresence } from "@/lib/room-membership";
 import { NextResponse } from "next/server";
 import { updatePlayback, RoomCommandError } from "@/lib/room-commands";
 import { auth } from "@/auth";
@@ -68,6 +69,7 @@ export const PATCH = withRequestLog(SCOPE + ".update", async (request, context) 
   if (typeof body?.clientId !== "string" || body.clientId.length > 64) {
     return NextResponse.json({ message: "Dữ liệu không hợp lệ." }, { status: 400 });
   }
+  if (!await ownsRoomPresence(await readCode(context), body.clientId)) return NextResponse.json({ message: "Bạn cần tham gia phòng trước." }, { status: 403 });
   try {
     return NextResponse.json(await updatePlayback(await readCode(context), body.clientId, session?.user ?? {}, body));
   } catch (error) {

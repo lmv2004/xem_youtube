@@ -112,6 +112,7 @@ export type RoomMessageDto = {
 };
 
 export type RoomSyncResponse = {
+  clientToken?: string;
   roomTitle?: string;
   confirmedCommandId?: string;
   queue: RoomQueueItem[];

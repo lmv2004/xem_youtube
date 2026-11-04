@@ -191,7 +191,7 @@ export function SyncPlayer({
       className={cn(
         "relative aspect-video w-full overflow-hidden rounded-2xl bg-black transition-all shadow-md",
         fillHeight && "w-full max-h-[calc(100vh-3.5rem)] max-w-[calc((100vh-3.5rem)*16/9)] mx-auto aspect-video shadow-2xl",
-        compact && "h-[32vh] sm:h-[35vh] max-h-[340px] min-h-[190px] w-auto aspect-video mx-auto rounded-xl shadow-[0_0_30px_rgba(244,63,94,0.3)] border border-rose-500/40"
+        compact && "h-auto w-full max-w-[min(760px,calc(38dvh*16/9))] aspect-video mx-auto rounded-lg ring-1 ring-white/15 shadow-[0_8px_40px_rgba(0,0,0,.65)]"
       )}
     >
       <div ref={containerRef} className="h-full w-full [&_iframe]:h-full [&_iframe]:w-full" />

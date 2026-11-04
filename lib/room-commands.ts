@@ -304,8 +304,8 @@ export async function postRoomMessage(
       createdAt: row.createdAt.toISOString(),
       author: roomPublicAuthor(
         row.userId,
-        presence?.name ?? row.user?.name,
-        presence?.image ?? row.user?.image,
+        presence?.name,
+        presence?.image,
       ),
     };
   });

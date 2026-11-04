@@ -170,6 +170,8 @@ export function RoomClient({ code }: { code: string }) {
     displayName: identity.name,
     avatarUrl: session?.user?.image,
     externalStage: sync.stage,
+    clientToken: sync.clientToken,
+    disabled: !joined || sync.isOffline,
   });
 
   // Player callbacks may be bound once, so read the live value from a ref.
@@ -407,7 +409,7 @@ export function RoomClient({ code }: { code: string }) {
     // Seek / play / pause corrections are pointless while the tab is hidden:
     // the browser throttles media anyway, and echoing state changes back would
     // fight other clients. Only video swaps (above) proceed in background tabs.
-    if (document.hidden) return;
+    // Background viewers still follow authoritative play/pause; outgoing lifecycle events are filtered in SyncPlayer.
 
     if (Date.now() < suppressUntilRef.current) return;
     // Let a buffering player finish its current load. Repeated seeks on the
@@ -879,18 +881,10 @@ export function RoomClient({ code }: { code: string }) {
       <div className={`relative grid items-start gap-5 ${focused && panelCollapsed ? "lg:grid-cols-[minmax(0,1fr)_44px]" : "lg:grid-cols-[minmax(0,1fr)_360px]"} ${focused ? "lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(0,1fr)]" : ""}`}>
         <div className={focused ? "min-w-0 lg:h-full lg:min-h-0 lg:overflow-y-auto space-y-3" : "relative group min-w-0 space-y-3"}>
           {!focused && <div className="ambient-glow opacity-50 dark:opacity-85" aria-hidden="true" />}
-          {stageHook.stage.enabled ? (
-            <div className="w-full bg-slate-950/90 rounded-t-2xl border-2 border-rose-500/40 border-b-0 relative overflow-hidden flex flex-col items-center justify-center p-2 sm:p-2.5 backdrop-blur-xl shadow-2xl">
-              {/* Dynamic concert lights above jumbotron screen */}
-              <div className="pointer-events-none absolute -top-10 left-1/4 h-24 w-1/2 rounded-full bg-rose-500/20 blur-3xl animate-pulse" />
-              <div className="pointer-events-none absolute top-0 left-0 right-0 h-3 bg-zinc-900/80 border-b border-white/10 flex items-center justify-around px-8">
-                <span className="h-1.5 w-2 rounded-t-xs bg-rose-500 shadow-[0_0_6px_#f43f5e]" />
-                <span className="h-1.5 w-2 rounded-t-xs bg-cyan-400 shadow-[0_0_6px_#22d3ee]" />
-                <span className="h-1.5 w-2 rounded-t-xs bg-amber-400 shadow-[0_0_6px_#f59e0b]" />
-                <span className="h-1.5 w-2 rounded-t-xs bg-purple-400 shadow-[0_0_6px_#c084fc]" />
-              </div>
+          <div className={stageHook.stage.enabled ? "concert-screen-frame w-full rounded-t-2xl border border-white/10 bg-[#0c0d14] px-3 py-5 sm:px-8 sm:py-6" : focused ? "flex min-h-0 w-full flex-1 items-center justify-center" : "w-full"}>
               <SyncPlayer
-                compact={true}
+                fillHeight={focused && !stageHook.stage.enabled}
+                compact={stageHook.stage.enabled}
                 videoId={room.video.videoId}
                 onReady={(handle) => {
                   handleRef.current = handle;
@@ -924,46 +918,7 @@ export function RoomClient({ code }: { code: string }) {
                   void reportEnded();
                 }}
               />
-            </div>
-          ) : (
-            <div className={focused ? "flex-1 min-h-0 flex items-center justify-center w-full" : "w-full"}>
-              <SyncPlayer
-                fillHeight={focused}
-                videoId={room.video.videoId}
-                onReady={(handle) => {
-                  handleRef.current = handle;
-                  currentVideoRef.current = room.video.videoId;
-                  setPlayerReady(true);
-                }}
-                onStateChange={(playing, currentTime) => {
-                  if (document.hidden || Date.now() < suppressUntilRef.current) return;
-                  void pushPlayback(
-                    {
-                      isPlaying: playing,
-                      positionSeconds: currentTime,
-                    },
-                    true,
-                  );
-                }}
-                onEnded={(id, duration) => {
-                  if (
-                    id !== currentVideoRef.current ||
-                    currentGenerationRef.current === null ||
-                    !Number.isFinite(duration) ||
-                    duration <= 0
-                  )
-                    return;
-                  endedRef.current = {
-                    generation: currentGenerationRef.current,
-                    duration,
-                    anchor: sync.playback?.lastSyncAt ?? "",
-                    lastSent: 0,
-                  };
-                  void reportEnded();
-                }}
-              />
-            </div>
-          )}
+          </div>
 
           {/* Sân Khấu Mèo Nhảy */}
           <RoomStage
