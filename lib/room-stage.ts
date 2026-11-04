@@ -61,9 +61,32 @@ export function getStageState(code: string): RoomStageState {
   return state;
 }
 
-export function toggleStage(code: string, enabled: boolean): RoomStageState {
+export function toggleStage(
+  code: string,
+  enabled: boolean,
+  hostActor?: {
+    clientId: string;
+    userId?: string | null;
+    name?: string;
+    image?: string | null;
+  },
+): RoomStageState {
   const state = getStageState(code);
   state.enabled = enabled;
+  if (enabled && state.participants.length === 0) {
+    // Automatically add the host or active dancer so the stage is immediately vibrant with cats dancing!
+    state.participants.push({
+      clientId: hostActor?.clientId || "host-dancer",
+      userId: hostActor?.userId ?? null,
+      name: hostActor?.name || "Chủ phòng (DJ)",
+      image: hostActor?.image || null,
+      isHost: true,
+      catId: "GK7dGndK4kyOozR9Xk",
+      catGifUrl: "https://media.giphy.com/media/GK7dGndK4kyOozR9Xk/giphy.gif",
+      catName: "Mèo Disco Neon",
+      joinedAt: Date.now(),
+    });
+  }
   state.lastUpdatedAt = Date.now();
   return state;
 }
@@ -72,7 +95,6 @@ export function setStageLimit(code: string, maxParticipants: number): RoomStageS
   const state = getStageState(code);
   const clamped = Math.max(1, Math.min(12, Math.floor(maxParticipants)));
   state.maxParticipants = clamped;
-  // If participants exceed new limit, slice
   if (state.participants.length > clamped) {
     state.participants = state.participants.slice(0, clamped);
   }

@@ -79,7 +79,13 @@ export async function POST(
   switch (action) {
     case "toggle": {
       const enabled = Boolean(body.enabled);
-      const state = toggleStage(code, enabled);
+      const hostActor = body.clientId ? {
+        clientId: String(body.clientId),
+        userId: session?.user?.id ?? null,
+        name: session?.user?.name || "Chủ phòng (DJ)",
+        image: session?.user?.image || null,
+      } : undefined;
+      const state = toggleStage(code, enabled, hostActor);
       return Response.json(state);
     }
 

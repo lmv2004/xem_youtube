@@ -1,11 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import Image from "next/image";
 import {
   Sparkles,
   Crown,
-  Users,
   Settings2,
   X,
   Check,
@@ -16,6 +14,8 @@ import {
   Loader2,
   Music4,
   Flame,
+  Radio,
+  Disc3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -72,6 +72,7 @@ export function RoomStage({
   if (!enabled) return null;
 
   const isFull = participants.length >= maxParticipants;
+  const availableSlots = Math.max(0, maxParticipants - participants.length);
 
   const handleJoinClick = () => {
     setSelectCatOpen(true);
@@ -95,32 +96,32 @@ export function RoomStage({
   };
 
   return (
-    <div className="relative rounded-2xl border border-rose-500/30 bg-gradient-to-b from-card/95 via-card/85 to-background/95 p-3 sm:p-4 shadow-xl backdrop-blur-xl overflow-hidden group">
-      {/* Stage Ambient Glow Effect */}
-      <div className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 h-36 w-3/4 rounded-full bg-gradient-to-r from-rose-500/20 via-purple-500/20 to-amber-500/20 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-10 left-1/4 h-24 w-1/2 rounded-full bg-rose-600/10 blur-2xl" />
+    <div className="relative rounded-2xl border-2 border-rose-500/40 bg-gradient-to-b from-card/95 via-purple-950/20 to-card/95 p-3 sm:p-4 shadow-2xl backdrop-blur-xl overflow-hidden group">
+      {/* Dynamic Disco & Spotlight Beams */}
+      <div className="pointer-events-none absolute -top-16 left-1/4 h-36 w-1/2 rounded-full bg-gradient-to-r from-rose-500/30 via-pink-500/30 to-amber-500/25 blur-3xl animate-pulse" />
+      <div className="pointer-events-none absolute -bottom-10 right-1/4 h-28 w-1/3 rounded-full bg-purple-600/20 blur-3xl" />
 
       {/* Stage Header */}
-      <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border/60">
+      <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border/70">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 text-white shadow-md shadow-rose-500/30">
-            <Music4 className="h-4 w-4 animate-bounce" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-rose-600 via-pink-600 to-amber-500 text-white shadow-lg shadow-rose-500/30 animate-bounce">
+            <Disc3 className="h-5 w-5 animate-spin text-white" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-extrabold tracking-wide text-xs sm:text-sm uppercase bg-gradient-to-r from-rose-400 via-pink-400 to-amber-400 bg-clip-text text-transparent">
-                Sân Khấu Mèo Nhảy
+              <span className="font-black tracking-wide text-xs sm:text-sm uppercase bg-gradient-to-r from-rose-400 via-pink-400 to-amber-400 bg-clip-text text-transparent drop-shadow-sm">
+                Sàn Nhảy Mèo Quẩy Live 🐾
               </span>
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
               </span>
             </div>
-            <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-              <span>Meme mèo nhảy từ GIPHY</span>
+            <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 font-medium">
+              <span>GIPHY Cat Dance</span>
               <span>•</span>
-              <span className="font-semibold text-foreground/80">
-                {participants.length}/{maxParticipants} đang quẩy
+              <span className="text-rose-400 font-semibold">
+                {participants.length}/{maxParticipants} đang nhảy
               </span>
             </p>
           </div>
@@ -148,21 +149,21 @@ export function RoomStage({
               onClick={() => void onCancelRequest()}
             >
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              <span>Chờ chủ phòng duyệt (Huỷ)</span>
+              <span>Chờ duyệt (Bấm để huỷ)</span>
             </Button>
           ) : isFull && !isHost ? (
             <Badge variant="outline" className="h-8 rounded-full text-xs text-muted-foreground px-3">
-              Sân khấu đã đầy ({maxParticipants}/{maxParticipants})
+              Sân khấu đầy ({maxParticipants}/{maxParticipants})
             </Badge>
           ) : (
             <Button
               type="button"
               size="sm"
-              className="h-8 rounded-full bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-semibold text-xs shadow-md shadow-rose-600/30 gap-1.5 transition-all hover:scale-105"
+              className="h-8 rounded-full bg-gradient-to-r from-rose-600 via-pink-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white font-bold text-xs shadow-md shadow-rose-600/30 gap-1.5 transition-all hover:scale-105 active:scale-95"
               onClick={handleJoinClick}
             >
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>Lên sân khấu 💃</span>
+              <Sparkles className="h-3.5 w-3.5 text-amber-200" />
+              <span>Lên sàn nhảy 💃</span>
             </Button>
           )}
 
@@ -172,13 +173,13 @@ export function RoomStage({
               type="button"
               variant="outline"
               size="sm"
-              className="relative h-8 rounded-full border-border/80 bg-background/50 hover:bg-muted text-xs font-semibold gap-1.5"
+              className="relative h-8 rounded-full border-border/80 bg-background/60 hover:bg-muted text-xs font-semibold gap-1.5 shadow-sm"
               onClick={() => setManageOpen(true)}
             >
-              <Settings2 className="h-3.5 w-3.5" />
-              <span>Quản lý sân khấu</span>
+              <Settings2 className="h-3.5 w-3.5 text-rose-500" />
+              <span>Quản lý sàn</span>
               {requests.length > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-rose-600 text-[10px] font-bold text-white shadow-sm animate-pulse">
+                <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-rose-600 text-[10px] font-bold text-white shadow-sm animate-pulse">
                   {requests.length}
                 </span>
               )}
@@ -187,73 +188,87 @@ export function RoomStage({
         </div>
       </div>
 
-      {/* Sàn Nhảy / Dance Floor Deck */}
-      <div className="relative mt-3 min-h-[140px] sm:min-h-[160px] rounded-xl border border-border/40 bg-gradient-to-b from-card/40 to-muted/20 p-3 flex flex-col justify-end overflow-hidden">
-        {/* Stage Lighting Grid */}
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(244,63,94,0.15),_transparent_70%)]" />
+      {/* SÀN NHẢY ĐÍCH THỰC (REALISTIC DISCO DANCE FLOOR) */}
+      <div className="relative mt-3 min-h-[170px] sm:min-h-[190px] rounded-xl border border-rose-500/30 bg-gradient-to-b from-slate-950/80 via-purple-950/40 to-slate-950/90 p-3 sm:p-4 flex flex-col justify-end overflow-hidden shadow-inner">
+        {/* Spotlight cones from ceiling */}
+        <div className="pointer-events-none absolute -top-10 left-1/6 w-32 h-44 bg-[radial-gradient(ellipse_at_top,_rgba(244,63,94,0.35),_transparent_75%)] rotate-[-15deg]" />
+        <div className="pointer-events-none absolute -top-10 right-1/6 w-32 h-44 bg-[radial-gradient(ellipse_at_top,_rgba(234,179,8,0.3),_transparent_75%)] rotate-[15deg]" />
+        <div className="pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 w-48 h-40 bg-[radial-gradient(ellipse_at_top,_rgba(168,85,247,0.3),_transparent_70%)]" />
 
-        {participants.length === 0 ? (
-          <div className="relative z-10 flex flex-col items-center justify-center py-6 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted/60 border border-border/60 text-muted-foreground mb-2">
-              <Flame className="h-6 w-6 text-rose-500/60" />
-            </div>
-            <p className="text-xs font-medium text-muted-foreground max-w-sm">
-              Sân khấu đang mở và trống! Hãy bấm <span className="text-rose-500 font-semibold">&ldquo;Lên sân khấu 💃&rdquo;</span> để chọn meme mèo và khuấy động bầu không khí!
-            </p>
-          </div>
-        ) : (
-          <div className="relative z-10 flex flex-wrap items-end justify-center gap-4 sm:gap-6 py-2">
-            {participants.map((p) => (
-              <div
-                key={p.clientId}
-                className="group/cat relative flex flex-col items-center transition-transform hover:scale-110"
-              >
-                {/* Host kick button overlay */}
-                {isHost && (
-                  <button
-                    type="button"
-                    onClick={() => void onLeaveStage(p.clientId)}
-                    className="absolute -top-2 -right-2 z-20 hidden group-hover/cat:flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-white shadow-md hover:bg-destructive/80 transition-all"
-                    title="Mời xuống sân khấu"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                )}
+        {/* Dancing Cats & Empty Spots */}
+        <div className="relative z-10 flex flex-wrap items-end justify-center gap-3 sm:gap-6 py-2">
+          {participants.map((p) => (
+            <div
+              key={p.clientId}
+              className="group/cat relative flex flex-col items-center transition-all hover:scale-110 select-none"
+            >
+              {/* Host kick button overlay */}
+              {isHost && (
+                <button
+                  type="button"
+                  onClick={() => void onLeaveStage(p.clientId)}
+                  className="absolute -top-2 -right-2 z-20 hidden group-hover/cat:flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-white shadow-md hover:bg-destructive/80 transition-all cursor-pointer"
+                  title="Mời xuống sân khấu"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
 
-                {/* Dancing Cat GIF */}
-                <div className="relative h-24 w-24 sm:h-28 sm:w-28 drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={p.catGifUrl}
-                    alt={p.catName || "Dancing Cat"}
-                    className="h-full w-full object-contain pointer-events-none select-none"
-                    loading="eager"
-                  />
-                </div>
-
-                {/* Dancer Tag with Avatar & Name */}
-                <div className="mt-1 flex items-center gap-1.5 rounded-full border border-border/80 bg-background/90 px-2.5 py-0.5 text-[11px] font-semibold shadow-sm backdrop-blur-md max-w-[120px] sm:max-w-[140px]">
-                  <Avatar className="h-3.5 w-3.5 shrink-0">
-                    {p.image ? (
-                      <AvatarImage src={p.image} alt={p.name} />
-                    ) : (
-                      <AvatarFallback className="text-[8px] bg-rose-600 text-white">
-                        {p.name.slice(0, 1)}
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
-                  <span className="truncate text-foreground/90">{p.name}</span>
-                  {p.isHost && (
-                    <span title="Chủ phòng"><Crown className="h-3 w-3 text-amber-500 shrink-0" /></span>
-                  )}
-                </div>
+              {/* Dancing Cat GIF */}
+              <div className="relative h-24 w-24 sm:h-28 sm:w-28 drop-shadow-[0_12px_12px_rgba(0,0,0,0.7)] flex items-end justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={p.catGifUrl}
+                  alt={p.catName || "Dancing Cat"}
+                  className="h-full w-full object-contain pointer-events-none select-none"
+                  loading="eager"
+                />
               </div>
-            ))}
-          </div>
-        )}
 
-        {/* Dance Floor Edge Plank */}
-        <div className="relative z-10 mt-2 h-1.5 w-full rounded-full bg-gradient-to-r from-rose-500/30 via-amber-500/40 to-rose-500/30 shadow-sm" />
+              {/* Glowing Pedestal Shadow under cat */}
+              <div className="h-2 w-16 sm:w-20 rounded-full bg-rose-500/40 blur-xs -mt-1 mb-1" />
+
+              {/* Dancer Tag with Avatar & Name */}
+              <div className="flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-background/95 px-2.5 py-0.5 text-[11px] font-semibold shadow-md backdrop-blur-md max-w-[130px] sm:max-w-[150px]">
+                <Avatar className="h-3.5 w-3.5 shrink-0">
+                  {p.image ? (
+                    <AvatarImage src={p.image} alt={p.name} />
+                  ) : (
+                    <AvatarFallback className="text-[8px] bg-rose-600 text-white font-bold">
+                      {p.name.slice(0, 1).toUpperCase()}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                <span className="truncate text-foreground/90">{p.name}</span>
+                {p.isHost && (
+                  <span title="Chủ phòng">
+                    <Crown className="h-3 w-3 text-amber-500 shrink-0" />
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {/* Quick Click-to-Join Empty Spots if available */}
+          {!isOnStage && !isFull && (
+            <button
+              type="button"
+              onClick={handleJoinClick}
+              className="flex flex-col items-center justify-center h-28 w-24 sm:h-32 sm:w-28 rounded-2xl border-2 border-dashed border-rose-500/40 bg-rose-500/5 hover:bg-rose-500/15 hover:border-rose-500/70 transition-all p-2 text-center group/slot cursor-pointer"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-rose-500/20 text-rose-500 group-hover/slot:scale-110 group-hover/slot:bg-rose-500 group-hover/slot:text-white transition-all shadow-sm">
+                <Plus className="h-5 w-5" />
+              </div>
+              <span className="mt-2 text-[11px] font-bold text-rose-400 group-hover/slot:text-rose-300">
+                + Nhảy cùng
+              </span>
+              <span className="text-[9px] text-muted-foreground">Bấm để lên sàn</span>
+            </button>
+          )}
+        </div>
+
+        {/* Sàn Gỗ / Neon Dance Floor Edge Platform */}
+        <div className="relative z-10 mt-2 h-2.5 w-full rounded-full bg-gradient-to-r from-rose-600 via-amber-400 to-rose-600 shadow-md shadow-rose-500/40 border-t border-white/30" />
       </div>
 
       {/* DIALOG: Chọn Meme Mèo Nhảy */}
@@ -265,7 +280,7 @@ export function RoomStage({
               <span>Chọn meme mèo nhảy của bạn</span>
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Chọn một bé mèo nhảy từ bộ sưu tập GIPHY Cat Dance để đại diện cho bạn trên sân khấu!
+              Chọn một bé mèo nhảy từ bộ sưu tập GIPHY Cat Dance để đại diện cho bạn trên sàn nhảy!
             </DialogDescription>
           </DialogHeader>
 
@@ -355,7 +370,7 @@ export function RoomStage({
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
                 <Settings2 className="h-5 w-5 text-rose-500" />
-                <span>Quản lý sân khấu mèo nhảy</span>
+                <span>Quản lý sàn nhảy mèo</span>
               </DialogTitle>
               <DialogDescription className="text-xs">
                 Chỉnh số lượng người tối đa và duyệt yêu cầu lên sân khấu của các thành viên.

@@ -876,10 +876,10 @@ export function RoomClient({ code }: { code: string }) {
       ) : null}
 
       <div className={`relative grid items-start gap-5 ${focused && panelCollapsed ? "lg:grid-cols-[minmax(0,1fr)_44px]" : "lg:grid-cols-[minmax(0,1fr)_360px]"} ${focused ? "lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(0,1fr)]" : ""}`}>
-        <div className={focused ? "min-w-0 lg:h-full lg:min-h-0" : "relative group min-w-0 space-y-3"}>
+        <div className={focused ? "min-w-0 lg:h-full lg:min-h-0 lg:overflow-y-auto space-y-3" : "relative group min-w-0 space-y-3"}>
           {!focused && <div className="ambient-glow opacity-50 dark:opacity-85" aria-hidden="true" />}
           <SyncPlayer
-            fillHeight={focused}
+            fillHeight={focused && !stageHook.stage.enabled}
             videoId={room.video.videoId}
             onReady={(handle) => {
               handleRef.current = handle;
@@ -910,6 +910,23 @@ export function RoomClient({ code }: { code: string }) {
               };
               void reportEnded();
             }}
+          />
+
+          {/* Sân Khấu Mèo Nhảy */}
+          <RoomStage
+            stage={stageHook.stage}
+            isHost={isHost}
+            isOnStage={stageHook.isOnStage}
+            isPendingApproval={stageHook.isPendingApproval}
+            onToggleStage={stageHook.toggleStage}
+            onSetLimit={stageHook.setLimit}
+            onRequestJoin={stageHook.requestJoin}
+            onCancelRequest={stageHook.cancelRequest}
+            onApproveRequest={stageHook.approveRequest}
+            onRejectRequest={stageHook.rejectRequest}
+            onApproveAll={stageHook.approveAll}
+            onLeaveStage={stageHook.leave}
+            onClearStage={stageHook.clear}
           />
 
           {!focused && (
