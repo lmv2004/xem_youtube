@@ -33,6 +33,7 @@ import { RoomChat } from "./room-chat";
 import { RoomMembers } from "./room-members";
 import { RoomSearch } from "./room-search";
 import { RoomRelatedVideos } from "./room-related-videos";
+import { youtubeLinkVideo } from "@/lib/youtube-link";
 import { RoomQueue } from "./room-queue";
 import { RoomStage } from "./room-stage";
 import { useRoomStage } from "@/hooks/use-room-stage";
@@ -237,16 +238,13 @@ export function RoomClient({ code }: { code: string }) {
           sync.queueEdits.length >= 20
         )
           return false;
-        void editQueue(payload).catch((error) =>
-          toast({
-            title: t(
-              error instanceof Error
-                ? error.message
-                : "Không cập nhật được hàng đợi",
-            ),
-          }),
-        );
-        return true;
+        try {
+          await editQueue(payload); // The hook inserts the optimistic row immediately.
+          return true;
+        } catch (error) {
+          toast({ title: t(error instanceof Error ? error.message : "Không cập nhật được hàng đợi") });
+          return false;
+        }
       }
       if (sync.isOffline || (payload.action !== "ended" && !canControl))
         return false;
@@ -1125,6 +1123,20 @@ export function RoomClient({ code }: { code: string }) {
               items={sync.queue}
               disabled={!canControl || sync.isOffline}
               canContribute={canEnqueue && !sync.isOffline}
+              onAddLink={async link => {
+                if (!canEnqueue || sync.isOffline) return false;
+                const fallback = youtubeLinkVideo(link);
+                if (!fallback) return false;
+                let item = fallback;
+                try {
+                  const response = await fetch(`/api/video-link?id=${encodeURIComponent(fallback.id)}`, { signal: AbortSignal.timeout(3500) });
+                  if (response.ok) {
+                    const data = await response.json() as { video?: VideoItem };
+                    if (data.video?.id === fallback.id) item = data.video;
+                  }
+                } catch { /* Metadata failure must not prevent a valid link from being queued. */ }
+                return enqueueVideo(item);
+              }}
               pending={queuePending}
               onMove={(id, direction) =>
                 void changeQueue({ action: "move", id, direction }).then(
