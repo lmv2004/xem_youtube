@@ -3074,5 +3074,33 @@
   "Quản lý sân khấu": {
     "en": "Manage stage",
     "te": "వేదికను నిర్వహించండి"
+  },
+  "Thêm bằng link YouTube": {
+    "en": "Add a YouTube link",
+    "te": "YouTube లింక్‌ను జోడించండి"
+  },
+  "Liên kết YouTube không hợp lệ.": {
+    "en": "Invalid YouTube link.",
+    "te": "చెల్లని YouTube లింక్."
+  },
+  "Chưa thêm được video. Vui lòng thử lại.": {
+    "en": "Could not add the video. Please try again.",
+    "te": "వీడియోను జోడించలేకపోయాము. మళ్లీ ప్రయత్నించండి."
+  },
+  "Đang thêm…": {
+    "en": "Adding…",
+    "te": "జోడిస్తోంది…"
+  },
+  "Dán link để thêm trực tiếp, không cần tìm kiếm. Nếu chưa tải được tiêu đề, video sẽ hiển thị bằng mã YouTube.": {
+    "en": "Paste a link to add directly without search. If the title is unavailable, the YouTube video ID is shown.",
+    "te": "శోధించకుండా నేరుగా జోడించడానికి లింక్‌ను పేస్ట్ చేయండి. శీర్షిక అందుబాటులో లేకపోతే YouTube వీడియో ID చూపబడుతుంది."
+  },
+  "Bạn có thể dán link hoặc tìm video để thêm. Chủ phòng sắp xếp, xóa và chuyển bài.": {
+    "en": "You can paste a link or find a video to add. The host manages order, removal and playback.",
+    "te": "మీరు లింక్‌ను పేస్ట్ చేయవచ్చు లేదా వీడియోను వెతికి జోడించవచ్చు. హోస్ట్ క్రమం, తొలగింపు మరియు ప్లేబ్యాక్‌ను నిర్వహిస్తారు."
+  },
+  "Dán link YouTube ở trên hoặc tìm video để thêm vào hàng đợi.": {
+    "en": "Paste a YouTube link above or find a video to add to the queue.",
+    "te": "పైన YouTube లింక్‌ను పేస్ట్ చేయండి లేదా క్యూలో జోడించడానికి వీడియోను వెతకండి."
   }
 }

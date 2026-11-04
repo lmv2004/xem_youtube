@@ -1,6 +1,11 @@
 "use client";
+import { useId, useRef, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { youtubeLinkVideo } from "@/lib/youtube-link";
 import { useTranslations } from "@/components/locale-provider";
 import {
+  Loader2,
+  Link2,
   ArrowUp,
   ArrowDown,
   ListVideo,
@@ -22,6 +27,7 @@ export function RoomQueue({
   onMove,
   onNext,
   onSearch,
+  onAddLink,
 }: {
   fillHeight?: boolean;
   items: RoomQueueItem[];
@@ -31,12 +37,48 @@ export function RoomQueue({
   onRemove: (id: string) => void;
   onNext: () => void;
   onSearch: () => void;
+  onAddLink: (link: string) => Promise<boolean>;
   onMove: (id: string, direction: "up" | "down") => void;
 }) {
   const t = useTranslations();
+  const inputId = useId();
+  const [link, setLink] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [error, setError] = useState("");
+  const revision = useRef(0);
+  const submitting = useRef(false);
+  async function submitLink(event: React.FormEvent) {
+    event.preventDefault();
+    if (submitting.current || !canContribute || items.length >= 50) return;
+    const submitted = link.trim();
+    if (!youtubeLinkVideo(submitted)) {
+      setError(t("Liên kết YouTube không hợp lệ."));
+      return;
+    }
+    const submittedRevision = revision.current;
+    submitting.current = true;
+    setAdding(true);
+    setError("");
+    try {
+      const added = await onAddLink(submitted);
+      if (added && revision.current === submittedRevision) {
+        setLink("");
+        revision.current++;
+      }
+      if (!added) setError(t("Chưa thêm được video. Vui lòng thử lại."));
+    } catch {
+      setError(t("Chưa thêm được video. Vui lòng thử lại."));
+    } finally {
+      submitting.current = false;
+      setAdding(false);
+    }
+  }
   return (
     <section
-      className={cn("flex h-[min(580px,70dvh)] min-h-[360px] flex-col overflow-hidden rounded-2xl border border-border bg-card lg:h-[620px]", fillHeight && "lg:h-full lg:min-h-0")}
+      className={cn(
+        "flex h-[min(580px,70dvh)] min-h-[360px] flex-col overflow-hidden rounded-2xl border border-border bg-card lg:h-[620px]",
+        fillHeight && "lg:h-full lg:min-h-0",
+      )}
       aria-label={t("Danh sách chờ")}
     >
       <div className="shrink-0 space-y-2 border-b border-border p-3">
@@ -57,13 +99,75 @@ export function RoomQueue({
           {t("Tự phát lần lượt khi video hiện tại kết thúc.")}
         </p>
       </div>
+      <form
+        onSubmit={submitLink}
+        className="shrink-0 space-y-2 border-b border-border p-3"
+        aria-busy={adding}
+      >
+        <label
+          htmlFor={inputId}
+          className="flex items-center gap-1.5 text-sm font-medium"
+        >
+          <Link2 aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
+          {t("Thêm bằng link YouTube")}
+        </label>
+        <div className="flex items-center gap-2">
+          <Input
+            id={inputId}
+            value={link}
+            type="text"
+            inputMode="url"
+            autoComplete="off"
+            maxLength={2048}
+            placeholder="https://youtu.be/..."
+            disabled={!canContribute}
+            aria-invalid={Boolean(error)}
+            aria-describedby={`${inputId}-hint${error ? ` ${inputId}-error` : ""}`}
+            className="min-w-0 flex-1"
+            onChange={(event) => {
+              revision.current++;
+              setLink(event.target.value);
+              setError("");
+            }}
+          />
+          <Button
+            type="submit"
+            disabled={
+              !canContribute || adding || !link.trim() || items.length >= 50
+            }
+            className="shrink-0 px-3"
+          >
+            {adding && (
+              <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+            )}
+            {t(adding ? "Đang thêm…" : "Thêm")}
+          </Button>
+        </div>
+        <p
+          id={`${inputId}-hint`}
+          className="text-xs leading-relaxed text-muted-foreground"
+        >
+          {t(
+            "Dán link để thêm trực tiếp, không cần tìm kiếm. Nếu chưa tải được tiêu đề, video sẽ hiển thị bằng mã YouTube.",
+          )}
+        </p>
+        {error && (
+          <p
+            id={`${inputId}-error`}
+            role="alert"
+            className="text-xs text-destructive"
+          >
+            {error}
+          </p>
+        )}
+      </form>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3">
         {!items.length ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
             <ListVideo className="h-9 w-9 text-muted-foreground" />
             <p className="text-sm font-medium">{t("Hàng đợi đang trống")}</p>
             <p className="max-w-60 text-xs text-muted-foreground">
-              {t("Tìm video và chọn “Thêm vào hàng đợi” để xem liên tục.")}
+              {t("Dán link YouTube ở trên hoặc tìm video để thêm vào hàng đợi.")}
             </p>
             <Button size="sm" variant="outline" onClick={onSearch}>
               {t("Tìm video")}
@@ -147,7 +251,7 @@ export function RoomQueue({
         <p className="shrink-0 border-t border-border p-3 text-xs text-muted-foreground">
           {t(
             canContribute
-              ? "Bạn có thể thêm video ở mục Tìm video. Chủ phòng sắp xếp, xóa và chuyển bài."
+              ? "Bạn có thể dán link hoặc tìm video để thêm. Chủ phòng sắp xếp, xóa và chuyển bài."
               : "Kết nối lại hoặc chờ chủ phòng mở quyền để sửa hàng đợi.",
           )}
         </p>

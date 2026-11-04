@@ -226,6 +226,22 @@ test("HTTP viewers join, chat, contribute under host control and recover without
     const advanced = await sync(false);
     assert.deepEqual(advanced.queue.map((entry) => entry.id), [firstId]);
     assert.equal(advanced.playbackGeneration, generation + 1, "duplicate reports only advance once");
+    // Direct links resolve independently of the Search API (even with no usable API key).
+    assert.equal((await fetch(`${origin}/api/video-link?id=invalid`)).status, 400);
+    const resolved = await fetch(`${origin}/api/video-link?id=dQw4w9WgXcQ`);
+    assert.equal(resolved.status, 200);
+    const { video: directVideo } = await resolved.json();
+    assert.equal(directVideo.id, "dQw4w9WgXcQ");
+    const directId = crypto.randomUUID();
+    const directAdd = { type: "queue", requestId: "direct-link", payload: { action: "add", id: directId, video: {
+      videoId: directVideo.id, title: directVideo.title, channel: directVideo.channel,
+      thumbnail: directVideo.thumbnail, embedUrl: directVideo.embedUrl, watchUrl: directVideo.watchUrl,
+      duration: directVideo.durationSeconds,
+    } } };
+    assert.equal((await command(true, directAdd)).status, 200);
+    const linkedQueue = await sync(false);
+    assert.equal(linkedQueue.queue.at(-1)?.id, directId);
+    assert.equal(linkedQueue.queue.at(-1)?.videoId, "dQw4w9WgXcQ");
     const deleted = await fetch(`${origin}/api/rooms/${code}`, { method: "DELETE", headers: { Cookie: hostCookie, Origin: origin } });
     assert.equal(deleted.status, 200);
     assert.equal((await post("sync", { clientId: guestId, displayName: "Guest", heartbeat: false })).status, 404);
