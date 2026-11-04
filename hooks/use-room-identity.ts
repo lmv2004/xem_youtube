@@ -7,6 +7,7 @@ import {
 } from "@/lib/rooms";
 
 const NAME_KEY = "xemphim:room:nickname:v2";
+const TAB_CLIENT_KEY = "xemphim:room:tab_client_id:v1";
 
 /**
  * Identity used inside rooms.
@@ -21,8 +22,20 @@ export function useRoomIdentity() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    // Independent tabs must not mistake each other's actions for their own echo.
-    setClientId((previous) => previous ?? createClientId());
+    // Preserve client ID per tab across page refreshes (F5) so dancer state remains intact,
+    // while keeping independent tabs isolated with unique sessionStorage.
+    let tabId: string | null = null;
+    try {
+      tabId = window.sessionStorage.getItem(TAB_CLIENT_KEY);
+      if (!tabId) {
+        tabId = createClientId();
+        window.sessionStorage.setItem(TAB_CLIENT_KEY, tabId);
+      }
+    } catch {
+      tabId = createClientId();
+    }
+    setClientId((previous) => previous ?? tabId);
+
     let stored: string | null = null;
     try { stored = window.localStorage.getItem(NAME_KEY); } catch { /* Private mode. */ }
     setName(

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { RoomStageState, StageParticipant, StageRequest } from "@/lib/room-stage";
+import type { RoomStageState } from "@/lib/room-stage";
 import type { CatDanceMeme } from "@/lib/cat-memes";
 import { toast } from "sonner";
 
@@ -16,6 +16,7 @@ const defaultStageState: RoomStageState = {
 type UseRoomStageProps = {
   code: string;
   clientId: string | null;
+  userId?: string | null;
   isHost: boolean;
   displayName: string;
   avatarUrl?: string | null;
@@ -25,6 +26,7 @@ type UseRoomStageProps = {
 export function useRoomStage({
   code,
   clientId,
+  userId,
   isHost,
   displayName,
   avatarUrl,
@@ -35,7 +37,13 @@ export function useRoomStage({
   const activeRef = useRef(true);
 
   const getEffectiveClientId = useCallback(() => {
-    return clientId || (typeof window !== "undefined" ? window.sessionStorage?.getItem("stage:temp:client") : null) || "host-client";
+    if (clientId) return clientId;
+    if (typeof window !== "undefined") {
+      return (
+        window.sessionStorage.getItem("xemphim:room:tab_client_id:v1") || ""
+      );
+    }
+    return "";
   }, [clientId]);
 
   const fetchStage = useCallback(async () => {
@@ -84,7 +92,9 @@ export function useRoomStage({
         });
         if (res.ok) {
           const updated = (await res.json()) as RoomStageState;
-          setStage(updated);
+          if (activeRef.current) {
+            setStage(updated);
+          }
           if (successMessage) {
             toast.success(successMessage);
           }
@@ -104,39 +114,16 @@ export function useRoomStage({
   const toggleStage = useCallback(
     async (enabled: boolean) => {
       const cid = getEffectiveClientId();
-      // Optimistic update
-      setStage((prev) => ({
-        ...prev,
-        enabled,
-        participants:
-          enabled && prev.participants.length === 0
-            ? [
-                {
-                  clientId: cid,
-                  userId: null,
-                  name: displayName || "Chủ phòng (DJ)",
-                  image: avatarUrl || null,
-                  isHost,
-                  catId: "GK7dGndK4kyOozR9Xk",
-                  catGifUrl: "https://media.giphy.com/media/GK7dGndK4kyOozR9Xk/giphy.gif",
-                  catName: "Mèo Disco Neon",
-                  joinedAt: Date.now(),
-                },
-              ]
-            : prev.participants,
-      }));
-
       await sendStageAction(
         { action: "toggle", enabled, clientId: cid },
         enabled ? "Đã bật sân khấu mèo nhảy! 🎉" : "Đã tắt sân khấu",
       );
     },
-    [sendStageAction, getEffectiveClientId, displayName, avatarUrl, isHost],
+    [sendStageAction, getEffectiveClientId],
   );
 
   const setLimit = useCallback(
     async (maxParticipants: number) => {
-      setStage((prev) => ({ ...prev, maxParticipants }));
       await sendStageAction(
         { action: "set_limit", maxParticipants },
         `Đã đặt giới hạn sân khấu là ${maxParticipants} người`,
@@ -148,41 +135,9 @@ export function useRoomStage({
   const requestJoin = useCallback(
     async (cat: CatDanceMeme) => {
       const cid = getEffectiveClientId();
-      // Optimistic update
-      if (isHost) {
-        setStage((prev) => ({
-          ...prev,
-          participants: [
-            ...prev.participants.filter((p) => p.clientId !== cid),
-            {
-              clientId: cid,
-              name: displayName,
-              image: avatarUrl,
-              isHost: true,
-              catId: cat.id,
-              catGifUrl: cat.gifUrl,
-              catName: cat.name,
-              joinedAt: Date.now(),
-            },
-          ],
-        }));
-      } else {
-        setStage((prev) => ({
-          ...prev,
-          requests: [
-            ...prev.requests.filter((r) => r.clientId !== cid),
-            {
-              clientId: cid,
-              name: displayName,
-              image: avatarUrl,
-              isHost: false,
-              catId: cat.id,
-              catGifUrl: cat.gifUrl,
-              catName: cat.name,
-              requestedAt: Date.now(),
-            },
-          ],
-        }));
+      if (!cid) {
+        toast.error("Đang kết nối phòng, vui lòng thử lại sau giây lát");
+        return;
       }
 
       await sendStageAction(
@@ -205,10 +160,7 @@ export function useRoomStage({
 
   const cancelRequest = useCallback(async () => {
     const cid = getEffectiveClientId();
-    setStage((prev) => ({
-      ...prev,
-      requests: prev.requests.filter((r) => r.clientId !== cid),
-    }));
+    if (!cid) return;
     await sendStageAction(
       { action: "cancel_request", clientId: cid },
       "Đã huỷ yêu cầu lên sân khấu",
@@ -216,9 +168,9 @@ export function useRoomStage({
   }, [sendStageAction, getEffectiveClientId]);
 
   const approveRequest = useCallback(
-    async (targetClientId: string) => {
+    async (targetClientId: string, targetUserId?: string | null) => {
       await sendStageAction(
-        { action: "approve", clientId: targetClientId },
+        { action: "approve", clientId: targetClientId, userId: targetUserId },
         "Đã duyệt thành viên lên sân khấu! 🐾",
       );
     },
@@ -226,13 +178,9 @@ export function useRoomStage({
   );
 
   const rejectRequest = useCallback(
-    async (targetClientId: string) => {
-      setStage((prev) => ({
-        ...prev,
-        requests: prev.requests.filter((r) => r.clientId !== targetClientId),
-      }));
+    async (targetClientId: string, targetUserId?: string | null) => {
       await sendStageAction(
-        { action: "reject", clientId: targetClientId },
+        { action: "reject", clientId: targetClientId, userId: targetUserId },
         "Đã từ chối yêu cầu",
       );
     },
@@ -249,10 +197,7 @@ export function useRoomStage({
   const leave = useCallback(
     async (targetClientId?: string) => {
       const cid = targetClientId || getEffectiveClientId();
-      setStage((prev) => ({
-        ...prev,
-        participants: prev.participants.filter((p) => p.clientId !== cid),
-      }));
+      if (!cid) return;
       await sendStageAction(
         { action: "leave", clientId: cid },
         cid === clientId ? "Bạn đã rời khỏi sân khấu" : "Đã mời thành viên xuống sân khấu",
@@ -262,7 +207,6 @@ export function useRoomStage({
   );
 
   const clear = useCallback(async () => {
-    setStage((prev) => ({ ...prev, participants: [], requests: [] }));
     await sendStageAction(
       { action: "clear" },
       "Đã đưa tất cả mọi người xuống sân khấu",
@@ -271,10 +215,23 @@ export function useRoomStage({
 
   const currentCid = getEffectiveClientId();
   const isOnStage = Boolean(
-    stage.participants.some((p) => p.clientId === currentCid || (clientId && p.clientId === clientId)),
+    stage.participants.some(
+      (p) =>
+        (currentCid && p.clientId === currentCid) ||
+        (userId && p.userId && p.userId === userId),
+    ),
   );
   const isPendingApproval = Boolean(
-    stage.requests.some((r) => r.clientId === currentCid || (clientId && r.clientId === clientId)),
+    stage.requests.some(
+      (r) =>
+        (currentCid && r.clientId === currentCid) ||
+        (userId && r.userId && r.userId === userId),
+    ),
+  );
+  const myParticipant = stage.participants.find(
+    (p) =>
+      (currentCid && p.clientId === currentCid) ||
+      (userId && p.userId && p.userId === userId),
   );
 
   return {
@@ -282,6 +239,7 @@ export function useRoomStage({
     loading,
     isOnStage,
     isPendingApproval,
+    myParticipant,
     toggleStage,
     setLimit,
     requestJoin,

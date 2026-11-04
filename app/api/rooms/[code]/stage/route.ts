@@ -79,12 +79,14 @@ export async function POST(
   switch (action) {
     case "toggle": {
       const enabled = Boolean(body.enabled);
-      const hostActor = body.clientId ? {
-        clientId: String(body.clientId),
-        userId: session?.user?.id ?? null,
-        name: session?.user?.name || "Chủ phòng (DJ)",
-        image: session?.user?.image || null,
-      } : undefined;
+      const hostActor = body.clientId
+        ? {
+            clientId: String(body.clientId),
+            userId: session?.user?.id ?? null,
+            name: session?.user?.name || "Chủ phòng",
+            image: session?.user?.image || null,
+          }
+        : undefined;
       const state = toggleStage(code, enabled, hostActor);
       return Response.json(state);
     }
@@ -127,21 +129,26 @@ export async function POST(
     case "cancel_request": {
       const clientId = String(body.clientId || "").trim();
       if (!clientId) return Response.json({ message: "Thiếu clientId." }, { status: 400 });
-      const state = cancelStageRequest(code, clientId);
+      const state = cancelStageRequest(code, {
+        clientId,
+        userId: session?.user?.id ?? null,
+      });
       return Response.json(state);
     }
 
     case "approve": {
       const clientId = String(body.clientId || "").trim();
+      const userId = body.userId ? String(body.userId).trim() : null;
       if (!clientId) return Response.json({ message: "Thiếu clientId." }, { status: 400 });
-      const state = approveStageRequest(code, clientId);
+      const state = approveStageRequest(code, { clientId, userId });
       return Response.json(state);
     }
 
     case "reject": {
       const clientId = String(body.clientId || "").trim();
+      const userId = body.userId ? String(body.userId).trim() : null;
       if (!clientId) return Response.json({ message: "Thiếu clientId." }, { status: 400 });
-      const state = rejectStageRequest(code, clientId);
+      const state = rejectStageRequest(code, { clientId, userId });
       return Response.json(state);
     }
 
@@ -154,7 +161,10 @@ export async function POST(
       const targetClientId = String(body.clientId || "").trim();
       if (!targetClientId) return Response.json({ message: "Thiếu clientId." }, { status: 400 });
       // Can leave if self or host kicking
-      const state = leaveStage(code, targetClientId);
+      const state = leaveStage(code, {
+        clientId: targetClientId,
+        userId: isHost ? null : (session?.user?.id ?? null),
+      });
       return Response.json(state);
     }
 
