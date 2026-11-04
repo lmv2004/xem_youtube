@@ -30,3 +30,7 @@ Additive columns only: Room.stage JSONB default {}, RoomPresence.ownerKey nullab
 Replaced the dense neon header and overlapping floor effects with a dark concert deck: a truss with five slow-moving violet/cyan light beams, perspective floor, aligned performer podiums and a separate action toolbar. Stage video keeps a responsive 16:9 screen within the available viewport. The same SyncPlayer remains mounted.
 
 Visual fixture checks in headless Edge: 0/6/12 performers at 1280px, 390px and 320px, without horizontal overflow; management and cat-selection dialogs open; reduced-motion disables beam animation; Telugu/light theme checked at 320px. Screenshots were reviewed and the temporary fixture route removed. New presentation strings include English and Telugu translations.
+
+## Member menu layering
+
+The native details dropdown inherited the backdrop-filter header's stacking context and could appear underneath video content. RoomMembers now uses the existing Radix popover portal, with viewport collision handling and a scrollable bounded list. Isolated browser checks at 1280px and 320px confirmed the lower part of the popover wins hit testing over a higher-stacked video layer, 30 members scroll without horizontal overflow, Escape restores focus, and clicking outside dismisses the menu. The temporary test route was removed.
