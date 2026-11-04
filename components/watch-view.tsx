@@ -279,10 +279,11 @@ export function WatchView({
             "min-w-0 space-y-5",
           )}
         >
-          <div className="relative">
+          <div className="relative group">
+            <div className="ambient-glow opacity-50 dark:opacity-85" aria-hidden="true" />
             <div
               ref={playerRef}
-              className="relative overflow-hidden rounded-xl border border-border bg-black shadow-sm sm:rounded-2xl"
+              className="relative overflow-hidden rounded-xl border border-border/80 bg-black shadow-2xl sm:rounded-2xl ring-1 ring-white/10"
             >
               {preferencesReady ? (
                 <WatchPlayer
@@ -396,7 +397,7 @@ export function WatchView({
                 size="sm"
                 disabled={isCreating}
                 onClick={() => void createRoom(video)}
-                className="min-h-11 rounded-full border border-border gap-1.5 hover:text-primary"
+                className="min-h-10 rounded-full border border-border/80 gap-1.5 hover:border-cyan-500/40 hover:text-cyan-500 hover:bg-cyan-500/10 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-2xs"
                 title={t("Tạo phòng xem chung cùng bạn bè")}
               >
                 <Users className="h-4 w-4" />
@@ -409,7 +410,7 @@ export function WatchView({
                 variant="secondary"
                 size="sm"
                 onClick={() => setCollectionOpen(true)}
-                className="min-h-11 rounded-full border border-border gap-1.5 hover:bg-muted"
+                className="min-h-10 rounded-full border border-border/80 gap-1.5 hover:border-purple-500/40 hover:text-purple-500 hover:bg-purple-500/10 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-2xs"
                 title={t("Lưu vào thư viện")}
               >
                 <BookmarkPlus className="h-4 w-4" />
@@ -422,7 +423,7 @@ export function WatchView({
                 variant="secondary"
                 size="sm"
                 onClick={handleShare}
-                className="min-h-11 rounded-full border border-border gap-1.5 hover:bg-muted"
+                className="min-h-10 rounded-full border border-border/80 gap-1.5 hover:border-purple-500/40 hover:text-purple-500 hover:bg-purple-500/10 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-2xs"
                 title={t("Chia sẻ video")}
               >
                 <Share2 className="h-4 w-4" />

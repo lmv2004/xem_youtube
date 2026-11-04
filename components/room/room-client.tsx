@@ -824,6 +824,8 @@ export function RoomClient({ code }: { code: string }) {
 
       <div className={`relative grid items-start gap-5 ${focused && panelCollapsed ? "lg:grid-cols-[minmax(0,1fr)_44px]" : "lg:grid-cols-[minmax(0,1fr)_360px]"} ${focused ? "lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(0,1fr)]" : ""}`}>
         <div className={focused ? "min-w-0 lg:h-full lg:min-h-0" : "min-w-0 space-y-3"}>
+          <div className="relative group">
+            {!focused && <div className="ambient-glow opacity-50 dark:opacity-85" aria-hidden="true" />}
           <SyncPlayer
             fillHeight={focused}
             videoId={room.video.videoId}
@@ -857,6 +859,7 @@ export function RoomClient({ code }: { code: string }) {
               void reportEnded();
             }}
           />
+          </div>
 
           <div className={focused ? "hidden" : undefined}>
             <h2 className="text-base font-semibold leading-snug sm:text-lg">
