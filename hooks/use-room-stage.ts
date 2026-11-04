@@ -20,6 +20,7 @@ type UseRoomStageProps = {
   isHost: boolean;
   displayName: string;
   avatarUrl?: string | null;
+  externalStage?: RoomStageState;
   disabled?: boolean;
 };
 
@@ -30,11 +31,28 @@ export function useRoomStage({
   isHost,
   displayName,
   avatarUrl,
+  externalStage,
   disabled = false,
 }: UseRoomStageProps) {
   const [stage, setStage] = useState<RoomStageState>(defaultStageState);
   const [loading, setLoading] = useState(false);
   const activeRef = useRef(true);
+
+  // Synchronize immediately whenever external stage snapshot arrives via room sync
+  useEffect(() => {
+    if (!externalStage) return;
+    setStage((prev) => {
+      if (
+        externalStage.lastUpdatedAt >= prev.lastUpdatedAt ||
+        externalStage.enabled !== prev.enabled ||
+        externalStage.participants.length !== prev.participants.length ||
+        externalStage.requests.length !== prev.requests.length
+      ) {
+        return externalStage;
+      }
+      return prev;
+    });
+  }, [externalStage]);
 
   const getEffectiveClientId = useCallback(() => {
     if (clientId) return clientId;
@@ -47,7 +65,7 @@ export function useRoomStage({
   }, [clientId]);
 
   const fetchStage = useCallback(async () => {
-    if (!code || disabled) return;
+    if (!code) return;
     try {
       const res = await fetch(`/api/rooms/${code}/stage`, {
         cache: "no-store",
@@ -55,13 +73,22 @@ export function useRoomStage({
       if (res.ok) {
         const data = (await res.json()) as RoomStageState;
         if (activeRef.current) {
-          setStage(data);
+          setStage((prev) => {
+            if (
+              data.lastUpdatedAt >= prev.lastUpdatedAt ||
+              data.enabled !== prev.enabled ||
+              data.participants.length !== prev.participants.length
+            ) {
+              return data;
+            }
+            return prev;
+          });
         }
       }
     } catch {
       // Ignore network errors in polling
     }
-  }, [code, disabled]);
+  }, [code]);
 
   // Polling loop
   useEffect(() => {
@@ -69,7 +96,7 @@ export function useRoomStage({
     void fetchStage();
 
     const interval = setInterval(() => {
-      if (!document.hidden && activeRef.current) {
+      if (activeRef.current) {
         void fetchStage();
       }
     }, 2000);

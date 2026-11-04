@@ -4,6 +4,7 @@ import { prisma } from "./db";
 import { playbackDto } from "./room-commands";
 import { messageCursor, parseMessageCursor } from "./room-sync";
 import { MESSAGE_PAGE_SIZE, PRESENCE_TIMEOUT_MS, type RoomSyncResponse } from "./rooms";
+import { getStageState } from "./room-stage";
 
 /** Authoritative snapshot for HTTP polling and paginated chat catch-up. */
 export async function readRoomSnapshot(room: Room, after?: string | null): Promise<RoomSyncResponse> {
@@ -49,6 +50,7 @@ export async function readRoomSnapshot(room: Room, after?: string | null): Promi
       isHost: presence.userId === room.hostId, isGuest: !presence.userId,
       joinedAt: presence.joinedAt.toISOString(),
     })),
+    stage: getStageState(room.code),
     cursor: messages.length ? messageCursor(messages[messages.length - 1]) : after ?? null,
   };
 }

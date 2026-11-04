@@ -169,7 +169,7 @@ export function RoomClient({ code }: { code: string }) {
     isHost,
     displayName: identity.name,
     avatarUrl: session?.user?.image,
-    disabled: !joined || !identity.hydrated || sync.isOffline,
+    externalStage: sync.stage,
   });
 
   // Player callbacks may be bound once, so read the live value from a ref.

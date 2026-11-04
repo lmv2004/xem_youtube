@@ -23,17 +23,13 @@ export async function GET(
   context: { params: Promise<{ code: string }> },
 ) {
   const code = normalizeRoomCode((await context.params).code);
-  const room = await prisma.room.findUnique({
-    where: { code },
-    select: { id: true, hostId: true },
-  });
-  if (!room) {
-    return Response.json({ message: "Phòng không tồn tại." }, { status: 404 });
+  if (!code) {
+    return Response.json({ message: "Mã phòng không hợp lệ." }, { status: 400 });
   }
 
   const stage = getStageState(code);
   return Response.json(stage, {
-    headers: { "Cache-Control": "no-store" },
+    headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
   });
 }
 
