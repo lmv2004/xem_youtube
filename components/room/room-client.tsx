@@ -880,6 +880,7 @@ export function RoomClient({ code }: { code: string }) {
           {!focused && <div className="ambient-glow opacity-50 dark:opacity-85" aria-hidden="true" />}
           <SyncPlayer
             fillHeight={focused && !stageHook.stage.enabled}
+            compact={stageHook.stage.enabled}
             videoId={room.video.videoId}
             onReady={(handle) => {
               handleRef.current = handle;
@@ -915,6 +916,7 @@ export function RoomClient({ code }: { code: string }) {
           {/* Sân Khấu Mèo Nhảy */}
           <RoomStage
             stage={stageHook.stage}
+            messages={sync.messages}
             isHost={isHost}
             isOnStage={stageHook.isOnStage}
             isPendingApproval={stageHook.isPendingApproval}

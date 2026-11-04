@@ -346,3 +346,30 @@ html[lang="te"] .font-display {
     scroll-behavior: auto !important;
   }
 }
+
+
+/* Stage Lights Animations */
+@keyframes stage-beam-left {
+  0%, 100% { transform: rotate(-25deg) scaleY(1); opacity: 0.35; }
+  50% { transform: rotate(-8deg) scaleY(1.15); opacity: 0.75; }
+}
+@keyframes stage-beam-right {
+  0%, 100% { transform: rotate(25deg) scaleY(1); opacity: 0.35; }
+  50% { transform: rotate(8deg) scaleY(1.15); opacity: 0.75; }
+}
+@keyframes stage-beam-center {
+  0%, 100% { transform: scaleX(1) scaleY(1); opacity: 0.4; }
+  50% { transform: scaleX(1.25) scaleY(1.1); opacity: 0.8; }
+}
+.animate-stage-left {
+  animation: stage-beam-left 4.5s ease-in-out infinite;
+  transform-origin: top center;
+}
+.animate-stage-right {
+  animation: stage-beam-right 4.5s ease-in-out infinite 0.8s;
+  transform-origin: top center;
+}
+.animate-stage-center {
+  animation: stage-beam-center 3s ease-in-out infinite;
+  transform-origin: top center;
+}
