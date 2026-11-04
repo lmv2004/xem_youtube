@@ -50,7 +50,11 @@ let apiPromise: Promise<YTNamespace> | null = null;
 function loadYouTubeApi(): Promise<YTNamespace> {
   if (apiPromise) return apiPromise;
 
-  apiPromise = new Promise<YTNamespace>((resolve) => {
+  apiPromise = new Promise((resolve) => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
     if (window.YT?.Player) {
       resolve(window.YT);
       return;
@@ -95,7 +99,14 @@ type Props = {
   onEnded?: (videoId: string, duration: number) => void;
 };
 
-export function SyncPlayer({ videoId, onStateChange, onReady, onEnded, fillHeight = false, compact = false }: Props) {
+export function SyncPlayer({
+  videoId,
+  onStateChange,
+  onReady,
+  onEnded,
+  fillHeight = false,
+  compact = false,
+}: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<YTPlayer | null>(null);
 
@@ -178,9 +189,9 @@ export function SyncPlayer({ videoId, onStateChange, onReady, onEnded, fillHeigh
   return (
     <div
       className={cn(
-        "aspect-video w-full overflow-hidden rounded-2xl bg-black transition-all",
-        fillHeight && "lg:h-full lg:aspect-auto",
-        compact && "max-h-[34vh] sm:max-h-[38vh] w-auto mx-auto shadow-xl border border-border/40"
+        "relative aspect-video w-full overflow-hidden rounded-2xl bg-black transition-all shadow-md",
+        fillHeight && "w-full max-h-[calc(100vh-3.5rem)] max-w-[calc((100vh-3.5rem)*16/9)] mx-auto aspect-video shadow-2xl",
+        compact && "h-[32vh] sm:h-[35vh] max-h-[340px] min-h-[190px] w-auto aspect-video mx-auto rounded-xl shadow-[0_0_30px_rgba(244,63,94,0.3)] border border-rose-500/40"
       )}
     >
       <div ref={containerRef} className="h-full w-full [&_iframe]:h-full [&_iframe]:w-full" />

@@ -165,10 +165,11 @@ export function RoomClient({ code }: { code: string }) {
   const stageHook = useRoomStage({
     code,
     clientId: identity.clientId,
+    userId: currentUserId,
     isHost,
     displayName: identity.name,
     avatarUrl: session?.user?.image,
-    disabled: !joined || !identity.hydrated || sync.isOffline,
+    externalStage: sync.stage,
   });
 
   // Player callbacks may be bound once, so read the live value from a ref.
@@ -878,40 +879,91 @@ export function RoomClient({ code }: { code: string }) {
       <div className={`relative grid items-start gap-5 ${focused && panelCollapsed ? "lg:grid-cols-[minmax(0,1fr)_44px]" : "lg:grid-cols-[minmax(0,1fr)_360px]"} ${focused ? "lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(0,1fr)]" : ""}`}>
         <div className={focused ? "min-w-0 lg:h-full lg:min-h-0 lg:overflow-y-auto space-y-3" : "relative group min-w-0 space-y-3"}>
           {!focused && <div className="ambient-glow opacity-50 dark:opacity-85" aria-hidden="true" />}
-          <SyncPlayer
-            fillHeight={focused && !stageHook.stage.enabled}
-            compact={stageHook.stage.enabled}
-            videoId={room.video.videoId}
-            onReady={(handle) => {
-              handleRef.current = handle;
-              currentVideoRef.current = room.video.videoId;
-              setPlayerReady(true);
-            }}
-            onStateChange={(playing, currentTime) => {
-              // Ignore the events caused by our own sync corrections.
-              if (document.hidden || Date.now() < suppressUntilRef.current) return;
-              void pushPlayback({
-                isPlaying: playing,
-                positionSeconds: currentTime,
-              }, true);
-            }}
-            onEnded={(id, duration) => {
-              if (
-                id !== currentVideoRef.current ||
-                currentGenerationRef.current === null ||
-                !Number.isFinite(duration) ||
-                duration <= 0
-              )
-                return;
-              endedRef.current = {
-                generation: currentGenerationRef.current,
-                duration,
-                anchor: sync.playback?.lastSyncAt ?? "",
-                lastSent: 0,
-              };
-              void reportEnded();
-            }}
-          />
+          {stageHook.stage.enabled ? (
+            <div className="w-full bg-slate-950/90 rounded-t-2xl border-2 border-rose-500/40 border-b-0 relative overflow-hidden flex flex-col items-center justify-center p-2 sm:p-2.5 backdrop-blur-xl shadow-2xl">
+              {/* Dynamic concert lights above jumbotron screen */}
+              <div className="pointer-events-none absolute -top-10 left-1/4 h-24 w-1/2 rounded-full bg-rose-500/20 blur-3xl animate-pulse" />
+              <div className="pointer-events-none absolute top-0 left-0 right-0 h-3 bg-zinc-900/80 border-b border-white/10 flex items-center justify-around px-8">
+                <span className="h-1.5 w-2 rounded-t-xs bg-rose-500 shadow-[0_0_6px_#f43f5e]" />
+                <span className="h-1.5 w-2 rounded-t-xs bg-cyan-400 shadow-[0_0_6px_#22d3ee]" />
+                <span className="h-1.5 w-2 rounded-t-xs bg-amber-400 shadow-[0_0_6px_#f59e0b]" />
+                <span className="h-1.5 w-2 rounded-t-xs bg-purple-400 shadow-[0_0_6px_#c084fc]" />
+              </div>
+              <SyncPlayer
+                compact={true}
+                videoId={room.video.videoId}
+                onReady={(handle) => {
+                  handleRef.current = handle;
+                  currentVideoRef.current = room.video.videoId;
+                  setPlayerReady(true);
+                }}
+                onStateChange={(playing, currentTime) => {
+                  if (document.hidden || Date.now() < suppressUntilRef.current) return;
+                  void pushPlayback(
+                    {
+                      isPlaying: playing,
+                      positionSeconds: currentTime,
+                    },
+                    true,
+                  );
+                }}
+                onEnded={(id, duration) => {
+                  if (
+                    id !== currentVideoRef.current ||
+                    currentGenerationRef.current === null ||
+                    !Number.isFinite(duration) ||
+                    duration <= 0
+                  )
+                    return;
+                  endedRef.current = {
+                    generation: currentGenerationRef.current,
+                    duration,
+                    anchor: sync.playback?.lastSyncAt ?? "",
+                    lastSent: 0,
+                  };
+                  void reportEnded();
+                }}
+              />
+            </div>
+          ) : (
+            <div className={focused ? "flex-1 min-h-0 flex items-center justify-center w-full" : "w-full"}>
+              <SyncPlayer
+                fillHeight={focused}
+                videoId={room.video.videoId}
+                onReady={(handle) => {
+                  handleRef.current = handle;
+                  currentVideoRef.current = room.video.videoId;
+                  setPlayerReady(true);
+                }}
+                onStateChange={(playing, currentTime) => {
+                  if (document.hidden || Date.now() < suppressUntilRef.current) return;
+                  void pushPlayback(
+                    {
+                      isPlaying: playing,
+                      positionSeconds: currentTime,
+                    },
+                    true,
+                  );
+                }}
+                onEnded={(id, duration) => {
+                  if (
+                    id !== currentVideoRef.current ||
+                    currentGenerationRef.current === null ||
+                    !Number.isFinite(duration) ||
+                    duration <= 0
+                  )
+                    return;
+                  endedRef.current = {
+                    generation: currentGenerationRef.current,
+                    duration,
+                    anchor: sync.playback?.lastSyncAt ?? "",
+                    lastSent: 0,
+                  };
+                  void reportEnded();
+                }}
+              />
+            </div>
+          )}
 
           {/* Sân Khấu Mèo Nhảy */}
           <RoomStage
@@ -920,6 +972,12 @@ export function RoomClient({ code }: { code: string }) {
             isHost={isHost}
             isOnStage={stageHook.isOnStage}
             isPendingApproval={stageHook.isPendingApproval}
+            myParticipant={stageHook.myParticipant}
+            videoTitle={video.title}
+            channel={video.channel}
+            focused={focused}
+            isDocked={true}
+            onToggleFocused={() => setFocused((prev) => !prev)}
             onToggleStage={stageHook.toggleStage}
             onSetLimit={stageHook.setLimit}
             onRequestJoin={stageHook.requestJoin}
@@ -931,7 +989,7 @@ export function RoomClient({ code }: { code: string }) {
             onClearStage={stageHook.clear}
           />
 
-          {!focused && (
+          {!focused && !stageHook.stage.enabled && (
             <div className="rounded-2xl border border-border/80 bg-card/70 backdrop-blur-xl p-4 shadow-xs space-y-3">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3 min-w-0">
@@ -988,33 +1046,8 @@ export function RoomClient({ code }: { code: string }) {
             </div>
           )}
 
-          <div className={focused
-            ? `sticky bottom-0 z-[60] flex justify-end gap-2 bg-background py-2 lg:absolute lg:right-0 lg:py-0 ${panelCollapsed ? "lg:flex-col" : ""}`
-            : "flex items-center justify-between gap-3"}>
-          {!focused && <div className="min-w-0 flex-1 space-y-1">
-            <p className="text-sm text-muted-foreground">{video.channel}</p>
-            {canControl ? (
-            <p className="text-xs text-muted-foreground">
-              {activity
-                ? activity
-                : hostOnlyControl
-                  ? t("Bạn đang khoá phòng: chỉ bạn điều khiển được.")
-                  : t(
-                      "Ai trong phòng cũng phát, tạm dừng, tua và đổi video được.",
-                    )}
-            </p>
-          ) : (
-            <p className="flex items-start gap-1.5 rounded-xl bg-amber-500/10 px-3 py-2 text-xs text-muted-foreground">
-              <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <span>
-                {t(
-                  "Chủ phòng đang khoá điều khiển. Trình phát của bạn sẽ tự bám theo chủ phòng.",
-                )}{" "}
-                {activity ? " " + activity + "." : ""}
-              </span>
-            </p>
-          )}</div>}
-            {focused && (
+          {focused && (
+            <div className={`sticky bottom-0 z-[60] flex justify-end gap-2 bg-background py-2 lg:absolute lg:right-0 lg:py-0 ${panelCollapsed ? "lg:flex-col" : ""}`}>
               <Button
                 type="button"
                 variant="outline"
@@ -1029,22 +1062,32 @@ export function RoomClient({ code }: { code: string }) {
                 {panelCollapsed ? <PanelRightOpen aria-hidden="true" className="h-4 w-4" /> : <PanelRightClose aria-hidden="true" className="h-4 w-4" />}
                 {panelCollapsed && unreadMessages > 0 && <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-primary px-1 text-[10px] leading-5 text-primary-foreground">{unreadMessages > 99 ? "99+" : unreadMessages}</span>}
               </Button>
-            )}
-            <Button
-              type="button"
-              variant="outline"
-              size={focused && panelCollapsed ? "icon" : "default"}
-              aria-label={t(focused ? "Thoát giản lược" : "Giản lược")}
-              title={t(focused ? "Thoát giản lược" : "Giản lược")}
-              className={"min-h-11 shrink-0 bg-background shadow-sm hover:bg-muted " + (focused && panelCollapsed ? "h-11 w-11 p-0" : "")}
-              onClick={() => setFocused(value => !value)}
-              aria-pressed={focused}
-            >
-              {focused ? <Minimize2 aria-hidden="true" className={panelCollapsed ? "h-4 w-4" : "mr-2 h-4 w-4"} /> : <Maximize2 aria-hidden="true" className="mr-2 h-4 w-4" />}
-              {!(focused && panelCollapsed) && t(focused ? "Thoát giản lược" : "Giản lược")}
-            </Button>
-          </div>
-          {!focused && <RoomRelatedVideos key={`${code}:${video.videoId}`} code={code} videoId={video.videoId} onPick={changeVideo} onEnqueue={enqueueVideo} enqueueDisabled={!canEnqueue || sync.isOffline} disabled={!canControl || sync.isOffline} />}
+              <Button
+                type="button"
+                variant="outline"
+                size={panelCollapsed ? "icon" : "default"}
+                aria-label={t("Thoát giản lược")}
+                title={t("Thoát giản lược")}
+                className={"min-h-11 shrink-0 bg-background shadow-sm hover:bg-muted " + (panelCollapsed ? "h-11 w-11 p-0" : "")}
+                onClick={() => setFocused(false)}
+              >
+                <Minimize2 aria-hidden="true" className={panelCollapsed ? "h-4 w-4" : "mr-2 h-4 w-4"} />
+                {!panelCollapsed && t("Thoát giản lược")}
+              </Button>
+            </div>
+          )}
+
+          {!focused && !stageHook.stage.enabled && (
+            <RoomRelatedVideos
+              key={`${code}:${video.videoId}`}
+              code={code}
+              videoId={video.videoId}
+              onPick={changeVideo}
+              onEnqueue={enqueueVideo}
+              enqueueDisabled={!canEnqueue || sync.isOffline}
+              disabled={!canControl || sync.isOffline}
+            />
+          )}
         </div>
 
         <Tabs

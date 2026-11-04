@@ -14,6 +14,9 @@ import {
   Loader2,
   Disc3,
   MessageSquare,
+  Maximize2,
+  Minimize2,
+  Music2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,13 +43,19 @@ type RoomStageProps = {
   isHost: boolean;
   isOnStage: boolean;
   isPendingApproval: boolean;
+  myParticipant?: StageParticipant;
   messages?: RoomMessageDto[];
+  videoTitle?: string;
+  channel?: string;
+  focused?: boolean;
+  isDocked?: boolean;
+  onToggleFocused?: () => void;
   onToggleStage: (enabled: boolean) => Promise<void>;
   onSetLimit: (max: number) => Promise<void>;
   onRequestJoin: (cat: CatDanceMeme) => Promise<void>;
   onCancelRequest: () => Promise<void>;
-  onApproveRequest: (clientId: string) => Promise<void>;
-  onRejectRequest: (clientId: string) => Promise<void>;
+  onApproveRequest: (clientId: string, userId?: string | null) => Promise<void>;
+  onRejectRequest: (clientId: string, userId?: string | null) => Promise<void>;
   onApproveAll: () => Promise<void>;
   onLeaveStage: (clientId?: string) => Promise<void>;
   onClearStage: () => Promise<void>;
@@ -57,7 +66,13 @@ export function RoomStage({
   isHost,
   isOnStage,
   isPendingApproval,
+  myParticipant,
   messages = [],
+  videoTitle,
+  channel,
+  focused = false,
+  isDocked = true,
+  onToggleFocused,
   onToggleStage,
   onSetLimit,
   onRequestJoin,
@@ -140,6 +155,10 @@ export function RoomStage({
   const isFull = participants.length >= maxParticipants;
 
   const handleJoinClick = () => {
+    if (myParticipant) {
+      const existingCat = CAT_DANCE_MEMES.find((c) => c.id === myParticipant.catId);
+      if (existingCat) setSelectedCat(existingCat);
+    }
     setSelectCatOpen(true);
   };
 
@@ -161,28 +180,33 @@ export function RoomStage({
   };
 
   return (
-    <div className="relative rounded-2xl border-2 border-rose-500/40 bg-gradient-to-b from-card/95 via-purple-950/20 to-card/95 p-2.5 sm:p-3.5 shadow-2xl backdrop-blur-xl overflow-hidden group">
+    <div
+      className={cn(
+        "relative rounded-2xl border-2 border-rose-500/40 bg-gradient-to-b from-card/95 via-purple-950/20 to-card/95 p-2.5 sm:p-3.5 shadow-2xl backdrop-blur-xl overflow-hidden group transition-all",
+        isDocked && "rounded-t-none border-t-0"
+      )}
+    >
       {/* Dynamic Ambient Stage Atmosphere */}
       <div className="pointer-events-none absolute -top-14 left-1/4 h-32 w-1/2 rounded-full bg-gradient-to-r from-rose-500/30 via-pink-500/30 to-amber-500/25 blur-3xl animate-pulse" />
       <div className="pointer-events-none absolute -bottom-10 right-1/4 h-24 w-1/3 rounded-full bg-purple-600/20 blur-3xl" />
 
       {/* Stage Header Bar */}
       <div className="relative z-20 flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-border/70">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-rose-600 via-pink-600 to-amber-500 text-white shadow-lg shadow-rose-500/30">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-rose-600 via-pink-600 to-amber-500 text-white shadow-lg shadow-rose-500/30">
             <Disc3 className="h-4 w-4 animate-spin text-white" />
           </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-black tracking-wide text-xs uppercase bg-gradient-to-r from-rose-400 via-pink-400 to-amber-400 bg-clip-text text-transparent">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="font-black tracking-wide text-xs uppercase bg-gradient-to-r from-rose-400 via-pink-400 to-amber-400 bg-clip-text text-transparent shrink-0">
                 Sàn Nhảy Mèo Quẩy Live 🐾
               </span>
-              <span className="relative flex h-2 w-2">
+              <span className="relative flex h-2 w-2 shrink-0">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
               </span>
             </div>
-            <p className="text-[10px] text-muted-foreground flex items-center gap-1 font-medium">
+            <p className="text-[10px] text-muted-foreground flex items-center gap-1 font-medium truncate">
               <span>GIPHY Cat Dance</span>
               <span>•</span>
               <span className="text-rose-400 font-semibold">
@@ -190,20 +214,41 @@ export function RoomStage({
               </span>
             </p>
           </div>
+
+          {videoTitle && (
+            <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 max-w-[220px] lg:max-w-[300px] shrink-0 truncate ml-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <span className="truncate text-[11px] font-semibold text-foreground/90">
+                {videoTitle}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Stage Header Controls */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 shrink-0">
           {isOnStage ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-7.5 rounded-full border-rose-500/40 text-rose-500 hover:bg-rose-500/10 text-xs font-semibold gap-1 shadow-sm"
-              onClick={() => void onLeaveStage()}
-            >
-              <span>🐾 Xuống sàn</span>
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7.5 rounded-full border-rose-500/40 text-rose-500 hover:bg-rose-500/10 text-xs font-semibold gap-1 shadow-sm"
+                onClick={handleJoinClick}
+                title="Đổi meme mèo nhảy khác"
+              >
+                <span>Đổi mèo 🐱</span>
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7.5 rounded-full text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 text-xs font-semibold gap-1"
+                onClick={() => void onLeaveStage()}
+              >
+                <span>🐾 Xuống sàn</span>
+              </Button>
+            </div>
           ) : isPendingApproval ? (
             <Button
               type="button"
@@ -246,6 +291,20 @@ export function RoomStage({
                   {requests.length}
                 </span>
               )}
+            </Button>
+          )}
+
+          {onToggleFocused && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7.5 px-2 rounded-full border-border/80 bg-background/60 hover:bg-muted text-xs font-semibold gap-1 shadow-sm"
+              onClick={onToggleFocused}
+              title={focused ? "Thoát giản lược" : "Giản lược"}
+            >
+              {focused ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5 text-rose-500" />}
+              <span className="hidden sm:inline">{focused ? "Thu nhỏ" : "Giản lược"}</span>
             </Button>
           )}
         </div>
@@ -580,7 +639,7 @@ export function RoomStage({
                             type="button"
                             size="sm"
                             className="h-7 px-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs"
-                            onClick={() => void onApproveRequest(r.clientId)}
+                            onClick={() => void onApproveRequest(r.clientId, r.userId)}
                           >
                             <Check className="h-3.5 w-3.5 mr-1" />
                             Duyệt
@@ -590,7 +649,7 @@ export function RoomStage({
                             variant="ghost"
                             size="sm"
                             className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                            onClick={() => void onRejectRequest(r.clientId)}
+                            onClick={() => void onRejectRequest(r.clientId, r.userId)}
                           >
                             <X className="h-3.5 w-3.5" />
                           </Button>

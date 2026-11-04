@@ -1,6 +1,8 @@
 // Shared watch-party helpers. Safe to import from both server and client:
 // no Prisma, no server-only imports.
 
+import type { RoomStageState } from "./room-stage";
+
 /**
  * How far a viewer may drift from the room before we hard-seek them.
  * Below this we leave playback alone — constant micro-seeks are far more
@@ -121,6 +123,7 @@ export type RoomSyncResponse = {
   members: RoomMemberDto[];
   hostOnlyControl: boolean;
   allowQueueAdds: boolean;
+  stage?: RoomStageState;
   /** Pass back as `after` on the next poll. */
   cursor: string | null;
   serverTime: string;
@@ -139,6 +142,7 @@ export type RoomPlaybackUpdate = Pick<
   | "revision"
   | "queue"
   | "playbackGeneration"
+  | "stage"
 >;
 
 /**

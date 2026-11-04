@@ -21,6 +21,7 @@ const initialState: State = {
   playback: null, video: null, messages: [], members: [], hostOnlyControl: false, allowQueueAdds: false,
   serverTime: "", isOffline: true, hasConnected: false,
   showSyncWarning: false, isClosed: false, receivedAt: 0,
+  stage: undefined,
 };
 type Options = { enabled: boolean; clientId: string | null; displayName: string; userId: string | null };
 type CommandResult = RoomMessageDto | RoomPlaybackUpdate;
@@ -58,8 +59,10 @@ export function useRoomSync(code: string, { enabled, clientId, displayName, user
       },
       apply(snapshot) {
         setState((previous) => ({
-          ...withPlayback(previous, snapshot), members: snapshot.members,
+          ...withPlayback(previous, snapshot),
+          members: snapshot.members,
           messages: mergeMessages(previous.messages, snapshot.messages),
+          stage: snapshot.stage ?? previous.stage,
         }));
       },
       status(offline) {
