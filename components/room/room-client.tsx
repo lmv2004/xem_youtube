@@ -52,6 +52,7 @@ import type { VideoItem } from "@/lib/types";
 /** How long to ignore local player events after we move the player ourselves. */
 const ECHO_WINDOW_MS = 1200;
 const VIDEO_SWAP_WINDOW_MS = 2500;
+const getRoomJoinedKey = (roomCode: string) => `xemphim:room:joined:${roomCode}`;
 
 export function RoomClient({ code }: { code: string }) {
   const t = useTranslations();
@@ -65,6 +66,17 @@ export function RoomClient({ code }: { code: string }) {
   const [joined, setJoined] = useState(false);
   const [joining, setJoining] = useState(false);
   const [leaving, setLeaving] = useState(false);
+
+  useEffect(() => {
+    if (!code) return;
+    try {
+      if (window.localStorage.getItem(getRoomJoinedKey(code)) === "true") {
+        setJoined(true);
+      }
+    } catch {
+      /* Storage is optional (private mode). */
+    }
+  }, [code]);
   const [lockPending, setLockPending] = useState(false);
   const [queuePermissionPending, setQueuePermissionPending] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -147,6 +159,27 @@ export function RoomClient({ code }: { code: string }) {
   // Player callbacks may be bound once, so read the live value from a ref.
   const canControlRef = useRef(canControl);
   canControlRef.current = canControl && !sync.isOffline;
+
+  useEffect(() => {
+    if (isHost && code) {
+      setJoined(true);
+      try {
+        window.localStorage.setItem(getRoomJoinedKey(code), "true");
+      } catch {
+        /* Storage is optional (private mode). */
+      }
+    }
+  }, [isHost, code]);
+
+  useEffect(() => {
+    if (sync.isClosed && code) {
+      try {
+        window.localStorage.removeItem(getRoomJoinedKey(code));
+      } catch {
+        /* Storage is optional (private mode). */
+      }
+    }
+  }, [sync.isClosed, code]);
 
   useEffect(() => {
     let cancelled = false;
@@ -521,12 +554,22 @@ export function RoomClient({ code }: { code: string }) {
   const handleJoin = () => {
     setJoining(true);
     identity.persistName(identity.name);
+    try {
+      window.localStorage.setItem(getRoomJoinedKey(code), "true");
+    } catch {
+      /* Storage is optional (private mode). */
+    }
     setJoined(true);
     setJoining(false);
   };
 
   const handleLeave = async () => {
     setLeaving(true);
+    try {
+      window.localStorage.removeItem(getRoomJoinedKey(code));
+    } catch {
+      /* Storage is optional (private mode). */
+    }
     await leave();
     router.push("/rooms");
   };
@@ -709,6 +752,11 @@ export function RoomClient({ code }: { code: string }) {
               code={code}
               title={roomTitle}
               onDeleted={() => {
+                try {
+                  window.localStorage.removeItem(getRoomJoinedKey(code));
+                } catch {
+                  /* Storage is optional (private mode). */
+                }
                 void leave();
                 router.replace("/rooms");
               }}

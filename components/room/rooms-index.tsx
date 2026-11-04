@@ -144,6 +144,9 @@ export function RoomsIndex() {
         description: t("Mã phòng của bạn: {p0}", { p0: json.code }),
       });
       setCreateModalOpen(false);
+      try {
+        window.localStorage.setItem(`xemphim:room:joined:${json.code}`, "true");
+      } catch {}
       router.push(`/rooms/${json.code}`);
     } catch (err) {
       toast({

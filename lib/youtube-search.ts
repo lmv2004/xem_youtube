@@ -63,10 +63,27 @@ function putInPagedCache<T>(key: string, data: T, ttlSeconds = 600): void {
   pagedCache.set(key, { data, expiresAt: Date.now() + ttlSeconds * 1000 });
 }
 
+function getKeys(): string[] {
+  const raw = process.env.YOUTUBE_API_KEY?.trim() || "";
+  return raw
+    .split(",")
+    .map((k) => k.trim().replace(/^["']|["']$/g, ""))
+    .filter(Boolean);
+}
+
+let currentKeyIndex = 0;
+
 function ensureKey(): string {
-  const key = process.env.YOUTUBE_API_KEY?.trim();
-  if (!key) fail("missing-key", "Chưa cấu hình YOUTUBE_API_KEY trên máy chủ.");
-  return key as string;
+  const keys = getKeys();
+  if (!keys.length) fail("missing-key", "Chưa cấu hình YOUTUBE_API_KEY trên máy chủ.");
+  return keys[currentKeyIndex % keys.length];
+}
+
+function rotateKey(): void {
+  const keys = getKeys();
+  if (keys.length > 1) {
+    currentKeyIndex = (currentKeyIndex + 1) % keys.length;
+  }
 }
 
 function parseDurationSeconds(iso: string | undefined): number {

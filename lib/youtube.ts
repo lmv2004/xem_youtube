@@ -71,10 +71,50 @@ function putInCache<T>(key: string, data: T, ttlSeconds = 600): void {
   memoryCache.set(key, { data, expiresAt: Date.now() + ttlSeconds * 1000 });
 }
 
+function getKeys(): string[] {
+  const raw = process.env.YOUTUBE_API_KEY?.trim() || "";
+  return raw
+    .split(",")
+    .map((k) => k.trim().replace(/^["']|["']$/g, ""))
+    .filter(Boolean);
+}
+
+let currentKeyIndex = 0;
+
 function ensureKey(): string {
-  const key = process.env.YOUTUBE_API_KEY?.trim();
-  if (!key) fail("missing-key", "Chưa cấu hình YOUTUBE_API_KEY trên máy chủ.");
-  return key!;
+  const keys = getKeys();
+  if (!keys.length) fail("missing-key", "Chưa cấu hình YOUTUBE_API_KEY trên máy chủ.");
+  return keys[currentKeyIndex % keys.length];
+}
+
+function rotateKey(): void {
+  const keys = getKeys();
+  if (keys.length > 1) {
+    currentKeyIndex = (currentKeyIndex + 1) % keys.length;
+  }
+}
+
+async function fetchYouTubeWithRetry(
+  buildUrl: (key: string) => URL,
+  actionName: string,
+): Promise<Response> {
+  const keys = getKeys();
+  const maxAttempts = Math.max(1, keys.length);
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const key = ensureKey();
+    const url = buildUrl(key);
+    const res = await fetchWithTimeout(url.toString(), DEFAULT_TIMEOUT_MS);
+    if ((res.status === 403 || res.status === 429) && attempt < maxAttempts - 1) {
+      rotateKey();
+      continue;
+    }
+    if (!res.ok) {
+      fail("upstream-error", `YouTube từ chối yêu cầu ${actionName} (HTTP ${res.status}).`);
+    }
+    return res;
+  }
+  fail("upstream-error", `YouTube từ chối yêu cầu ${actionName}.`);
 }
 
 // Parse ISO-8601 duration (PT#H#M#S) → seconds. Returns 0 on malformed input.
@@ -185,21 +225,18 @@ export async function searchVideos(topic: string): Promise<VideoItem[]> {
   const cached = getFromCache<VideoItem[]>(cacheKey);
   if (cached) return cached;
 
-  const key = ensureKey();
+  const searchRes = await fetchYouTubeWithRetry((k) => {
+    const searchUrl = new URL(SEARCH_ENDPOINT);
+    searchUrl.searchParams.set("part", "snippet");
+    searchUrl.searchParams.set("type", "video");
+    searchUrl.searchParams.set("maxResults", String(MAX_RESULTS));
+    searchUrl.searchParams.set("q", topic);
+    searchUrl.searchParams.set("relevanceLanguage", "vi");
+    searchUrl.searchParams.set("safeSearch", "none");
+    searchUrl.searchParams.set("key", k);
+    return searchUrl;
+  }, "tìm kiếm");
 
-  const searchUrl = new URL(SEARCH_ENDPOINT);
-  searchUrl.searchParams.set("part", "snippet");
-  searchUrl.searchParams.set("type", "video");
-  searchUrl.searchParams.set("maxResults", String(MAX_RESULTS));
-  searchUrl.searchParams.set("q", topic);
-  searchUrl.searchParams.set("relevanceLanguage", "vi");
-  searchUrl.searchParams.set("safeSearch", "none");
-  searchUrl.searchParams.set("key", key);
-
-  const searchRes = await fetchWithTimeout(searchUrl.toString(), DEFAULT_TIMEOUT_MS);
-  if (!searchRes.ok) {
-    fail("upstream-error", `YouTube từ chối yêu cầu tìm kiếm (HTTP ${searchRes.status}).`);
-  }
   const searchJson = (await searchRes.json()) as {
     items?: SearchListItem[];
     error?: { message?: string; code?: number };
@@ -213,15 +250,14 @@ export async function searchVideos(topic: string): Promise<VideoItem[]> {
     .filter((id): id is string => typeof id === "string" && id.length > 0);
   if (ids.length === 0) return [];
 
-  const videosUrl = new URL(VIDEOS_ENDPOINT);
-  videosUrl.searchParams.set("part", "statistics,contentDetails,snippet,status");
-  videosUrl.searchParams.set("id", ids.join(","));
-  videosUrl.searchParams.set("key", key);
+  const videosRes = await fetchYouTubeWithRetry((k) => {
+    const videosUrl = new URL(VIDEOS_ENDPOINT);
+    videosUrl.searchParams.set("part", "statistics,contentDetails,snippet,status");
+    videosUrl.searchParams.set("id", ids.join(","));
+    videosUrl.searchParams.set("key", k);
+    return videosUrl;
+  }, "chi tiết video");
 
-  const videosRes = await fetchWithTimeout(videosUrl.toString(), DEFAULT_TIMEOUT_MS);
-  if (!videosRes.ok) {
-    fail("upstream-error", `YouTube từ chối yêu cầu chi tiết video (HTTP ${videosRes.status}).`);
-  }
   const videosJson = (await videosRes.json()) as {
     items?: VideosListItem[];
     error?: { message?: string; code?: number };
@@ -286,17 +322,13 @@ export async function getVideoById(id: string): Promise<VideoItem | null> {
   const cached = getFromCache<VideoItem>(cacheKey);
   if (cached) return cached;
 
-  const key = ensureKey();
-
-  const url = new URL(VIDEOS_ENDPOINT);
-  url.searchParams.set("part", "statistics,contentDetails,snippet,status");
-  url.searchParams.set("id", cleanId);
-  url.searchParams.set("key", key);
-
-  const res = await fetchWithTimeout(url.toString(), DEFAULT_TIMEOUT_MS);
-  if (!res.ok) {
-    fail("upstream-error", `YouTube từ chối yêu cầu video (HTTP ${res.status}).`);
-  }
+  const res = await fetchYouTubeWithRetry((k) => {
+    const url = new URL(VIDEOS_ENDPOINT);
+    url.searchParams.set("part", "statistics,contentDetails,snippet,status");
+    url.searchParams.set("id", cleanId);
+    url.searchParams.set("key", k);
+    return url;
+  }, "video");
   const json = (await res.json()) as {
     items?: VideosListItem[];
     error?: { message?: string; code?: number };
@@ -342,19 +374,16 @@ export async function listTrending(regionCode: string, maxResults = MAX_RESULTS)
   const cached = getFromCache<VideoItem[]>(cacheKey);
   if (cached) return cached;
 
-  const key = ensureKey();
+  const res = await fetchYouTubeWithRetry((k) => {
+    const url = new URL(VIDEOS_ENDPOINT);
+    url.searchParams.set("part", "statistics,contentDetails,snippet,status");
+    url.searchParams.set("chart", "mostPopular");
+    url.searchParams.set("regionCode", normRegion);
+    url.searchParams.set("maxResults", String(maxResults));
+    url.searchParams.set("key", k);
+    return url;
+  }, "trending");
 
-  const url = new URL(VIDEOS_ENDPOINT);
-  url.searchParams.set("part", "statistics,contentDetails,snippet,status");
-  url.searchParams.set("chart", "mostPopular");
-  url.searchParams.set("regionCode", normRegion);
-  url.searchParams.set("maxResults", String(maxResults));
-  url.searchParams.set("key", key);
-
-  const res = await fetchWithTimeout(url.toString(), DEFAULT_TIMEOUT_MS);
-  if (!res.ok) {
-    fail("upstream-error", `YouTube từ chối yêu cầu trending (HTTP ${res.status}).`);
-  }
   const json = (await res.json()) as {
     items?: VideosListItem[];
     error?: { message?: string; code?: number };
@@ -414,7 +443,14 @@ export async function getRelatedVideos(video: VideoItem, maxResults = 10): Promi
       .join(" ");
 
     const query = words || video.channel;
-    const searchResults = await searchVideos(query);
+    let searchResults: VideoItem[] = [];
+    try {
+      searchResults = await searchVideos(query);
+    } catch {
+      try {
+        if (video.channel) searchResults = await searchVideos(video.channel);
+      } catch {}
+    }
     const related = searchResults.filter((it) => it.id !== video.id);
 
     if (related.length >= maxResults) {
@@ -424,13 +460,19 @@ export async function getRelatedVideos(video: VideoItem, maxResults = 10): Promi
     }
 
     // Supplement with trending if needed
-    const trending = await listTrending("VN", 12);
+    let trending: VideoItem[] = [];
+    try {
+      trending = await listTrending("VN", 12);
+    } catch {}
+
     const combined = [
       ...related,
       ...trending.filter((t) => t.id !== video.id && !related.some((r) => r.id === t.id)),
     ];
     const result = combined.slice(0, maxResults);
-    putInCache(cacheKey, result, 900);
+    if (result.length > 0) {
+      putInCache(cacheKey, result, 900);
+    }
     return result;
   } catch {
     return [];
