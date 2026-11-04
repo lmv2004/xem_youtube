@@ -1,4 +1,5 @@
 "use client";
+import type { StageLighting } from "@/lib/stage-lighting";
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { RoomStageState } from "@/lib/room-stage";
@@ -111,6 +112,7 @@ export function useRoomStage({
           if (successMessage) {
             toast.success(successMessage);
           }
+          return true;
         } else {
           const err = await res.json().catch(() => ({}));
           toast.error(err.message || "Không thể thực hiện hành động trên sân khấu");
@@ -134,6 +136,8 @@ export function useRoomStage({
     },
     [sendStageAction, getEffectiveClientId],
   );
+
+  const setLighting = useCallback(async (lighting: StageLighting) => Boolean(await sendStageAction({ action: "set_lighting", lighting })), [sendStageAction]);
 
   const setLimit = useCallback(
     async (maxParticipants: number) => {
@@ -255,6 +259,7 @@ export function useRoomStage({
     myParticipant,
     toggleStage,
     setLimit,
+    setLighting,
     requestJoin,
     cancelRequest,
     approveRequest,

@@ -2481,7 +2481,7 @@
   },
   "Đang lưu…": {
     "en": "Saving…",
-    "te": "సేవ్ చేస్తోంది…"
+    "te": "సేవ్ అవుతోంది…"
   },
   "Thư viện của bạn": {
     "en": "Your library",
@@ -3102,5 +3102,121 @@
   "Dán link YouTube ở trên hoặc tìm video để thêm vào hàng đợi.": {
     "en": "Paste a YouTube link above or find a video to add to the queue.",
     "te": "పైన YouTube లింక్‌ను పేస్ట్ చేయండి లేదా క్యూలో జోడించడానికి వీడియోను వెతకండి."
+  },
+  "Tia quét": {
+    "en": "Sweeping beams",
+    "te": "కదిలే కిరణాలు"
+  },
+  "Đèn rọi": {
+    "en": "Spotlights",
+    "te": "స్పాట్‌లైట్లు"
+  },
+  "Phủ sáng": {
+    "en": "Wash lights",
+    "te": "విస్తృత కాంతులు"
+  },
+  "Tím · Xanh ngọc": {
+    "en": "Violet · Teal",
+    "te": "ఊదా · నీలి ఆకుపచ్చ"
+  },
+  "Hoàng hôn": {
+    "en": "Sunset",
+    "te": "సూర్యాస్తమయం"
+  },
+  "Đại dương": {
+    "en": "Ocean",
+    "te": "సముద్రం"
+  },
+  "Xanh lá": {
+    "en": "Green",
+    "te": "ఆకుపచ్చ"
+  },
+  "Đa sắc": {
+    "en": "Multicolor",
+    "te": "బహుళ రంగులు"
+  },
+  "Tĩnh": {
+    "en": "Static",
+    "te": "స్థిరం"
+  },
+  "Chậm": {
+    "en": "Slow",
+    "te": "నెమ్మదిగా"
+  },
+  "Vừa": {
+    "en": "Medium",
+    "te": "మధ్యస్థం"
+  },
+  "Nhanh": {
+    "en": "Fast",
+    "te": "వేగంగా"
+  },
+  "Không chớp": {
+    "en": "No pulsing",
+    "te": "పల్స్ లేదు"
+  },
+  "Chớp chậm": {
+    "en": "Slow pulse",
+    "te": "నెమ్మది పల్స్"
+  },
+  "Chớp vừa": {
+    "en": "Medium pulse",
+    "te": "మధ్యస్థ పల్స్"
+  },
+  "Chớp nhanh": {
+    "en": "Fast pulse",
+    "te": "వేగవంతమైన పల్స్"
+  },
+  "Kiểu đèn": {
+    "en": "Light type",
+    "te": "కాంతి రకం"
+  },
+  "Bảng màu": {
+    "en": "Color palette",
+    "te": "రంగుల పట్టిక"
+  },
+  "Tốc độ quét": {
+    "en": "Sweep speed",
+    "te": "కదలిక వేగం"
+  },
+  "Nhịp chớp": {
+    "en": "Pulse speed",
+    "te": "పల్స్ వేగం"
+  },
+  "Đã cập nhật ánh sáng": {
+    "en": "Lighting updated",
+    "te": "లైటింగ్ నవీకరించబడింది"
+  },
+  "Không lưu được ánh sáng. Hãy thử lại.": {
+    "en": "Could not save lighting. Please try again.",
+    "te": "లైటింగ్ సేవ్ కాలేదు. మళ్లీ ప్రయత్నించండి."
+  },
+  "Ánh sáng sân khấu": {
+    "en": "Stage lighting",
+    "te": "వేదిక లైటింగ్"
+  },
+  "Xem thử bên dưới. Bấm Áp dụng để cập nhật cho cả phòng.": {
+    "en": "Preview below. Apply to update lighting for everyone in the room.",
+    "te": "క్రింద ముందుగా చూడండి. గదిలో అందరికీ నవీకరించడానికి వర్తింపజేయండి."
+  },
+  "Xem trước": {
+    "en": "Preview",
+    "te": "ముందుగా చూడండి"
+  },
+  "Độ sáng": {
+    "en": "Brightness",
+    "te": "ప్రకాశం"
+  },
+  "Chế độ giảm chuyển động trên thiết bị sẽ luôn dùng ánh sáng tĩnh.": {
+    "en": "Your device’s reduced-motion setting always uses static lighting.",
+    "te": "మీ పరికరంలో చలనాన్ని తగ్గించే సెట్టింగ్ స్థిర లైటింగ్‌ను ఉపయోగిస్తుంది."
+  },
+  "Hủy thay đổi": {
+    "en": "Discard changes",
+    "te": "మార్పులను విస్మరించండి"
+  },
+  "Áp dụng": {
+    "en": "Apply",
+    "te": "వర్తింపజేయండి"
   }
 }

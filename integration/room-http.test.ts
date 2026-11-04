@@ -106,6 +106,11 @@ test("HTTP viewers join, chat, contribute under host control and recover without
     assert.equal((await sync(false)).stage?.participants.length, 2);
     const persistedStage = await fetch(`${origin}/api/rooms/${code}/stage`);
     assert.equal((await persistedStage.json()).participants.length, 2);
+    const lighting = { type: "wash", palette: "sunset", motion: "medium", pulse: "slow", brightness: 80 };
+    assert.equal((await stageAction(false, { action: "set_lighting", lighting })).status, 403);
+    assert.equal((await stageAction(true, { action: "set_lighting", lighting: { ...lighting, brightness: 150 } })).status, 400);
+    assert.equal((await stageAction(true, { action: "set_lighting", lighting })).status, 200);
+    assert.deepEqual((await sync(false)).stage?.lighting, lighting);
     const afterStage = await prisma.room.findUniqueOrThrow({ where: { id: room.id } });
     assert.equal((afterStage.stage as { participants: unknown[] }).participants.length, 2, "stage is persisted, not process-local");
     assert.equal(afterStage.lastSyncAt.toISOString(), stageAnchor.lastSyncAt.toISOString());
