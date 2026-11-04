@@ -373,3 +373,23 @@ html[lang="te"] .font-display {
   animation: stage-beam-center 3s ease-in-out infinite;
   transform-origin: top center;
 }
+
+/* A self-contained concert surface; light beams never intercept the player. */
+.concert-screen-frame {
+  position: relative;
+  background-image: radial-gradient(ellipse at 10% 0%, #7261bd24, transparent 48%), radial-gradient(ellipse at 90% 0%, #3c9aa51c, transparent 48%);
+  box-shadow: inset 0 1px 0 #ffffff0a;
+}
+.concert-deck { margin-top: 0 !important; }
+.concert-floor { background: #0b0c13; min-height: 250px; }
+.concert-rig { position: absolute; z-index: 0; top: 12px; left: 7%; right: 7%; height: 12px; display: flex; justify-content: space-between; border-block: 1px solid #ffffff20; background: repeating-linear-gradient(45deg, transparent 0 10px, #ffffff0c 10px 12px); }
+.concert-fixture { position: relative; width: 22px; height: 12px; border: 2px solid #343543; border-radius: 3px 3px 7px 7px; background: #b7a5fa; box-shadow: 0 4px 14px #b7a5fa66; }
+.concert-fixture:nth-child(even) { background: #70c9d0; box-shadow: 0 4px 14px #70c9d066; }
+.concert-beam { position: absolute; pointer-events: none; top: 7px; left: 50%; width: 160px; height: 310px; margin-left: -80px; transform-origin: 50% 0; clip-path: polygon(47% 0,53% 0,100% 100%,0 100%); background: linear-gradient(#b7a5fa45, #b7a5fa08 80%, transparent); opacity: .6; animation: concert-sweep 11s ease-in-out infinite alternate; }
+.concert-beam-1, .concert-beam-3 { background: linear-gradient(#70c9d045,#70c9d008 80%,transparent); animation-direction: alternate-reverse; }
+.concert-beam-1 { animation-delay: -4s; }.concert-beam-2 { animation-delay: -8s; }.concert-beam-3 { animation-delay: -2s; }.concert-beam-4 { animation-delay: -6s; }
+.concert-backdrop { position: absolute; pointer-events: none; inset: 42% -10% -60%; opacity: .45; transform: perspective(240px) rotateX(45deg); background-image: linear-gradient(#9b88d91c 1px,transparent 1px),linear-gradient(90deg,#9b88d91c 1px,transparent 1px); background-size: 48px 30px; mask-image: linear-gradient(transparent,#000 45%); }
+.concert-podium { height: 9px; width: 80%; border-radius: 50%; background: #a596dd40; border: 1px solid #c0b2fa50; box-shadow: 0 5px 16px #9981d52b; }
+.concert-stage-edge { position: absolute; pointer-events: none; height: 4px; bottom: 0; left: 0; right: 0; background: linear-gradient(90deg,transparent,#a399ce88 30%,#78b9c088 70%,transparent); box-shadow: 0 -4px 24px #9981d52b; }
+@keyframes concert-sweep { from { transform: rotate(-22deg); } to { transform: rotate(22deg); } }
+@media (prefers-reduced-motion: reduce) { .concert-beam { animation: none; opacity: .35; } .concert-beam-0,.concert-beam-3 { transform: rotate(-15deg); } .concert-beam-1,.concert-beam-4 { transform: rotate(15deg); } }

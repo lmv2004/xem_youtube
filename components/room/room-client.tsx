@@ -881,7 +881,7 @@ export function RoomClient({ code }: { code: string }) {
       <div className={`relative grid items-start gap-5 ${focused && panelCollapsed ? "lg:grid-cols-[minmax(0,1fr)_44px]" : "lg:grid-cols-[minmax(0,1fr)_360px]"} ${focused ? "lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(0,1fr)]" : ""}`}>
         <div className={focused ? "min-w-0 lg:h-full lg:min-h-0 lg:overflow-y-auto space-y-3" : "relative group min-w-0 space-y-3"}>
           {!focused && <div className="ambient-glow opacity-50 dark:opacity-85" aria-hidden="true" />}
-          <div className={stageHook.stage.enabled ? "w-full rounded-t-2xl border-2 border-rose-500/40 bg-slate-950/90 p-2" : focused ? "flex min-h-0 w-full flex-1 items-center justify-center" : "w-full"}>
+          <div className={stageHook.stage.enabled ? "concert-screen-frame w-full rounded-t-2xl border border-white/10 bg-[#0c0d14] px-3 py-5 sm:px-8 sm:py-6" : focused ? "flex min-h-0 w-full flex-1 items-center justify-center" : "w-full"}>
               <SyncPlayer
                 fillHeight={focused && !stageHook.stage.enabled}
                 compact={stageHook.stage.enabled}

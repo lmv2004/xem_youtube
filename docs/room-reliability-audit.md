@@ -24,3 +24,9 @@ Additive columns only: Room.stage JSONB default {}, RoomPresence.ownerKey nullab
 - HTTP integration covers joining, chat, queue contribution/reordering/end progression, lock/rename/delete, stage persistence, host approval and rejection of impersonated commands/leave/heartbeat/stage actions.
 - Headless Edge with a simulated YouTube API verifies one player instance across stage toggles and a hidden viewer following room pause/play.
 - Real YouTube/mobile background media restrictions still require device testing; the browser regression test simulates YouTube state events.
+
+## Stage presentation follow-up
+
+Replaced the dense neon header and overlapping floor effects with a dark concert deck: a truss with five slow-moving violet/cyan light beams, perspective floor, aligned performer podiums and a separate action toolbar. Stage video keeps a responsive 16:9 screen within the available viewport. The same SyncPlayer remains mounted.
+
+Visual fixture checks in headless Edge: 0/6/12 performers at 1280px, 390px and 320px, without horizontal overflow; management and cat-selection dialogs open; reduced-motion disables beam animation; Telugu/light theme checked at 320px. Screenshots were reviewed and the temporary fixture route removed. New presentation strings include English and Telugu translations.

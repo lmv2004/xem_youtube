@@ -3026,5 +3026,53 @@
   "Nhấn để kích hoạt âm báo": {
     "en": "Tap to activate notification sounds",
     "te": "నోటిఫికేషన్ శబ్దాలను ప్రారంభించడానికి నొక్కండి"
+  },
+  "Sân khấu trực tiếp": {
+    "en": "Live stage",
+    "te": "ప్రత్యక్ష వేదిక"
+  },
+  "Cùng nghe, cùng nhảy": {
+    "en": "Listen together. Dance together.",
+    "te": "కలిసి వినండి, కలిసి నృత్యం చేయండి."
+  },
+  "{count}/{max} đang biểu diễn": {
+    "en": "{count}/{max} performing",
+    "te": "{count}/{max} ప్రదర్శిస్తున్నారు"
+  },
+  "Sân khấu đang chờ bạn": {
+    "en": "The stage is yours",
+    "te": "వేదిక మీ కోసం వేచి ఉంది"
+  },
+  "Chọn một chú mèo và cùng nhảy theo nhạc.": {
+    "en": "Choose a cat and dance along to the music.",
+    "te": "ఒక పిల్లిని ఎంచుకుని సంగీతానికి నృత్యం చేయండి."
+  },
+  "Mời {name} xuống sân khấu": {
+    "en": "Remove {name} from stage",
+    "te": "{name}ను వేదిక నుండి తొలగించండి"
+  },
+  "Lên sân khấu": {
+    "en": "Join the stage",
+    "te": "వేదికలో చేరండి"
+  },
+  "Đổi mèo": {
+    "en": "Change cat",
+    "te": "పిల్లిని మార్చండి"
+  },
+  "Rời sân khấu": {
+    "en": "Leave stage",
+    "te": "వేదికను విడిచిపెట్టండి"
+  },
+  "Đang chờ duyệt · Hủy": {
+    "en": "Awaiting approval · Cancel",
+    "te": "అనుమతి కోసం వేచి ఉంది · రద్దు"
+  },
+  "Sân khấu đã đầy": {
+    "en": "Stage is full",
+    "te": "వేదిక నిండిపోయింది"
+  },
+  "Quản lý sân khấu": {
+    "en": "Manage stage",
+    "te": "వేదికను నిర్వహించండి"
   }
 }
