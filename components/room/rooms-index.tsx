@@ -163,7 +163,8 @@ export function RoomsIndex() {
   return (
     <div className="space-y-8 animate-in-up">
       {/* A clear starting point for creating or joining a room. */}
-      <div className="rounded-2xl border border-border bg-card p-6 sm:p-8">
+      <div className="relative overflow-hidden rounded-3xl border border-border/80 bg-gradient-to-br from-card via-card/90 to-card/60 p-6 sm:p-8 shadow-xl shadow-black/5 backdrop-blur-xl">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-gradient-to-br from-rose-500/20 to-purple-500/15 blur-3xl" aria-hidden="true" />
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-2">
             <span className="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">
@@ -189,7 +190,7 @@ export function RoomsIndex() {
               }
             }}
             size="lg"
-            className="gap-2 self-start rounded-xl font-semibold sm:self-auto"
+            className="gap-2 self-start rounded-xl font-semibold sm:self-auto bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/30 active:scale-95 transition-all"
           >
             <Plus className="h-4 w-4" />
             <span>{t("Tạo phòng mới")}</span>
@@ -199,7 +200,7 @@ export function RoomsIndex() {
 
       {/* Grid: Join with code + How it works */}
       <div className="grid gap-6 md:grid-cols-12">
-        <div className="space-y-4 rounded-2xl border border-border bg-card p-6 md:col-span-7">
+        <div className="space-y-4 rounded-3xl border border-border/80 bg-card/60 backdrop-blur-md p-6 md:col-span-7 shadow-xs">
           <div className="flex items-center gap-2">
             <Radio className="h-4 w-4 text-primary" />
             <h2 className="font-display text-base font-bold text-foreground">
@@ -239,7 +240,7 @@ export function RoomsIndex() {
           </p>
         </div>
 
-        <div className="space-y-3 rounded-2xl border border-border bg-card p-6 md:col-span-5">
+        <div className="space-y-3 rounded-3xl border border-border/80 bg-card/60 backdrop-blur-md p-6 md:col-span-5 shadow-xs">
           <div className="flex items-center gap-2 text-primary font-bold text-sm">
             <Sparkles className="h-4 w-4" />
             <span>{t("Đồng bộ phát video thông minh")}</span>
@@ -328,7 +329,7 @@ export function RoomsIndex() {
             {rooms.map((r) => (
               <div
                 key={r.code}
-                className="min-w-0 rounded-2xl border bg-card p-3"
+                className="min-w-0 rounded-2xl border border-border/80 bg-card/60 backdrop-blur-md p-3.5 transition-all duration-300 hover:border-rose-500/40 hover:bg-card hover:shadow-xl hover:shadow-rose-500/5 hover:-translate-y-0.5"
               >
                 <Link
                   href={"/rooms/" + r.code}

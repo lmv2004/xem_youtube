@@ -19,17 +19,23 @@ import {
   Search,
   ListPlus,
   Unlock,
+  Share2,
+  MessageSquare,
+  Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Glass } from "@/components/ui/glass";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 import { SyncPlayer, type SyncPlayerHandle } from "./sync-player";
 import { RoomChat } from "./room-chat";
 import { RoomMembers } from "./room-members";
 import { RoomSearch } from "./room-search";
 import { RoomRelatedVideos } from "./room-related-videos";
 import { RoomQueue } from "./room-queue";
+import { RoomStage } from "./room-stage";
+import { useRoomStage } from "@/hooks/use-room-stage";
 import { RenameRoomButton } from "./rename-room-button";
 import { DeleteRoomButton } from "./delete-room-button";
 import { JoinGate } from "./join-gate";
@@ -155,6 +161,15 @@ export function RoomClient({ code }: { code: string }) {
     ? sync.allowQueueAdds
     : (room?.allowQueueAdds ?? false);
   const canEnqueue = canAddToQueue({ hostOnlyControl, allowQueueAdds, isHost });
+
+  const stageHook = useRoomStage({
+    code,
+    clientId: identity.clientId,
+    isHost,
+    displayName: identity.name,
+    avatarUrl: session?.user?.image,
+    disabled: !joined || !identity.hydrated || sync.isOffline,
+  });
 
   // Player callbacks may be bound once, so read the live value from a ref.
   const canControlRef = useRef(canControl);
@@ -634,172 +649,210 @@ export function RoomClient({ code }: { code: string }) {
 
   return (
     <div className={focused ? "fixed inset-0 z-50 overflow-y-auto bg-background p-3 sm:p-5 lg:flex lg:flex-col lg:gap-3" : "space-y-5"}>
-      <Glass
-        intensity="strong"
-        className={focused ? "hidden" : "flex flex-wrap items-center gap-3 p-3 sm:p-4"}
-      >
-        <Button
-          type="button"
-          variant="secondary"
-          className="gap-2 font-mono tracking-wider"
-          onClick={() => void copyCode()}
-          aria-label={t("Sao chép mã phòng {p0}", { p0: room.code })}
-        >
-          <Radio className="h-4 w-4 text-primary" /> {room.code}
-          <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-        </Button>
+      {/* Room Navigation & Top Control Bar */}
+      {!focused && (
+        <div className="rounded-2xl border border-border/80 bg-card/85 backdrop-blur-xl p-3 sm:p-4 shadow-sm transition-all flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          {/* Left: Live status, Room Code, Title, Host & Members */}
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="flex items-center gap-1.5 rounded-full bg-rose-500/10 border border-rose-500/25 px-2.5 py-1 text-[11px] font-bold text-rose-500 shrink-0 shadow-2xs">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+              </span>
+              <span>LIVE</span>
+            </div>
 
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1">
-            <h1
-              className="line-clamp-1 text-base font-semibold"
-              title={roomTitle}
-            >
-              {roomTitle}
-            </h1>
-            {isHost && (
-              <RenameRoomButton
-                title={roomTitle}
-                disabled={sync.isOffline}
-                onSave={async (title) => {
-                  applyPlayback(
-                    (await sendCommand({
-                      type: "rename",
-                      title,
-                    })) as RoomPlaybackUpdate,
-                  );
-                }}
-              />
-            )}
-          </div>
-          <div className="flex flex-wrap items-center gap-x-3">
-            <RoomMembers
-              members={sync.members}
-              myClientId={identity.clientId}
-            />
-            <span className="text-xs text-muted-foreground">
-              {isHost
-                ? t("Bạn là chủ phòng")
-                : t("Chủ phòng: {p0}", {
-                    p0: room.host.name ?? t("Người dùng"),
-                  })}
-            </span>
-          </div>
-        </div>
-
-        <details className="group w-full lg:w-auto">
-          <summary className="cursor-pointer rounded-lg border border-border px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2">{t("Tùy chọn phòng")}</summary>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-          {isHost ? (
-            <Button
+            <button
               type="button"
-              size="sm"
-              variant={hostOnlyControl ? "default" : "outline"}
-              disabled={lockPending || queuePermissionPending || sync.isOffline}
-              onClick={() => void toggleLock()}
-              title={
-                hostOnlyControl
-                  ? t("Đang khoá — bấm để mở cho mọi người")
-                  : t("Mọi người đều điều khiển được — bấm để khoá")
-              }
+              className="group flex items-center gap-1.5 rounded-full border border-border/80 bg-muted/60 hover:bg-muted px-3 py-1 font-mono text-xs font-bold tracking-wider hover:border-rose-500/40 transition-all active:scale-95 shadow-2xs shrink-0"
+              onClick={() => void copyCode()}
+              title={t("Sao chép mã phòng")}
+              aria-label={t("Sao chép mã phòng {p0}", { p0: room.code })}
             >
-              {lockPending ? (
-                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-              ) : hostOnlyControl ? (
-                <Lock className="mr-1 h-4 w-4" />
-              ) : (
-                <Unlock className="mr-1 h-4 w-4" />
-              )}
-              {hostOnlyControl ? t("Chỉ chủ phòng") : t("Mọi người")}
-            </Button>
-          ) : hostOnlyControl ? (
-            <Badge className="bg-amber-500/15 text-foreground ring-1 ring-amber-500/30">
-              <Lock className="mr-1 h-3 w-3" /> {t("Chủ phòng đang khoá")}{" "}
-            </Badge>
-          ) : null}
+              <Radio className="h-3.5 w-3.5 text-rose-500 group-hover:animate-pulse" />
+              <span>{room.code}</span>
+              <Copy className="h-3 w-3 text-muted-foreground group-hover:text-foreground" />
+            </button>
 
-          {hostOnlyControl &&
-            (isHost ? (
+            <div className="min-w-0 flex items-center gap-2">
+              <h1
+                className="line-clamp-1 text-sm sm:text-base font-bold text-foreground"
+                title={roomTitle}
+              >
+                {roomTitle}
+              </h1>
+              {isHost && (
+                <RenameRoomButton
+                  title={roomTitle}
+                  disabled={sync.isOffline}
+                  onSave={async (title) => {
+                    applyPlayback(
+                      (await sendCommand({
+                        type: "rename",
+                        title,
+                      })) as RoomPlaybackUpdate,
+                    );
+                  }}
+                />
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 border-l border-border/60 pl-3">
+              <RoomMembers
+                members={sync.members}
+                myClientId={identity.clientId}
+              />
+              <span className="hidden sm:inline text-xs text-muted-foreground">
+                {isHost
+                  ? t("Bạn là chủ phòng")
+                  : t("Chủ: {p0}", {
+                      p0: room.host.name ?? t("Người dùng"),
+                    })}
+              </span>
+            </div>
+          </div>
+
+          {/* Right: Quick Action Toolbar */}
+          <div className="flex flex-wrap items-center gap-1.5 shrink-0 justify-end">
+            {/* Host lock control */}
+            {isHost && (
+              <Button
+                type="button"
+                size="sm"
+                variant={hostOnlyControl ? "default" : "outline"}
+                disabled={lockPending || queuePermissionPending || sync.isOffline}
+                onClick={() => void toggleLock()}
+                className={cn(
+                  "rounded-full gap-1.5 h-8 text-xs font-semibold shadow-2xs transition-all",
+                  hostOnlyControl && "bg-rose-600 hover:bg-rose-500 text-white"
+                )}
+                title={
+                  hostOnlyControl
+                    ? t("Đang khoá — bấm để mở cho mọi người")
+                    : t("Mọi người đều điều khiển được — bấm để khoá")
+                }
+              >
+                {lockPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : hostOnlyControl ? (
+                  <Lock className="h-3.5 w-3.5" />
+                ) : (
+                  <Unlock className="h-3.5 w-3.5" />
+                )}
+                <span>{hostOnlyControl ? t("Chỉ chủ phòng") : t("Mở điều khiển")}</span>
+              </Button>
+            )}
+
+            {/* Host allow queue adds */}
+            {hostOnlyControl && isHost && (
               <Button
                 type="button"
                 size="sm"
                 variant={allowQueueAdds ? "secondary" : "outline"}
                 aria-pressed={allowQueueAdds}
-                aria-busy={queuePermissionPending}
                 disabled={lockPending || queuePermissionPending || sync.isOffline}
                 onClick={() => void toggleQueueContributions()}
-                title={t(
-                  "Thành viên chỉ được thêm video; chủ phòng giữ quyền điều khiển và quản lý hàng đợi.",
-                )}
+                className="rounded-full gap-1.5 h-8 text-xs font-semibold shadow-2xs transition-all"
+                title={t("Thành viên chỉ được thêm video; chủ phòng giữ quyền điều khiển và quản lý hàng đợi.")}
               >
                 {queuePermissionPending ? (
-                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <ListPlus className="mr-1 h-4 w-4" />
+                  <ListPlus className="h-3.5 w-3.5 text-purple-500" />
                 )}
-                {t("Cho mọi người thêm video")}
-                {allowQueueAdds && <Check className="ml-1 h-4 w-4" />}
+                <span>{t("Cho thêm video")}</span>
+                {allowQueueAdds && <Check className="h-3.5 w-3.5 text-rose-500" />}
               </Button>
-            ) : allowQueueAdds ? (
-              <Badge variant="secondary">
-                <ListPlus className="mr-1 h-3 w-3" />
-                {t("Bạn có thể thêm video")}
-              </Badge>
-            ) : null)}
+            )}
 
-          {isHost && (
-            <DeleteRoomButton
-              code={code}
-              title={roomTitle}
-              onDeleted={() => {
-                try {
-                  window.localStorage.removeItem(getRoomJoinedKey(code));
-                } catch {
-                  /* Storage is optional (private mode). */
-                }
-                void leave();
-                router.replace("/rooms");
-              }}
-            />
-          )}
-          <Button type="button" size="sm" variant="outline" onClick={copyLink}>
-            {copied ? (
-              <>
-                <Check className="mr-1 h-4 w-4" /> {t("Đã chép")}{" "}
-              </>
-            ) : (
-              <>
-                <Copy className="mr-1 h-4 w-4" /> {t("Chia sẻ link")}{" "}
-              </>
+            {/* Host Dance Stage Toggle */}
+            {isHost && (
+              <Button
+                type="button"
+                size="sm"
+                variant={stageHook.stage.enabled ? "default" : "outline"}
+                onClick={() => void stageHook.toggleStage(!stageHook.stage.enabled)}
+                className={cn(
+                  "rounded-full gap-1.5 h-8 text-xs font-semibold shadow-2xs transition-all",
+                  stageHook.stage.enabled
+                    ? "bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white shadow-rose-600/25"
+                    : "hover:border-rose-500/40 hover:text-rose-500"
+                )}
+                title={stageHook.stage.enabled ? t("Tắt sân khấu mèo nhảy") : t("Bật sân khấu mèo nhảy")}
+              >
+                <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+                <span>{stageHook.stage.enabled ? t("Sân khấu: Bật") : t("Bật sân khấu")}</span>
+              </Button>
             )}
-          </Button>
-          <Button asChild size="sm" variant="ghost">
-            <Link
-              href={video.watchUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+
+            {/* Share room link */}
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={copyLink}
+              className="rounded-full gap-1.5 h-8 text-xs font-semibold hover:border-rose-500/40 hover:bg-rose-500/10 hover:text-rose-500 shadow-2xs transition-all"
             >
-              <ExternalLink className="mr-1 h-4 w-4" /> YouTube
-            </Link>
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            className="text-destructive hover:text-destructive"
-            disabled={leaving}
-            onClick={() => void handleLeave()}
-          >
-            {leaving ? (
-              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-            ) : (
-              <LogOut className="mr-1 h-4 w-4" />
+              {copied ? (
+                <>
+                  <Check className="h-3.5 w-3.5 text-rose-500" />
+                  <span>{t("Đã chép link")}</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="h-3.5 w-3.5" />
+                  <span>{t("Chia sẻ")}</span>
+                </>
+              )}
+            </Button>
+
+            {/* YouTube link */}
+            <Button asChild size="sm" variant="ghost" className="rounded-full h-8 text-xs text-muted-foreground hover:text-foreground">
+              <Link
+                href={video.watchUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="gap-1"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                <span>YouTube</span>
+              </Link>
+            </Button>
+
+            {/* Delete room (host only) */}
+            {isHost && (
+              <DeleteRoomButton
+                code={code}
+                title={roomTitle}
+                onDeleted={() => {
+                  try {
+                    window.localStorage.removeItem(getRoomJoinedKey(code));
+                  } catch {}
+                  void leave();
+                  router.replace("/rooms");
+                }}
+              />
             )}
-            {t("Rời phòng")}{" "}
-          </Button>
+
+            {/* Leave room */}
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="rounded-full h-8 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+              disabled={leaving}
+              onClick={() => void handleLeave()}
+            >
+              {leaving ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <LogOut className="h-3.5 w-3.5" />
+              )}
+              <span>{t("Rời phòng")}</span>
+            </Button>
           </div>
-        </details>
-      </Glass>
+        </div>
+      )}
 
       {sync.isOffline && !sync.hasConnected && !sync.isClosed ? (
         <p
@@ -823,9 +876,11 @@ export function RoomClient({ code }: { code: string }) {
       ) : null}
 
       <div className={`relative grid items-start gap-5 ${focused && panelCollapsed ? "lg:grid-cols-[minmax(0,1fr)_44px]" : "lg:grid-cols-[minmax(0,1fr)_360px]"} ${focused ? "lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(0,1fr)]" : ""}`}>
-        <div className={focused ? "min-w-0 lg:h-full lg:min-h-0" : "min-w-0 space-y-3"}>
+        <div className={focused ? "min-w-0 lg:h-full lg:min-h-0 lg:overflow-y-auto space-y-3" : "relative group min-w-0 space-y-3"}>
+          {!focused && <div className="ambient-glow opacity-50 dark:opacity-85" aria-hidden="true" />}
           <SyncPlayer
-            fillHeight={focused}
+            fillHeight={focused && !stageHook.stage.enabled}
+            compact={stageHook.stage.enabled}
             videoId={room.video.videoId}
             onReady={(handle) => {
               handleRef.current = handle;
@@ -858,11 +913,80 @@ export function RoomClient({ code }: { code: string }) {
             }}
           />
 
-          <div className={focused ? "hidden" : undefined}>
-            <h2 className="text-base font-semibold leading-snug sm:text-lg">
-              {video.title}
-            </h2>
-          </div>
+          {/* Sân Khấu Mèo Nhảy */}
+          <RoomStage
+            stage={stageHook.stage}
+            messages={sync.messages}
+            isHost={isHost}
+            isOnStage={stageHook.isOnStage}
+            isPendingApproval={stageHook.isPendingApproval}
+            onToggleStage={stageHook.toggleStage}
+            onSetLimit={stageHook.setLimit}
+            onRequestJoin={stageHook.requestJoin}
+            onCancelRequest={stageHook.cancelRequest}
+            onApproveRequest={stageHook.approveRequest}
+            onRejectRequest={stageHook.rejectRequest}
+            onApproveAll={stageHook.approveAll}
+            onLeaveStage={stageHook.leave}
+            onClearStage={stageHook.clear}
+          />
+
+          {!focused && (
+            <div className="rounded-2xl border border-border/80 bg-card/70 backdrop-blur-xl p-4 shadow-xs space-y-3">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-rose-500/20 to-purple-500/20 text-rose-500 font-bold border border-rose-500/20 text-sm">
+                    {(video.channel || "V").slice(0, 1).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="text-base sm:text-lg font-bold leading-snug text-foreground">
+                      {video.title}
+                    </h2>
+                    <p className="mt-0.5 text-xs text-muted-foreground flex items-center gap-1.5">
+                      <span className="font-medium text-foreground/90">{video.channel}</span>
+                      <span>•</span>
+                      <span className="inline-flex items-center gap-1 text-emerald-500 font-semibold">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        {t("Đồng bộ realtime")}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full gap-1.5 h-8 px-3 text-xs font-semibold shadow-2xs hover:bg-muted hover:border-rose-500/40 hover:text-rose-500 transition-all"
+                    onClick={() => setFocused(true)}
+                  >
+                    <Maximize2 className="h-3.5 w-3.5 text-rose-500" />
+                    <span>{t("Giản lược")}</span>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Activity / Control Status pill */}
+              <div className="pt-2 border-t border-border/50 flex flex-wrap items-center justify-between gap-2 text-xs">
+                {canControl ? (
+                  <p className="text-muted-foreground flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-rose-500" />
+                    {activity
+                      ? activity
+                      : hostOnlyControl
+                        ? t("Bạn đang khoá phòng: chỉ bạn điều khiển được.")
+                        : t("Mọi người đều có thể phát, tạm dừng, tua và đổi video.")}
+                  </p>
+                ) : (
+                  <p className="flex items-center gap-1.5 text-amber-500 font-medium">
+                    <Lock className="h-3.5 w-3.5 shrink-0" />
+                    <span>{t("Chủ phòng đang khoá điều khiển.")} {activity ? activity + "." : ""}</span>
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className={focused
             ? `sticky bottom-0 z-[60] flex justify-end gap-2 bg-background py-2 lg:absolute lg:right-0 lg:py-0 ${panelCollapsed ? "lg:flex-col" : ""}`
@@ -930,35 +1054,39 @@ export function RoomClient({ code }: { code: string }) {
           className={focused && panelCollapsed ? "hidden" : `min-w-0 space-y-2 ${focused ? "lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:pb-14" : ""}`}
         >
           <TabsList
-            className="grid h-12 w-full shrink-0 grid-cols-3 rounded-xl p-1"
+            className="grid h-11 w-full shrink-0 grid-cols-3 rounded-full bg-muted/70 p-1 border border-border/80 backdrop-blur-md"
             aria-label={t("Hoạt động trong phòng")}
           >
             <TabsTrigger
               value="chat"
-              className="h-10 min-w-0 gap-1.5 rounded-lg px-2 text-xs sm:text-sm"
+              className="h-9 min-w-0 gap-1.5 rounded-full px-2 text-xs sm:text-sm font-semibold transition-all data-[state=active]:bg-rose-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-rose-600/30"
             >
-
+              <MessageSquare className="h-3.5 w-3.5 shrink-0" />
               <span className="truncate">{t("Trò chuyện")}</span>
-              {unreadMessages > 0 && <span className="shrink-0 rounded-full bg-primary px-1.5 text-[10px] leading-5 text-primary-foreground" aria-label={t("{count} tin nhắn mới", { count: unreadMessages })}>{unreadMessages > 99 ? "99+" : unreadMessages}</span>}
+              {unreadMessages > 0 && (
+                <span className="shrink-0 rounded-full bg-white/25 px-1.5 text-[10px] font-bold leading-4" aria-label={t("{count} tin nhắn mới", { count: unreadMessages })}>
+                  {unreadMessages > 99 ? "99+" : unreadMessages}
+                </span>
+              )}
             </TabsTrigger>
             <TabsTrigger
               value="search"
-              className="h-10 min-w-0 gap-1.5 rounded-lg px-2 text-xs sm:text-sm"
+              className="h-9 min-w-0 gap-1.5 rounded-full px-2 text-xs sm:text-sm font-semibold transition-all data-[state=active]:bg-rose-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-rose-600/30"
             >
               {canControl ? (
-                <Search className="h-4 w-4 shrink-0" />
+                <Search className="h-3.5 w-3.5 shrink-0" />
               ) : (
-                <Lock className="h-4 w-4 shrink-0" />
+                <Lock className="h-3.5 w-3.5 shrink-0" />
               )}
               <span className="truncate">{t("Tìm video")}</span>
             </TabsTrigger>
             <TabsTrigger
               value="queue"
-              className="h-10 min-w-0 gap-1 rounded-lg px-2 text-xs sm:text-sm"
+              className="h-9 min-w-0 gap-1.5 rounded-full px-2 text-xs sm:text-sm font-semibold transition-all data-[state=active]:bg-rose-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-rose-600/30"
             >
-
+              <ListPlus className="h-3.5 w-3.5 shrink-0" />
               <span className="truncate">{t("Hàng đợi")}</span>
-              <span className="rounded-md bg-muted px-1 text-xs tabular-nums">
+              <span className="rounded-full bg-muted/80 data-[state=active]:bg-white/25 px-1.5 text-[10px] font-bold tabular-nums">
                 {sync.queue.length}
               </span>
             </TabsTrigger>

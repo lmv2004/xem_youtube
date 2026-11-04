@@ -215,7 +215,8 @@ export function HeroExplorer() {
 
   return (
     <div className="space-y-7 sm:space-y-9">
-      <section className="discovery-intro rounded-2xl border border-border p-4 sm:p-5">
+      <section className="relative overflow-hidden rounded-3xl border border-border/80 bg-gradient-to-br from-card via-card/90 to-card/60 p-5 sm:p-7 shadow-lg shadow-black/5 backdrop-blur-xl">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-gradient-to-br from-rose-500/15 to-purple-500/10 blur-3xl" aria-hidden="true" />
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
             {!topic && (
@@ -240,7 +241,7 @@ export function HeroExplorer() {
           </div>
           <Link
             href="/rooms"
-            className="hidden shrink-0 items-center gap-1.5 rounded-full border border-border bg-background px-4 py-2.5 text-sm font-medium hover:bg-muted xl:inline-flex"
+            className="hidden shrink-0 items-center gap-2 rounded-full border border-rose-500/25 bg-rose-500/10 px-4 py-2 text-xs font-semibold text-rose-500 hover:bg-rose-500/15 hover:border-rose-500/40 transition-all shadow-xs xl:inline-flex"
           >
             {t("Xem cùng bạn bè")} <ArrowUpRight className="h-4 w-4" />
           </Link>
@@ -253,7 +254,7 @@ export function HeroExplorer() {
             inputRef={inputRef}
             placeholder={t("Từ khóa hoặc link YouTube")}
             inputClassName="h-10 min-w-0 flex-1 bg-transparent px-2 text-sm outline-none"
-            className="flex items-center gap-2 rounded-2xl border border-input bg-background p-2 shadow-sm focus-within:ring-2 focus-within:ring-ring"
+            className="flex items-center gap-2 rounded-2xl border border-border/80 bg-background/80 backdrop-blur-md p-2 shadow-sm focus-within:border-rose-500/50 focus-within:ring-4 focus-within:ring-rose-500/15 transition-all"
             leading={
               <Search className="ml-2 hidden h-5 w-5 shrink-0 text-muted-foreground sm:block" />
             }
@@ -272,7 +273,7 @@ export function HeroExplorer() {
                     <X className="h-4 w-4" />
                   </button>
                 )}
-                <Button type="submit" className="h-10 rounded-xl px-3 sm:px-5">
+                <Button type="submit" className="h-10 rounded-xl px-4 sm:px-5 bg-rose-600 hover:bg-rose-500 text-white font-semibold shadow-md shadow-rose-600/25 transition-all active:scale-95">
                   <Search className="sm:hidden" />
                   <span className="hidden sm:inline">{t("Tìm kiếm")}</span>
                   <span className="sr-only sm:hidden">{t("Tìm kiếm")}</span>

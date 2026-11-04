@@ -1,4 +1,5 @@
 "use client";
+import { cn } from "@/lib/utils";
 import { useEffect, useRef } from "react";
 import { createPlayerEventGuard, createPlayerVisibilityGuard } from "@/lib/player-event-guard";
 
@@ -87,13 +88,14 @@ export type SyncPlayerHandle = {
 type Props = {
   videoId: string;
   fillHeight?: boolean;
+  compact?: boolean;
   /** Visible player state changes after scripted/lifecycle events are filtered. */
   onStateChange?: (playing: boolean, currentTime: number) => void;
   onReady?: (handle: SyncPlayerHandle) => void;
   onEnded?: (videoId: string, duration: number) => void;
 };
 
-export function SyncPlayer({ videoId, onStateChange, onReady, onEnded, fillHeight = false }: Props) {
+export function SyncPlayer({ videoId, onStateChange, onReady, onEnded, fillHeight = false, compact = false }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<YTPlayer | null>(null);
 
@@ -174,7 +176,13 @@ export function SyncPlayer({ videoId, onStateChange, onReady, onEnded, fillHeigh
   }, []);
 
   return (
-    <div className={`aspect-video w-full overflow-hidden rounded-2xl bg-black ${fillHeight ? "lg:h-full lg:aspect-auto" : ""}`}>
+    <div
+      className={cn(
+        "aspect-video w-full overflow-hidden rounded-2xl bg-black transition-all",
+        fillHeight && "lg:h-full lg:aspect-auto",
+        compact && "max-h-[34vh] sm:max-h-[38vh] w-auto mx-auto shadow-xl border border-border/40"
+      )}
+    >
       <div ref={containerRef} className="h-full w-full [&_iframe]:h-full [&_iframe]:w-full" />
     </div>
   );

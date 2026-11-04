@@ -60,11 +60,11 @@ function NavLink({
       aria-label={t(label)}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200",
-        collapsed && "justify-center px-0",
+        "group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all duration-200",
+        collapsed && "justify-center px-0 py-2.5",
         active
-          ? "bg-primary/10 font-semibold text-primary"
-          : "text-muted-foreground hover:bg-muted hover:text-foreground hover:translate-x-0.5",
+          ? "bg-rose-500/10 font-semibold text-rose-500 shadow-xs"
+          : "text-muted-foreground hover:bg-muted/80 hover:text-foreground hover:translate-x-0.5",
       )}
     >
       <Icon
@@ -75,7 +75,7 @@ function NavLink({
       />
       {collapsed ? null : <span className="whitespace-normal leading-5">{t(label)}</span>}
       {active && !collapsed && (
-        <span className="ml-auto h-1.5 w-1.5 rounded-full bg-rose-500 " />
+        <span className="ml-auto h-1.5 w-1.5 rounded-full bg-rose-500 shadow-sm shadow-rose-500/50" />
       )}
     </Link>
   );
@@ -88,9 +88,9 @@ function SectionLabel({
   children: React.ReactNode;
   hidden: boolean;
 }) {
-  if (hidden) return <div className="my-2 h-px bg-border" />;
+  if (hidden) return <div className="my-2 h-px bg-border/60" />;
   return (
-    <p className="px-3 pb-1 pt-4 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+    <p className="px-3 pb-1 pt-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
       {children}
     </p>
   );
@@ -126,11 +126,11 @@ export function AppSidebar() {
   return (
     <aside
       className={cn(
-        "sticky top-24 hidden shrink-0 self-start lg:block transition-all duration-300",
-        collapsed ? "w-[68px]" : "w-48",
+        "sticky top-20 hidden shrink-0 self-start lg:block transition-all duration-300",
+        collapsed ? "w-[68px]" : "w-52",
       )}
     >
-      <div className="rounded-2xl p-2">
+      <div className="rounded-2xl border border-border/60 bg-card/50 backdrop-blur-md p-2 shadow-xs transition-colors">
         <div
           className={cn(
             "flex pb-1",
@@ -145,7 +145,7 @@ export function AppSidebar() {
             aria-label={
               collapsed ? t("Mở rộng thanh bên") : t("Thu gọn thanh bên")
             }
-            className="h-8 w-8 text-muted-foreground hover:bg-border hover:text-foreground rounded-lg"
+            className="h-8 w-8 text-muted-foreground hover:bg-muted hover:text-foreground rounded-lg"
           >
             {collapsed ? (
               <PanelLeftOpen className="h-4 w-4" />
@@ -155,7 +155,7 @@ export function AppSidebar() {
           </Button>
         </div>
 
-        <nav className="flex flex-col gap-1">
+        <nav className="flex flex-col gap-0.5">
           {PRIMARY_NAV.map((item) => (
             <NavLink
               key={item.href}

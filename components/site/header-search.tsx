@@ -17,9 +17,11 @@ export function HeaderSearch() {
   const [expanded, setExpanded] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
     if (expanded) input.current?.focus();
   }, [expanded]);
+
   return (
     <>
       <button
@@ -29,17 +31,18 @@ export function HeaderSearch() {
         aria-expanded={expanded}
         aria-controls="header-search"
         onClick={() => setExpanded(!expanded)}
-        className="ml-auto grid h-10 w-10 place-items-center rounded-xl hover:bg-muted md:hidden"
+        className="ml-auto grid h-10 w-10 place-items-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground md:hidden"
       >
         <Search className="h-5 w-5" />
       </button>
+
       <SearchBox
         id="header-search"
         value={query}
         onChange={setQuery}
         inputRef={input}
-        placeholder={t("Tìm video hoặc dán link YouTube")}
-        inputClassName="h-9 min-w-0 flex-1 bg-transparent px-3 text-sm outline-none"
+        placeholder={t("Tìm video hoặc dán link YouTube...")}
+        inputClassName="h-9 min-w-0 flex-1 bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground/60"
         onSearch={(term) => {
           const destination = getSearchDestination(term);
           if (!destination) return;
@@ -57,20 +60,37 @@ export function HeaderSearch() {
           }
         }}
         className={cn(
-          "items-center gap-2 rounded-xl border border-border bg-background p-1.5 focus-within:ring-2 focus-within:ring-ring md:relative md:inset-auto md:flex md:max-w-md md:flex-1",
+          "items-center gap-1.5 rounded-full border border-border/80 bg-muted/40 px-2 py-1 transition-all duration-200",
+          "focus-within:border-rose-500/50 focus-within:bg-card focus-within:ring-2 focus-within:ring-rose-500/20 focus-within:shadow-md",
+          "md:relative md:inset-auto md:flex md:max-w-md md:flex-1",
           expanded
-            ? "absolute inset-x-3 top-full mt-2 flex shadow-lg md:mt-0"
+            ? "absolute inset-x-3 top-full mt-2 flex shadow-xl bg-card border-border md:mt-0"
             : "hidden",
         )}
         actions={
           <>
+            {query ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("");
+                  input.current?.focus();
+                }}
+                aria-label={t("Xóa")}
+                className="grid h-7 w-7 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            ) : null}
+
             <button
               type="submit"
               aria-label={t("Tìm kiếm")}
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted"
+              className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-rose-500/10 hover:text-rose-500"
             >
               <Search className="h-4 w-4" />
             </button>
+
             {expanded && (
               <button
                 type="button"
@@ -79,7 +99,7 @@ export function HeaderSearch() {
                   setExpanded(false);
                   trigger.current?.focus();
                 }}
-                className="grid h-9 w-9 place-items-center rounded-lg hover:bg-muted md:hidden"
+                className="grid h-7 w-7 place-items-center rounded-full text-muted-foreground hover:bg-muted md:hidden"
               >
                 <X className="h-4 w-4" />
               </button>

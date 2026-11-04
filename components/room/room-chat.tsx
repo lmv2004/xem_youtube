@@ -737,19 +737,16 @@ export function RoomChat({
             </form>
           </>
         ) : (
-          <div className="rounded-xl border border-border/80 bg-muted/30 p-3 text-center">
-            <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-              <LogIn className="h-3.5 w-3.5 text-primary" />
-              <span>
-                <Link
-                  href={`/login?callbackUrl=${encodeURIComponent(pathname)}`}
-                  className="font-semibold text-primary hover:underline"
-                >
-                  {t("Đăng nhập")}
-                </Link>{" "}
-                {t("để tham gia trò chuyện. Bạn vẫn xem video bình thường.")}
-              </span>
-            </div>
+          <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-3 text-center backdrop-blur-md">
+            <p className="text-xs text-muted-foreground mb-2">
+              {t("Đăng nhập để gửi tin nhắn và biểu cảm cùng bạn bè.")}
+            </p>
+            <Button asChild size="sm" className="w-full rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold shadow-md shadow-rose-600/25 h-9">
+              <Link href={`/login?callbackUrl=${encodeURIComponent(pathname)}`}>
+                <LogIn className="mr-1.5 h-3.5 w-3.5" />
+                <span>{t("Đăng nhập ngay")}</span>
+              </Link>
+            </Button>
           </div>
         )}
       </div>
