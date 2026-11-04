@@ -34,6 +34,8 @@ import type {
 } from "@/lib/room-stage";
 import type { RoomMessageDto } from "@/lib/rooms";
 import { useTranslations } from "@/components/locale-provider";
+import { StageLightingControls, StageLightingRig } from "./stage-lighting-controls";
+import { normalizeStageLighting, stageLightingStyle, type StageLighting } from "@/lib/stage-lighting";
 import { cn } from "@/lib/utils";
 
 type ActiveBubble = {
@@ -55,6 +57,7 @@ type RoomStageProps = {
   onToggleFocused?: () => void;
   onToggleStage: (enabled: boolean) => Promise<void>;
   onSetLimit: (max: number) => Promise<void>;
+  onSetLighting: (lighting: StageLighting) => Promise<boolean>;
   onRequestJoin: (cat: CatDanceMeme) => Promise<void>;
   onCancelRequest: () => Promise<void>;
   onApproveRequest: (clientId: string, userId?: string | null) => Promise<void>;
@@ -78,6 +81,7 @@ export function RoomStage({
   onToggleFocused,
   onToggleStage,
   onSetLimit,
+  onSetLighting,
   onRequestJoin,
   onCancelRequest,
   onApproveRequest,
@@ -98,6 +102,7 @@ export function RoomStage({
   const [bubbles, setBubbles] = useState<Record<string, ActiveBubble>>({});
   const processedMsgIdsRef = useRef<Set<string>>(new Set());
 
+  const lighting = normalizeStageLighting(stage.lighting);
   const { enabled, maxParticipants, participants, requests } = stage;
 
   // Track chat messages and assign bubbles to active dancers
@@ -192,9 +197,13 @@ export function RoomStage({
   return (
     <div
       className={cn(
-        "concert-deck overflow-hidden rounded-2xl border border-white/10 bg-[#101119] text-slate-100",
+        "concert-deck stage-light-surface overflow-hidden rounded-2xl border border-white/10 bg-[#101119] text-slate-100",
         isDocked && "rounded-t-none border-t-0",
       )}
+      data-light-type={lighting.type}
+      data-light-motion={lighting.motion}
+      data-light-pulse={lighting.pulse}
+      style={stageLightingStyle(lighting) as React.CSSProperties}
     >
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-5">
         <div className="flex min-w-0 items-center gap-3">
@@ -222,13 +231,7 @@ export function RoomStage({
         </span>
       </div>
       <div className="concert-floor relative isolate overflow-hidden px-3 pb-5 pt-16 sm:px-6 sm:pb-6 sm:pt-20">
-        <div className="concert-rig" aria-hidden="true">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <span key={i} className="concert-fixture">
-              <i className={`concert-beam concert-beam-${i}`} />
-            </span>
-          ))}
-        </div>
+        <StageLightingRig />
         <div className="concert-backdrop" aria-hidden="true" />
         {participants.length === 0 && (
           <div className="relative z-10 mx-auto mb-5 max-w-xs text-center">
@@ -501,6 +504,7 @@ export function RoomStage({
             </DialogHeader>
 
             <div className="space-y-4 py-2">
+              <StageLightingControls value={stage.lighting} onSave={onSetLighting} />
               {/* Cài đặt sức chứa sân khấu */}
               <div className="flex items-center justify-between rounded-xl border border-border/70 bg-muted/40 p-3">
                 <div>

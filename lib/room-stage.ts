@@ -1,3 +1,4 @@
+import { normalizeStageLighting, type StageLighting } from "./stage-lighting";
 import { AsyncLocalStorage } from "node:async_hooks";
 export type StageParticipant = {
   clientId: string;
@@ -25,6 +26,7 @@ export type StageRequest = {
 
 export type RoomStageState = {
   enabled: boolean;
+  lighting?: StageLighting;
   maxParticipants: number;
   participants: StageParticipant[];
   requests: StageRequest[];
@@ -290,6 +292,13 @@ export function clearStage(code: string): RoomStageState {
   const state = getStageState(code);
   state.participants = [];
   state.requests = [];
+  state.lastUpdatedAt = Date.now();
+  return state;
+}
+
+export function setStageLighting(code: string, lighting: StageLighting): RoomStageState {
+  const state = getStageState(code);
+  state.lighting = normalizeStageLighting(lighting);
   state.lastUpdatedAt = Date.now();
   return state;
 }

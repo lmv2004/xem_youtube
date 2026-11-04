@@ -1,3 +1,4 @@
+import { stageLightingSchema } from "@/lib/stage-lighting-schema";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { readStage, mutateStage } from "@/lib/room-stage-store";
@@ -10,6 +11,7 @@ import {
   getStageState,
   toggleStage,
   setStageLimit,
+  setStageLighting,
   requestStageJoin,
   cancelStageRequest,
   approveStageRequest,
@@ -59,12 +61,13 @@ export async function POST(
   const isHost = Boolean(session?.user?.id && session.user.id === room.hostId);
 
   const parsed = z.object({
-    action: z.enum(["toggle", "set_limit", "request_join", "cancel_request", "approve", "reject", "approve_all", "leave", "clear"]),
+    action: z.enum(["toggle", "set_limit", "request_join", "cancel_request", "approve", "reject", "approve_all", "leave", "clear", "set_lighting"]),
     clientId: z.string().trim().min(1).max(64).optional(),
     actorClientId: z.string().trim().min(1).max(64),
     clientToken: z.string().length(64),
     userId: z.string().max(200).nullish(),
     enabled: z.boolean().optional(),
+    lighting: stageLightingSchema.optional(),
     maxParticipants: z.number().int().min(1).max(12).optional(),
     catId: z.string().min(1).max(200).optional(),
     catGifUrl: z.string().url().max(600).refine(url => url.startsWith("https://")).optional(),
@@ -87,7 +90,7 @@ export async function POST(
   const action = body?.action;
 
   // Host-only checks
-  if (["toggle", "set_limit", "approve", "reject", "approve_all", "clear"].includes(action)) {
+  if (["toggle", "set_limit", "approve", "reject", "approve_all", "clear", "set_lighting"].includes(action)) {
     if (!isHost) {
       return Response.json(
         { message: "Chỉ chủ phòng mới có quyền thực hiện hành động này." },
@@ -98,6 +101,10 @@ export async function POST(
 
   return mutateStage(code, () => {
     switch (action) {
+      case "set_lighting": {
+        if (!body.lighting) return Response.json({ message: "Dữ liệu không hợp lệ." }, { status: 400 });
+        return Response.json(setStageLighting(code, body.lighting));
+      }
       case "toggle": {
         if (body.enabled === undefined) return Response.json({ message: "Thiếu trạng thái." }, { status: 400 });
         const enabled = body.enabled;
