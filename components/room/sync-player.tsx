@@ -1,5 +1,5 @@
-import { cn } from "@/lib/utils";
 "use client";
+import { cn } from "@/lib/utils";
 import { useEffect, useRef } from "react";
 import { createPlayerEventGuard, createPlayerVisibilityGuard } from "@/lib/player-event-guard";
 
