@@ -15,6 +15,7 @@ const defaultStageState: RoomStageState = {
 
 type UseRoomStageProps = {
   code: string;
+  clientToken?: string;
   clientId: string | null;
   userId?: string | null;
   isHost: boolean;
@@ -32,6 +33,7 @@ export function useRoomStage({
   displayName,
   avatarUrl,
   externalStage,
+  clientToken,
   disabled = false,
 }: UseRoomStageProps) {
   const [stage, setStage] = useState<RoomStageState>(defaultStageState);
@@ -43,10 +45,7 @@ export function useRoomStage({
     if (!externalStage) return;
     setStage((prev) => {
       if (
-        externalStage.lastUpdatedAt >= prev.lastUpdatedAt ||
-        externalStage.enabled !== prev.enabled ||
-        externalStage.participants.length !== prev.participants.length ||
-        externalStage.requests.length !== prev.requests.length
+        externalStage.lastUpdatedAt >= prev.lastUpdatedAt
       ) {
         return externalStage;
       }
@@ -75,9 +74,7 @@ export function useRoomStage({
         if (activeRef.current) {
           setStage((prev) => {
             if (
-              data.lastUpdatedAt >= prev.lastUpdatedAt ||
-              data.enabled !== prev.enabled ||
-              data.participants.length !== prev.participants.length
+              data.lastUpdatedAt >= prev.lastUpdatedAt
             ) {
               return data;
             }
@@ -90,37 +87,26 @@ export function useRoomStage({
     }
   }, [code]);
 
-  // Polling loop
+  // Room polling owns reads. Avoid a competing stage loop and out-of-order replies.
   useEffect(() => {
     activeRef.current = true;
-    void fetchStage();
-
-    const interval = setInterval(() => {
-      if (activeRef.current) {
-        void fetchStage();
-      }
-    }, 2000);
-
-    return () => {
-      activeRef.current = false;
-      clearInterval(interval);
-    };
-  }, [fetchStage]);
+    return () => { activeRef.current = false; };
+  }, [code]);
 
   const sendStageAction = useCallback(
     async (payload: Record<string, unknown>, successMessage?: string) => {
-      if (!code) return;
+      if (!code || disabled) return;
       try {
         setLoading(true);
         const res = await fetch(`/api/rooms/${code}/stage`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ ...payload, actorClientId: clientId, clientToken }),
         });
         if (res.ok) {
           const updated = (await res.json()) as RoomStageState;
           if (activeRef.current) {
-            setStage(updated);
+            setStage(previous => updated.lastUpdatedAt >= previous.lastUpdatedAt ? updated : previous);
           }
           if (successMessage) {
             toast.success(successMessage);
@@ -135,7 +121,7 @@ export function useRoomStage({
         setLoading(false);
       }
     },
-    [code],
+    [code, disabled, clientId, clientToken],
   );
 
   const toggleStage = useCallback(

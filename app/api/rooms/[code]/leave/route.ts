@@ -1,3 +1,4 @@
+import { ownsRoomPresence } from "@/lib/room-membership";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { log } from "@/lib/logger";
@@ -39,6 +40,7 @@ export const POST = withRequestLog(SCOPE, async (request, context) => {
     return NextResponse.json({ ok: true });
   }
 
+  if (!await ownsRoomPresence(code, clientId)) return NextResponse.json({ ok: false }, { status: 403 });
   await prisma.roomPresence.deleteMany({ where: { roomId: room.id, clientId } });
   log.info(SCOPE, "member left", { code });
 

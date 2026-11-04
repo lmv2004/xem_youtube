@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 export type StageParticipant = {
   clientId: string;
   userId?: string | null;
@@ -32,32 +33,16 @@ export type RoomStageState = {
 
 const DEFAULT_MAX_PARTICIPANTS = 6;
 
-declare global {
-  // eslint-disable-next-line no-var
-  var __ROOM_STAGE_STORE__: Map<string, RoomStageState> | undefined;
+const stageContext = new AsyncLocalStorage<RoomStageState>();
+export function defaultStageState(): RoomStageState {
+  return { enabled: false, maxParticipants: DEFAULT_MAX_PARTICIPANTS, participants: [], requests: [], lastUpdatedAt: 0 };
 }
-
-function getStore(): Map<string, RoomStageState> {
-  if (!globalThis.__ROOM_STAGE_STORE__) {
-    globalThis.__ROOM_STAGE_STORE__ = new Map<string, RoomStageState>();
-  }
-  return globalThis.__ROOM_STAGE_STORE__;
+export function withStageState<T>(state: RoomStageState, run: () => T): T {
+  return stageContext.run(state, run);
 }
-
-export function getStageState(code: string): RoomStageState {
-  const store = getStore();
-  const normalized = code.toUpperCase();
-  let state = store.get(normalized);
-  if (!state) {
-    state = {
-      enabled: false,
-      maxParticipants: DEFAULT_MAX_PARTICIPANTS,
-      participants: [],
-      requests: [],
-      lastUpdatedAt: Date.now(),
-    };
-    store.set(normalized, state);
-  }
+export function getStageState(_code: string): RoomStageState {
+  const state = stageContext.getStore();
+  if (!state) throw new Error("Stage mutations require a transaction-scoped state");
   return state;
 }
 
@@ -219,6 +204,7 @@ export function approveStageRequest(
   );
   if (reqIndex === -1) return state;
 
+  if (!state.enabled || state.participants.length >= state.maxParticipants) return state;
   const req = state.requests[reqIndex];
   state.requests.splice(reqIndex, 1);
 

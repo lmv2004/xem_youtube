@@ -46,11 +46,16 @@ export function useRoomSync(code: string, { enabled, clientId, displayName, user
     readyRef.current = false;
     if (!enabled || !clientId) return;
     let active = true;
+    let ownerKey = "";
+    try {
+      ownerKey = localStorage.getItem("xemphim:room:owner:v1") || crypto.randomUUID();
+      localStorage.setItem("xemphim:room:owner:v1", ownerKey);
+    } catch { /* The server cookie is sufficient when storage is unavailable. */ }
     const polling = startRoomPolling({
       async read(after, heartbeat, signal) {
         const response = await fetch(`/api/rooms/${code}/sync`, {
           method: "POST", cache: "no-store", signal,
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...(ownerKey ? { "X-Room-Owner": ownerKey } : {}) },
           body: JSON.stringify({ clientId, displayName: nameRef.current.trim() || "Khách", heartbeat, after }),
         });
         if (response.status === 404) throw new RoomClosedError();
@@ -62,7 +67,7 @@ export function useRoomSync(code: string, { enabled, clientId, displayName, user
           ...withPlayback(previous, snapshot),
           members: snapshot.members,
           messages: mergeMessages(previous.messages, snapshot.messages),
-          stage: snapshot.stage ?? previous.stage,
+          stage: snapshot.stage && (!previous.stage || snapshot.stage.lastUpdatedAt >= previous.stage.lastUpdatedAt) ? snapshot.stage : previous.stage,
         }));
       },
       status(offline) {

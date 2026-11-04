@@ -1,3 +1,4 @@
+import { ownsRoomPresence } from "@/lib/room-membership";
 import { auth } from "@/auth";
 import { roomCommand } from "@/lib/room-protocol";
 import { normalizeRoomCode } from "@/lib/rooms";
@@ -45,6 +46,7 @@ export async function POST(
   const session = await auth();
   const actor = session?.user ?? {};
   const code = normalizeRoomCode((await context.params).code);
+  if (!await ownsRoomPresence(code, body.clientId)) return Response.json({ message: "Bạn cần tham gia phòng trước." }, { status: 403 });
   const command = parsed.data;
   try {
     const data =

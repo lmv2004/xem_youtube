@@ -72,18 +72,46 @@ test("HTTP viewers join, chat, contribute under host control and recover without
     } });
     const hostId = crypto.randomUUID();
     const guestId = crypto.randomUUID();
-    const post = (path: string, body: unknown, host = false) => fetch(`${origin}/api/rooms/${code}/${path}`, {
-      method: "POST", headers: { "Content-Type": "application/json", Origin: origin,
-        ...(host ? { Cookie: hostCookie } : {}) }, body: JSON.stringify(body), signal: AbortSignal.timeout(15_000),
-    });
+    const ownerCookies = { host: "", guest: "" };
+    const post = async (path: string, body: unknown, host = false) => {
+      const key = host ? "host" : "guest";
+      const response = await fetch(`${origin}/api/rooms/${code}/${path}`, {
+        method: "POST", headers: { "Content-Type": "application/json", Origin: origin,
+          Cookie: [host ? hostCookie : "", ownerCookies[key]].filter(Boolean).join("; ") },
+        body: JSON.stringify(body), signal: AbortSignal.timeout(15_000),
+      });
+      const owner = response.headers.getSetCookie().find(value => value.startsWith("xem_room_owner="));
+      if (owner) ownerCookies[key] = owner.split(";", 1)[0];
+      return response;
+    };
     const sync = async (host: boolean, heartbeat = false, after?: string | null) => {
       const response = await post("sync", { clientId: host ? hostId : guestId, displayName: host ? "Host" : "Guest", heartbeat, after }, host);
       assert.equal(response.status, 200);
       return await response.json() as RoomSyncResponse;
     };
     const command = (host: boolean, data: unknown) => post("commands", { clientId: host ? hostId : guestId, command: data }, host);
-    await sync(true, true);
+    const hostJoined = await sync(true, true);
     const joined = await sync(false, true);
+    const stageAction = (host: boolean, data: Record<string, unknown>) => post("stage", {
+      ...data, actorClientId: host ? hostId : guestId,
+      clientToken: host ? hostJoined.clientToken : joined.clientToken,
+    }, host);
+    assert.equal((await stageAction(false, { action: "toggle", enabled: true })).status, 403);
+    const stageAnchor = await prisma.room.findUniqueOrThrow({ where: { id: room.id } });
+    assert.equal((await stageAction(true, { action: "toggle", enabled: true, clientId: hostId })).status, 200);
+    assert.equal((await sync(false)).stage?.enabled, true);
+    assert.equal((await stageAction(false, { action: "leave", clientId: hostId })).status, 403);
+    assert.equal((await stageAction(false, { action: "request_join", clientId: guestId, catId: "test-cat", catName: "Test", catGifUrl: "https://media.giphy.com/test.gif" })).status, 200);
+    assert.equal((await stageAction(true, { action: "approve", clientId: guestId })).status, 200);
+    assert.equal((await sync(false)).stage?.participants.length, 2);
+    const persistedStage = await fetch(`${origin}/api/rooms/${code}/stage`);
+    assert.equal((await persistedStage.json()).participants.length, 2);
+    const afterStage = await prisma.room.findUniqueOrThrow({ where: { id: room.id } });
+    assert.equal((afterStage.stage as { participants: unknown[] }).participants.length, 2, "stage is persisted, not process-local");
+    assert.equal(afterStage.lastSyncAt.toISOString(), stageAnchor.lastSyncAt.toISOString());
+    assert.equal(afterStage.updatedAt.toISOString(), stageAnchor.updatedAt.toISOString());
+    assert.equal((await stageAction(true, { action: "set_limit", maxParticipants: -1 })).status, 400);
+    assert.equal((await post("stage", { action: "leave", clientId: hostId, actorClientId: hostId, clientToken: hostJoined.clientToken })).status, 403);
     // Host is preserved even when NextRequest normalizes its URL to localhost.
     // None of these cross-origin writes may gain authority through forwarding headers.
     const rejectedOrigins: Record<string, string>[] = [
@@ -102,6 +130,9 @@ test("HTTP viewers join, chat, contribute under host control and recover without
       });
       assert.equal(rejected.status, 403);
     }
+    assert.equal((await post("commands", { clientId: hostId, command: { type: "playback", requestId: "impersonated", payload: { isPlaying: false } } })).status, 403);
+    assert.equal((await post("leave", { clientId: hostId })).status, 403);
+    assert.equal((await post("sync", { clientId: hostId, displayName: "Impersonator", heartbeat: true })).status, 409);
     assert.equal(joined.allowQueueAdds, false, "legacy locked permissions remain opt-in");
     assert.equal(joined.members.length, 2);
     assert.ok(joined.members.some((member) => member.clientId === hostId && member.isHost));

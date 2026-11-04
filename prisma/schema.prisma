@@ -179,6 +179,7 @@ model Room {
   updatedAt DateTime       @updatedAt
   messages  RoomMessage[]
   presences RoomPresence[]
+  stage Json @default("{}")
 
   @@index([hostId])
 }
@@ -199,6 +200,7 @@ model RoomMessage {
 // browser-generated clientId rather than a userId; `lastSeenAt` is refreshed
 // by the sync poll and rows that go stale are swept away.
 model RoomPresence {
+  ownerKey String?
   id         String   @id @default(cuid())
   roomId     String
   clientId   String
