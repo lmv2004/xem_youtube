@@ -51,16 +51,21 @@ export function useRoomSync(code: string, { enabled, clientId, displayName, user
       ownerKey = localStorage.getItem("xemphim:room:owner:v1") || crypto.randomUUID();
       localStorage.setItem("xemphim:room:owner:v1", ownerKey);
     } catch { /* The server cookie is sufficient when storage is unavailable. */ }
+    let lastHeartbeatName: string | undefined;
     const polling = startRoomPolling({
+      presenceChanged: () => lastHeartbeatName !== nameRef.current,
       async read(after, heartbeat, signal) {
+        const name = nameRef.current;
         const response = await fetch(`/api/rooms/${code}/sync`, {
           method: "POST", cache: "no-store", signal,
           headers: { "Content-Type": "application/json", ...(ownerKey ? { "X-Room-Owner": ownerKey } : {}) },
-          body: JSON.stringify({ clientId, displayName: nameRef.current.trim() || "Khách", heartbeat, after }),
+          body: JSON.stringify({ clientId, displayName: name.trim() || "Khách", heartbeat, after }),
         });
         if (response.status === 404) throw new RoomClosedError();
         if (!response.ok) throw new Error("Room sync unavailable");
-        return await response.json() as RoomSyncResponse;
+        const snapshot = await response.json() as RoomSyncResponse;
+        if (heartbeat && !signal.aborted) lastHeartbeatName = name;
+        return snapshot;
       },
       apply(snapshot) {
         setState((previous) => ({
@@ -119,6 +124,10 @@ export function useRoomSync(code: string, { enabled, clientId, displayName, user
       window.removeEventListener("pageshow", pageShow);
     };
   }, [code, clientId, enabled, userId]);
+
+  useEffect(() => {
+    if (readyRef.current) refreshRef.current();
+  }, [displayName]);
 
   const request = useCallback(async (
     command: Omit<Extract<RoomCommand, { type: "chat" }>, "requestId">

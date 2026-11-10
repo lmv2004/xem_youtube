@@ -55,6 +55,7 @@ export function guestDisplayName(): string {
 }
 
 export function sanitizeDisplayName(raw: string): string {
+  if (raw.includes("@")) return "";
   return raw.replace(/\s+/g, " ").trim().slice(0, MAX_NAME_LENGTH);
 }
 

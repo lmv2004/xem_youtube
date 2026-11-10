@@ -1,4 +1,16 @@
 {
+  "Đổi tên hiển thị": {
+    "en": "Change display name",
+    "te": "ప్రదర్శన పేరు మార్చండి"
+  },
+  "Tên hiển thị không được chứa ký tự @.": {
+    "en": "The display name cannot contain @.",
+    "te": "ప్రదర్శన పేరులో @ ఉండకూడదు."
+  },
+  "Đang đồng bộ tên hiển thị…": {
+    "en": "Syncing display name…",
+    "te": "ప్రదర్శన పేరు సమకాలీకరిస్తోంది…"
+  },
   "Đã bật tự động phát": {
     "en": "Autoplay enabled",
     "te": "స్వయంచాలక ప్లే ప్రారంభించబడింది"
