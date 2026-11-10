@@ -211,6 +211,43 @@ test("presence is refreshed at twenty-second intervals rather than every poll", 
   poller.stop();
 });
 
+test("a name change waits for the current poll and forces the next heartbeat", async (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  let name = "Original";
+  let acknowledged = "";
+  let finishFirst!: () => void;
+  const calls: { name: string; heartbeat: boolean }[] = [];
+  const poller = startRoomPolling({
+    presenceChanged: () => name !== acknowledged,
+    async read(_after, heartbeat) {
+      const sentName = name;
+      calls.push({ name: sentName, heartbeat });
+      if (calls.length === 1) await new Promise<void>((done) => { finishFirst = done; });
+      if (heartbeat) acknowledged = sentName;
+      return snapshot;
+    },
+    apply() {},
+    status() {},
+    closed() {},
+    hidden: () => false,
+  });
+  name = "Updated";
+  poller.refresh();
+  assert.equal(calls.length, 1);
+  finishFirst();
+  await flush();
+  context.mock.timers.tick(0);
+  await flush();
+  context.mock.timers.tick(2000);
+  await flush();
+  assert.deepEqual(calls, [
+    { name: "Original", heartbeat: true },
+    { name: "Updated", heartbeat: true },
+    { name: "Updated", heartbeat: false },
+  ]);
+  poller.stop();
+});
+
 test("a late snapshot from a paused page cannot overwrite the resumed room", async (context) => {
   context.mock.timers.enable({ apis: ["setTimeout"] });
   let resolve!: (data: RoomSyncResponse) => void;

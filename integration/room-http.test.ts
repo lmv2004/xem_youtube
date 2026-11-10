@@ -141,6 +141,15 @@ test("HTTP viewers join, chat, contribute under host control and recover without
     assert.equal(joined.allowQueueAdds, false, "legacy locked permissions remain opt-in");
     assert.equal(joined.members.length, 2);
     assert.ok(joined.members.some((member) => member.clientId === hostId && member.isHost));
+    // A nickname heartbeat affects only the caller's presence.
+    const beforeRename = await prisma.room.findUniqueOrThrow({ where: { id: room.id } });
+    assert.equal((await post("sync", { clientId: hostId, displayName: "  Movie   Fan  ", heartbeat: true }, true)).status, 200);
+    assert.equal((await post("sync", { clientId: guestId, displayName: "guest@example.invalid", heartbeat: true })).status, 200);
+    const renamed = await sync(false);
+    assert.equal(renamed.members.find((member) => member.clientId === hostId)?.name, "Movie Fan");
+    assert.equal(renamed.members.find((member) => member.clientId === hostId)?.isHost, true);
+    assert.equal(renamed.members.find((member) => member.clientId === guestId)?.name, "Khách");
+    assert.deepEqual(await prisma.room.findUniqueOrThrow({ where: { id: room.id } }), beforeRename);
     assert.equal((await command(false, { type: "chat", requestId: "guest-chat", body: "no account" })).status, 401);
     const messageId = crypto.randomUUID();
     const chat = { type: "chat", requestId: messageId, messageId, body: "HTTP chat" };
@@ -149,6 +158,7 @@ test("HTTP viewers join, chat, contribute under host control and recover without
     assert.equal(await prisma.roomMessage.count({ where: { roomId: room.id } }), 1);
     const chatted = await sync(false);
     assert.equal(chatted.messages.at(-1)?.id, messageId);
+    assert.equal(chatted.messages.at(-1)?.author.name, "Movie Fan");
     assert.equal((await command(true, { type: "playback", requestId: "play", payload: { isPlaying: true, positionSeconds: 45 } })).status, 200);
     assert.equal((await sync(false)).playback.positionSeconds, 45);
     assert.equal((await command(true, { type: "playback", requestId: "lock", payload: { hostOnlyControl: true } })).status, 200);

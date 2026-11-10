@@ -68,7 +68,7 @@ export function RoomClient({ code }: { code: string }) {
   const router = useRouter();
   const { data: session, status: sessionStatus } = useSession();
   const { toast } = useToast();
-  const identity = useRoomIdentity();
+  const identity = useRoomIdentity(code);
 
   const [room, setRoom] = useState<RoomDto | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -649,6 +649,7 @@ export function RoomClient({ code }: { code: string }) {
   const video = sync.video ?? room.video;
   const playback = sync.playback ?? room.playback;
   const activity = describeAction(playback, t);
+  const hostName = sync.members.find((member) => member.isHost)?.name ?? room.host.name;
 
   return (
     <div className={focused ? "fixed inset-0 z-50 overflow-y-auto bg-background p-3 sm:p-5 lg:flex lg:flex-col lg:gap-3" : "space-y-5"}>
@@ -704,12 +705,14 @@ export function RoomClient({ code }: { code: string }) {
               <RoomMembers
                 members={sync.members}
                 myClientId={identity.clientId}
+                myName={identity.name}
+                onRename={(name) => identity.persistName(name, true)}
               />
               <span className="hidden sm:inline text-xs text-muted-foreground">
                 {isHost
                   ? t("Bạn là chủ phòng")
                   : t("Chủ: {p0}", {
-                      p0: room.host.name ?? t("Người dùng"),
+                      p0: hostName ?? t("Người dùng"),
                     })}
               </span>
             </div>

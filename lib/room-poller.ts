@@ -13,6 +13,7 @@ export function startRoomPolling(options: {
   status: (offline: boolean) => void;
   closed: () => void;
   hidden: () => boolean;
+  presenceChanged?: () => boolean;
 }) {
   let stopped = false;
   let paused = false;
@@ -41,7 +42,7 @@ export function startRoomPolling(options: {
     try {
       // A foreground return immediately refreshes presence after a sleeping tab.
       let heartbeat =
-        heartbeatAt === null || Date.now() - heartbeatAt >= 20_000;
+        heartbeatAt === null || options.presenceChanged?.() || Date.now() - heartbeatAt >= 20_000;
       let more = true;
       for (let page = 0; more && page < 6 && !stopped; page++) {
         const after = cursor;

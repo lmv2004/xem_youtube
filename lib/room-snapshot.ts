@@ -3,7 +3,7 @@ import type { Room } from "@prisma/client";
 import { prisma } from "./db";
 import { playbackDto } from "./room-commands";
 import { messageCursor, parseMessageCursor } from "./room-sync";
-import { MESSAGE_PAGE_SIZE, PRESENCE_TIMEOUT_MS, type RoomSyncResponse } from "./rooms";
+import { MESSAGE_PAGE_SIZE, PRESENCE_TIMEOUT_MS, sanitizeDisplayName, type RoomSyncResponse } from "./rooms";
 import { readStage } from "./room-stage-store";
 
 /** Authoritative snapshot for HTTP polling and paginated chat catch-up. */
@@ -46,7 +46,7 @@ export async function readRoomSnapshot(room: Room, after?: string | null): Promi
     ...playbackDto(room),
     messages,
     members: presences.map((presence) => ({
-      clientId: presence.clientId, name: presence.name, image: presence.image,
+      clientId: presence.clientId, name: sanitizeDisplayName(presence.name) || "Khách", image: presence.image,
       isHost: presence.userId === room.hostId, isGuest: !presence.userId,
       joinedAt: presence.joinedAt.toISOString(),
     })),
