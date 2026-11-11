@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { randomUUID } from "node:crypto";
 import { roomClientToken } from "@/lib/room-client-token";
 import { readRoomSnapshot } from "@/lib/room-snapshot";
+import { pauseEmptyRoom } from "@/lib/room-idle";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
@@ -45,7 +46,7 @@ export const POST = withRequestLog(SCOPE, async (request, context) => {
   const { clientId, after } = parsed.data;
   const displayName = sanitizeDisplayName(parsed.data.displayName) || "Khách";
 
-  const room = await prisma.room.findUnique({ where: { code } });
+  let room = await prisma.room.findUnique({ where: { code } });
   if (!room) {
     return NextResponse.json({ message: "Phòng không tồn tại." }, { status: 404 });
   }
@@ -56,29 +57,57 @@ export const POST = withRequestLog(SCOPE, async (request, context) => {
   const existing = await prisma.$queryRaw<{ ownerKey: string | null }[]>`SELECT "ownerKey" FROM "RoomPresence" WHERE "roomId" = ${room.id} AND "clientId" = ${clientId}`;
   if (existing[0]?.ownerKey && existing[0].ownerKey !== ownerKey)
     return NextResponse.json({ message: "Mã phiên phòng đã được sử dụng ở cửa sổ khác." }, { status: 409 });
-  const now = new Date();
   if (parsed.data.heartbeat) {
     const session = await auth();
 
     // Ordinary state polls stay read-only; authenticate/write on heartbeats only.
     try {
-    await prisma.roomPresence.upsert({
-      where: { roomId_clientId: { roomId: room.id, clientId } },
-      create: {
-        roomId: room.id,
-        clientId,
-        userId: session?.user?.id ?? null,
-        name: displayName,
-        image: session?.user?.image ?? null,
-        lastSeenAt: now,
-      },
-      update: {
-        lastSeenAt: now,
-        name: displayName,
-        userId: session?.user?.id ?? null,
-        image: session?.user?.image ?? null,
-      },
-    });
+      const renewed = await prisma.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT id FROM "Room" WHERE code = ${code} FOR UPDATE`;
+        const current = await tx.room.findUnique({ where: { code } });
+        if (!current) return null;
+        const presence = await tx.roomPresence.findUnique({
+          where: { roomId_clientId: { roomId: current.id, clientId } },
+          select: { ownerKey: true },
+        });
+        if (presence?.ownerKey && presence.ownerKey !== ownerKey) {
+          return NextResponse.json({ message: "Mã phiên phòng đã được sử dụng ở cửa sổ khác." }, { status: 409 });
+        }
+        const heartbeatAt = new Date();
+        // A sleeping/reconnecting tab retains its playback. Only a new arrival
+        // can settle an abandoned room before its own presence is registered.
+        const snapshotRoom = presence ? current : await pauseEmptyRoom(tx, current, heartbeatAt);
+        await tx.roomPresence.upsert({
+          where: { roomId_clientId: { roomId: current.id, clientId } },
+          create: {
+            roomId: current.id,
+            clientId,
+            userId: session?.user?.id ?? null,
+            name: displayName,
+            image: session?.user?.image ?? null,
+            lastSeenAt: heartbeatAt,
+          },
+          update: {
+            lastSeenAt: heartbeatAt,
+            name: displayName,
+            userId: session?.user?.id ?? null,
+            image: session?.user?.image ?? null,
+          },
+        });
+        await tx.$executeRaw`UPDATE "RoomPresence" SET "ownerKey" = COALESCE("ownerKey", ${ownerKey}) WHERE "roomId" = ${current.id} AND "clientId" = ${clientId}`;
+        await tx.roomPresence.deleteMany({
+          where: {
+            roomId: current.id,
+            lastSeenAt: { lt: new Date(heartbeatAt.getTime() - PRESENCE_TIMEOUT_MS) },
+          },
+        });
+        return snapshotRoom;
+      });
+      if (!renewed) {
+        return NextResponse.json({ message: "Phòng đã đóng." }, { status: 404 });
+      }
+      if (renewed instanceof Response) return renewed;
+      room = renewed;
 
     } catch (error) {
       // The host can delete the room while this heartbeat is in flight.
@@ -87,14 +116,6 @@ export const POST = withRequestLog(SCOPE, async (request, context) => {
       }
       throw error;
     }
-
-    await prisma.$executeRaw`UPDATE "RoomPresence" SET "ownerKey" = COALESCE("ownerKey", ${ownerKey}) WHERE "roomId" = ${room.id} AND "clientId" = ${clientId}`;
-    await prisma.roomPresence.deleteMany({
-      where: {
-        roomId: room.id,
-        lastSeenAt: { lt: new Date(now.getTime() - PRESENCE_TIMEOUT_MS) },
-      },
-    });
 
   }
 

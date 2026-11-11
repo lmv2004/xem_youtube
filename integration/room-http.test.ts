@@ -70,8 +70,8 @@ test("HTTP viewers join, chat, contribute under host control and recover without
       channel: "", thumbnail: "", embedUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
       watchUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
     } });
-    const hostId = crypto.randomUUID();
-    const guestId = crypto.randomUUID();
+    let hostId = crypto.randomUUID();
+    let guestId = crypto.randomUUID();
     const ownerCookies = { host: "", guest: "" };
     const post = async (path: string, body: unknown, host = false) => {
       const key = host ? "host" : "guest";
@@ -257,6 +257,55 @@ test("HTTP viewers join, chat, contribute under host control and recover without
     const linkedQueue = await sync(false);
     assert.equal(linkedQueue.queue.at(-1)?.id, directId);
     assert.equal(linkedQueue.queue.at(-1)?.videoId, "dQw4w9WgXcQ");
+    // The last departure checkpoints playback, without affecting another viewer.
+    assert.equal((await post("leave", { clientId: hostId }, true)).status, 200);
+    assert.equal((await sync(false)).playback.isPlaying, true);
+    assert.equal((await post("leave", { clientId: guestId })).status, 200);
+    const empty = await prisma.room.findUniqueOrThrow({ where: { id: room.id } });
+    assert.equal(empty.isPlaying, false);
+    assert.ok(empty.positionSeconds <= empty.duration);
+    const returned = await sync(false, true);
+    assert.equal(returned.playback.isPlaying, false);
+    assert.equal(returned.playback.positionSeconds, empty.positionSeconds);
+    // Crashed tabs cannot accrue hours of unseen playback. Concurrent arrivals
+    // settle the anchor once under the same row lock as player commands.
+    const staleNow = Date.now();
+    await prisma.room.update({ where: { id: room.id }, data: {
+      isPlaying: true, duration: 200, positionSeconds: 50,
+      lastSyncAt: new Date(staleNow - 120_000),
+    } });
+    await prisma.roomPresence.updateMany({ where: { roomId: room.id }, data: {
+      lastSeenAt: new Date(staleNow - 90_000),
+    } });
+    const beforeRenewal = await prisma.room.findUniqueOrThrow({ where: { id: room.id } });
+    const sleepingTab = await sync(false, true);
+    assert.equal(sleepingTab.playback.isPlaying, true);
+    assert.equal(sleepingTab.playback.lastSyncAt, beforeRenewal.lastSyncAt.toISOString());
+    await prisma.roomPresence.updateMany({ where: { roomId: room.id }, data: {
+      lastSeenAt: new Date(staleNow - 90_000),
+    } });
+    hostId = crypto.randomUUID();
+    guestId = crypto.randomUUID();
+    const [firstArrival, secondArrival] = await Promise.all([sync(false, true), sync(true, true)]);
+    for (const snapshot of [firstArrival, secondArrival]) {
+      assert.equal(snapshot.playback.isPlaying, false);
+      assert.equal(snapshot.playback.positionSeconds, 80);
+    }
+    const resumedAnchor = firstArrival.playback.lastSyncAt;
+    assert.equal((await sync(true, true)).playback.lastSyncAt, resumedAnchor);
+    // Repair already-corrupt legacy anchors without touching queue/video identity.
+    await prisma.roomPresence.updateMany({ where: { roomId: room.id }, data: {
+      lastSeenAt: new Date(staleNow - 90_000),
+    } });
+    await prisma.room.update({ where: { id: room.id }, data: {
+      isPlaying: true, positionSeconds: 195, lastSyncAt: new Date(staleNow - 2 * 86_400_000),
+    } });
+    guestId = crypto.randomUUID();
+    const repaired = await sync(false, true);
+    assert.equal(repaired.playback.positionSeconds, 200);
+    assert.equal(repaired.playback.isPlaying, false);
+    assert.deepEqual(repaired.queue, linkedQueue.queue);
+    assert.equal(repaired.video.videoId, linkedQueue.video.videoId);
     const deleted = await fetch(`${origin}/api/rooms/${code}`, { method: "DELETE", headers: { Cookie: hostCookie, Origin: origin } });
     assert.equal(deleted.status, 200);
     assert.equal((await post("sync", { clientId: guestId, displayName: "Guest", heartbeat: false })).status, 404);

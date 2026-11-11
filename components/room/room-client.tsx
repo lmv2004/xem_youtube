@@ -37,6 +37,7 @@ import { youtubeLinkVideo } from "@/lib/youtube-link";
 import { RoomQueue } from "./room-queue";
 import type { CSSProperties } from "react";
 import { stageLightingStyle } from "@/lib/stage-lighting";
+import { boundedRoomPosition, createRoomPlayerTimeline, roomEndDuration } from "@/lib/room-player-timeline";
 import { RoomStage } from "./room-stage";
 import { useRoomStage } from "@/hooks/use-room-stage";
 import { RenameRoomButton } from "./rename-room-button";
@@ -128,6 +129,7 @@ export function RoomClient({ code }: { code: string }) {
   const localActionAtRef = useRef(0);
   const handleRef = useRef<SyncPlayerHandle | null>(null);
   const currentVideoRef = useRef<string | null>(null);
+  const timelineRef = useRef(createRoomPlayerTimeline());
   // Programmatic play/pause/seek fires the same events a human would, so we
   // mute our own outgoing broadcasts for a moment. Without this every client
   // would echo every change back and the room would fight itself.
@@ -393,30 +395,23 @@ export function RoomClient({ code }: { code: string }) {
     ) {
       currentVideoRef.current = video.videoId;
       currentGenerationRef.current = sync.playbackGeneration;
+      timelineRef.current.reset();
       suppressUntilRef.current = Date.now() + VIDEO_SWAP_WINDOW_MS;
-      handle.loadVideo(
-        video.videoId,
-        effectivePosition(playback, {
-          serverTime: sync.serverTime || undefined,
-          receivedAt: sync.receivedAt,
-        }),
-      );
+      handle.loadVideo(video.videoId);
       return;
     }
     if (!currentVideoRef.current) currentVideoRef.current = video.videoId;
     currentGenerationRef.current = sync.playbackGeneration;
 
-    // Seek / play / pause corrections are pointless while the tab is hidden:
-    // the browser throttles media anyway, and echoing state changes back would
-    // fight other clients. Only video swaps (above) proceed in background tabs.
-    // Background viewers still follow authoritative play/pause; outgoing lifecycle events are filtered in SyncPlayer.
+    // Background viewers still follow room controls. SyncPlayer filters
+    // outgoing lifecycle events so a hidden tab cannot pause everyone else.
 
     if (Date.now() < suppressUntilRef.current) return;
     // Let a buffering player finish its current load. Repeated seeks on the
     // one-second clock can keep restarting that load on a slow connection.
     // A local play starts buffering before YouTube emits PLAYING and we can
     // publish the intent. Applying the old paused snapshot here cancels it.
-    if (handle.isBuffering()) return;
+    if (handle.isBuffering() || handle.isPausePending()) return;
 
     // Our own action coming back through polling — the player is already there.
     if (
@@ -426,12 +421,15 @@ export function RoomClient({ code }: { code: string }) {
       return;
     }
 
-    const target = effectivePosition(playback, {
+    const mediaKind = timelineRef.current.observe(
+      handle.getDuration(), video.duration, handle.isLive(),
+    );
+    const target = boundedRoomPosition(effectivePosition(playback, {
       serverTime: sync.serverTime || undefined,
       receivedAt: sync.receivedAt,
-    });
+    }), handle.getDuration());
 
-    if (Math.abs(handle.getCurrentTime() - target) > DRIFT_TOLERANCE_SECONDS) {
+    if (mediaKind === "video" && Math.abs(handle.getCurrentTime() - target) > DRIFT_TOLERANCE_SECONDS) {
       suppressUntilRef.current = Date.now() + ECHO_WINDOW_MS;
       handle.seekTo(target);
     }
@@ -896,10 +894,15 @@ export function RoomClient({ code }: { code: string }) {
                 }}
                 onStateChange={(playing, currentTime) => {
                   if (document.hidden || Date.now() < suppressUntilRef.current) return;
+                  const handle = handleRef.current;
+                  if (!handle) return;
+                  const kind = timelineRef.current.observe(
+                    handle.getDuration(), sync.video?.duration ?? room.video.duration, handle.isLive(),
+                  );
                   void pushPlayback(
                     {
                       isPlaying: playing,
-                      positionSeconds: currentTime,
+                      ...(kind === "video" ? { positionSeconds: boundedRoomPosition(currentTime, handle.getDuration()) } : {}),
                     },
                     true,
                   );
@@ -914,7 +917,17 @@ export function RoomClient({ code }: { code: string }) {
                     return;
                   endedRef.current = {
                     generation: currentGenerationRef.current,
-                    duration,
+                    duration: roomEndDuration(
+                      duration,
+                      timelineRef.current.observe(
+                        duration, sync.video?.duration ?? room.video.duration,
+                        handleRef.current?.isLive(),
+                      ) === "live",
+                      effectivePosition(sync.playback ?? room.playback, {
+                        serverTime: sync.serverTime || undefined,
+                        receivedAt: sync.receivedAt,
+                      }),
+                    ),
                     anchor: sync.playback?.lastSyncAt ?? "",
                     lastSent: 0,
                   };

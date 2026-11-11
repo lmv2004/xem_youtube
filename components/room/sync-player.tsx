@@ -16,6 +16,7 @@ type YTPlayer = {
   seekTo: (seconds: number, allowSeekAhead: boolean) => void;
   getCurrentTime: () => number;
   getDuration: () => number;
+  getVideoData?: () => { isLive?: boolean };
   getVideoUrl: () => string;
   getPlayerState: () => number;
   loadVideoById: (videoId: string, startSeconds?: number) => void;
@@ -84,9 +85,12 @@ export type SyncPlayerHandle = {
   pause: () => void;
   seekTo: (seconds: number) => void;
   getCurrentTime: () => number;
+  getDuration: () => number;
+  isLive: () => boolean;
   isPlaying: () => boolean;
   isBuffering: () => boolean;
-  loadVideo: (videoId: string, startSeconds: number) => void;
+  isPausePending: () => boolean;
+  loadVideo: (videoId: string) => void;
 };
 
 type Props = {
@@ -146,9 +150,13 @@ export function SyncPlayer({
               pause: () => { events.expect(false); player.pauseVideo(); },
               seekTo: (s) => { events.expect(player.getPlayerState() === YT.PlayerState.PLAYING); player.seekTo(s, true); },
               getCurrentTime: () => player.getCurrentTime(),
+              getDuration: () => player.getDuration(),
+              // Optional hint only. Growing getDuration() also identifies live streams.
+              isLive: () => player.getVideoData?.()?.isLive === true,
               isPlaying: () => player.getPlayerState() === YT.PlayerState.PLAYING,
               isBuffering: () => player.getPlayerState() === YT.PlayerState.BUFFERING,
-              loadVideo: (id, start) => { events.expect(true, 2500); player.loadVideoById(id, start); },
+              isPausePending: () => pendingPause !== undefined,
+              loadVideo: (id) => { events.expect(true, 2500); player.loadVideoById(id); },
             });
           },
           onStateChange: (event) => {
@@ -163,6 +171,7 @@ export function SyncPlayer({
               // A lifecycle pause can arrive just before visibilitychange.
               // Briefly defer only pause; never publish it after hiding/restoring.
               pendingPause = setTimeout(() => {
+                pendingPause = undefined;
                 if (cancelled || document.hidden || !visibility.allows() || player.getPlayerState() !== YT.PlayerState.PAUSED) return;
                 onStateChangeRef.current?.(false, player.getCurrentTime());
               }, 150);

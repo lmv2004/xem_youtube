@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { log } from "@/lib/logger";
 import { withRequestLog } from "@/lib/api-route";
 import { normalizeRoomCode } from "@/lib/rooms";
+import { pauseEmptyRoom } from "@/lib/room-idle";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,7 +42,14 @@ export const POST = withRequestLog(SCOPE, async (request, context) => {
   }
 
   if (!await ownsRoomPresence(code, clientId)) return NextResponse.json({ ok: false }, { status: 403 });
-  await prisma.roomPresence.deleteMany({ where: { roomId: room.id, clientId } });
+  await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "Room" WHERE code = ${code} FOR UPDATE`;
+    const current = await tx.room.findUnique({ where: { code } });
+    if (!current) return;
+    await tx.roomPresence.deleteMany({ where: { roomId: current.id, clientId } });
+    const now = new Date();
+    await pauseEmptyRoom(tx, current, now, now);
+  });
   log.info(SCOPE, "member left", { code });
 
   return NextResponse.json({ ok: true });
